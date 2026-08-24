@@ -1,0 +1,12 @@
+services:
+  zeno:
+    build:
+      context: ..
+      dockerfile: frontend/Dockerfile
+    image: zeno:latest
+    container_name: zeno
+    ports:
+      - "8080:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped

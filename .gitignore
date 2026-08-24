@@ -1,0 +1,39 @@
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+!**/.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Backend runtime and build artifacts
+backend/bin/
+backend/data/
+backend/coverage.out
+backend/coverage.html
+
+# Frontend dependencies and build artifacts
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/src/generated-log.ts
+*.tsbuildinfo
+
+# Logs, coverage, and temporary files
+*.log
+coverage/
+.tmp/
+tmp/
+*.tmp
+*.swp
+
+# IDE and OS metadata
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Hermes local workspace metadata
+.hermes/

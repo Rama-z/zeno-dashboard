@@ -1,0 +1,21 @@
+{
+  "name": "Zeno",
+  "short_name": "Zeno",
+  "description": "Dashboard monitoring dan personal workspace Zeno",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#08090a",
+  "theme_color": "#08090a",
+  "icons": [
+    {
+      "src": "/zeno-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/zeno-logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "zeno",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "npm run generate && vite",
+    "build": "npm run generate && tsc -b && vite build",
+    "preview": "vite preview",
+    "generate": "node scripts/generate-log.mjs"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "vite": "^6.0.5"
+  }
+}

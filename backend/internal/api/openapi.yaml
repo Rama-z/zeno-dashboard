@@ -1,0 +1,515 @@
+openapi: 3.0.3
+info:
+  title: Zeno API
+  version: 1.5.0
+  description: API runtime untuk dashboard dan personal workspace Zeno.
+servers:
+  - url: http://localhost:3000
+paths:
+  /api/health:
+    get:
+      tags: [System]
+      summary: Cek kesehatan API, database, dan source Markdown
+      responses:
+        '200': {description: Service sehat}
+        '503': {description: Service degraded}
+  /api/auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register akun dan kirim email verifikasi
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/RegisterInput'}
+      responses:
+        '202': {description: Permintaan registrasi diterima}
+        '400': {description: Input tidak valid}
+        '429': {description: Terlalu banyak percobaan}
+        '503': {description: Provider email belum dikonfigurasi}
+  /api/auth/verify-email:
+    post:
+      tags: [Authentication]
+      summary: Aktifkan akun menggunakan token email sekali pakai
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: {type: string}
+      responses:
+        '200': {description: Email berhasil diverifikasi}
+        '400': {description: Token invalid, expired, atau sudah dipakai}
+  /api/auth/login:
+    post:
+      tags: [Authentication]
+      summary: Login dengan email dan password setelah verifikasi
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/LoginInput'}
+      responses:
+        '200': {description: Login berhasil dan session cookie dibuat}
+        '401': {description: Email atau password salah}
+        '403': {description: Email belum diverifikasi}
+        '429': {description: Terlalu banyak percobaan}
+  /api/auth/me:
+    get:
+      tags: [Authentication]
+      summary: Baca user dari session aktif
+      responses:
+        '200': {description: User aktif}
+        '401': {description: Login diperlukan}
+  /api/auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Hapus session aktif dan cookie
+      responses:
+        '200': {description: Logout berhasil}
+  /api/profile:
+    put:
+      tags: [Authentication]
+      summary: Ubah display name user aktif
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [displayName]
+              properties:
+                displayName: {type: string, minLength: 2, maxLength: 80}
+      responses:
+        '200': {description: Profil diperbarui}
+        '401': {description: Login diperlukan}
+  /api/overview:
+    get:
+      tags: [Monitoring]
+      summary: Ringkasan dan session entries terfilter
+      parameters:
+        - {in: query, name: status, schema: {type: string, enum: [all, success, info], default: all}}
+        - {in: query, name: query, schema: {type: string}}
+      responses:
+        '200':
+          description: Ringkasan monitoring
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Overview'}
+  /api/logs:
+    get:
+      tags: [Monitoring]
+      summary: Daftar session log
+      parameters:
+        - {in: query, name: status, schema: {type: string, enum: [all, success, info], default: all}}
+        - {in: query, name: query, schema: {type: string}}
+      responses:
+        '200': {description: Daftar log}
+  /api/logs/{id}:
+    get:
+      tags: [Monitoring]
+      summary: Detail session log
+      parameters:
+        - {in: path, name: id, required: true, schema: {type: integer, minimum: 1}}
+      responses:
+        '200':
+          description: Detail log
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Log'}
+        '404': {description: Tidak ditemukan}
+  /api/activity:
+    get:
+      tags: [Activity]
+      summary: Audit activity user; admin melihat semua, user hanya miliknya
+      responses:
+        '200': {description: Daftar audit activity}
+        '401': {description: Login diperlukan}
+  /api/settings:
+    get:
+      tags: [Settings]
+      summary: Baca workspace settings
+      responses:
+        '200': {description: Settings saat ini}
+    put:
+      tags: [Settings]
+      summary: Ubah nama workspace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [workspaceName]
+              properties:
+                workspaceName: {type: string, minLength: 1, maxLength: 80}
+      responses:
+        '200': {description: Settings tersimpan}
+        '400': {description: Input tidak valid}
+  /api/change-logs:
+    get:
+      tags: [Change Log]
+      summary: Baca Change Log dari PostgreSQL
+      responses:
+        '200':
+          description: Daftar Change Log terbaru lebih dahulu
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items: {$ref: '#/components/schemas/ChangeLogEntry'}
+    post:
+      tags: [Change Log]
+      summary: Simpan atau perbarui Change Log berdasarkan id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ChangeLogInput'}
+      responses:
+        '201':
+          description: Change Log tersimpan
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ChangeLogEntry'}
+        '400': {description: Input tidak valid}
+  /api/learning:
+    get:
+      tags: [Learning]
+      summary: Baca learning journal
+      parameters:
+        - {in: query, name: date, schema: {type: string, format: date}}
+      responses:
+        '200': {description: Learning entries}
+    post:
+      tags: [Learning]
+      summary: Tambah learning entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/LearningInput'}
+      responses:
+        '201':
+          description: Entry dibuat
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/LearningEntry'}
+        '400': {description: Input tidak valid}
+  /api/learning/{id}:
+    put:
+      tags: [Learning]
+      summary: Edit learning entry atau ubah status checklist
+      parameters:
+        - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/LearningInput'}
+      responses:
+        '200': {description: Entry diperbarui}
+        '400': {description: Input tidak valid}
+        '404': {description: Entry tidak ditemukan}
+    delete:
+      tags: [Learning]
+      summary: Hapus learning entry
+      parameters:
+        - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+        - {in: query, name: date, required: true, schema: {type: string, format: date}}
+      responses:
+        '200': {description: Entry dihapus}
+        '404': {description: Entry tidak ditemukan}
+  /api/doing:
+    get:
+      tags: [Doing]
+      summary: Baca task Doing berdasarkan tanggal opsional
+      parameters:
+        - {in: query, name: date, schema: {type: string, format: date}}
+      responses:
+        '200': {description: Doing entries}
+    post:
+      tags: [Doing]
+      summary: Tambah task Doing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/DoingInput'}
+      responses:
+        '201': {description: Task dibuat}
+        '400': {description: Input tidak valid}
+  /api/doing/{id}:
+    put:
+      tags: [Doing]
+      summary: Edit task atau ubah status checklist
+      parameters:
+        - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/DoingInput'}
+      responses:
+        '200': {description: Task diperbarui}
+        '404': {description: Task tidak ditemukan}
+    delete:
+      tags: [Doing]
+      summary: Hapus task Doing
+      parameters:
+        - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+        - {in: query, name: date, required: true, schema: {type: string, format: date}}
+      responses:
+        '200': {description: Task dihapus}
+        '404': {description: Task tidak ditemukan}
+  /api/workouts:
+    get:
+      tags: [Workout]
+      summary: Baca workout berdasarkan tanggal opsional
+      parameters:
+        - {in: query, name: date, schema: {type: string, format: date}}
+      responses:
+        '200': {description: Workout entries}
+    post:
+      tags: [Workout]
+      summary: Tambah workout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/WorkoutInput'}
+      responses:
+        '201': {description: Workout dibuat}
+        '400': {description: Input tidak valid}
+  /api/workouts/{id}:
+    put:
+      tags: [Workout]
+      summary: Edit detail atau status workout
+      parameters:
+        - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/WorkoutInput'}
+      responses:
+        '200': {description: Workout diperbarui}
+        '404': {description: Workout tidak ditemukan}
+    delete:
+      tags: [Workout]
+      summary: Hapus workout
+      parameters:
+        - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+        - {in: query, name: date, required: true, schema: {type: string, format: date}}
+      responses:
+        '200': {description: Workout dihapus}
+        '404': {description: Workout tidak ditemukan}
+  /api/journals:
+    get:
+      tags: [Journaling]
+      summary: Baca arsip jurnal berdasarkan tanggal opsional
+      parameters:
+        - {in: query, name: date, schema: {type: string, format: date}}
+      responses:
+        '200': {description: Journal entries}
+    post:
+      tags: [Journaling]
+      summary: Simpan jurnal Markdown
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/JournalInput'}
+      responses:
+        '201': {description: Journal dibuat}
+        '400': {description: Input tidak valid}
+  /api/journals/{id}:
+    delete:
+      tags: [Journaling]
+      summary: Hapus jurnal
+      parameters:
+        - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200': {description: Journal dihapus}
+        '404': {description: Journal tidak ditemukan}
+  /api/spending:
+    get:
+      tags: [Spending]
+      summary: Baca daftar pengeluaran berdasarkan tanggal opsional
+      parameters:
+        - {in: query, name: date, schema: {type: string, format: date}}
+      responses:
+        '200': {description: Spending entries}
+    post:
+      tags: [Spending]
+      summary: Tambah pengeluaran
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/SpendingInput'}
+      responses:
+        '201': {description: Pengeluaran dibuat}
+        '400': {description: Input tidak valid}
+  /api/spending/{id}:
+    delete:
+      tags: [Spending]
+      summary: Hapus pengeluaran
+      parameters:
+        - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200': {description: Pengeluaran dihapus}
+        '404': {description: Pengeluaran tidak ditemukan}
+components:
+  schemas:
+    RegisterInput:
+      type: object
+      required: [email, password, displayName]
+      properties:
+        email: {type: string, format: email, maxLength: 254}
+        password: {type: string, minLength: 12, maxLength: 72, format: password}
+        displayName: {type: string, minLength: 2, maxLength: 80}
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email: {type: string, format: email}
+        password: {type: string, format: password}
+    User:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        email: {type: string, format: email}
+        displayName: {type: string}
+        role: {type: string, enum: [user, admin]}
+        emailVerifiedAt: {type: string, format: date-time}
+    Log:
+      type: object
+      required: [id, title, question, answer, excerpt, status]
+      properties:
+        id: {type: integer}
+        title: {type: string}
+        question: {type: string}
+        answer: {type: string}
+        excerpt: {type: string}
+        status: {type: string, enum: [success, info]}
+    Overview:
+      type: object
+      properties:
+        totalEntries: {type: integer}
+        visibleEntries: {type: integer}
+        verifiedOutcomes: {type: integer}
+        coverage: {type: integer}
+        entries:
+          type: array
+          items: {$ref: '#/components/schemas/Log'}
+        generatedAt: {type: string, format: date-time}
+        sourceFile: {type: string}
+    ChangeLogInput:
+      type: object
+      required: [occurredAt, title]
+      properties:
+        id: {type: string, maxLength: 120}
+        occurredAt: {type: string, format: date-time}
+        title: {type: string, maxLength: 160}
+        description: {type: string, maxLength: 2000}
+        category: {type: string, enum: [Frontend, Backend, DevOps, Hermes, General], default: General}
+    ChangeLogEntry:
+      allOf:
+        - {$ref: '#/components/schemas/ChangeLogInput'}
+        - type: object
+          required: [id, createdAt]
+          properties:
+            id: {type: string}
+            createdAt: {type: string, format: date-time}
+    LearningInput:
+      type: object
+      required: [date, title]
+      properties:
+        date: {type: string, format: date}
+        title: {type: string, maxLength: 160}
+        note: {type: string, maxLength: 2000}
+        category: {type: string, maxLength: 60, default: General}
+        completed: {type: boolean, default: false}
+    LearningEntry:
+      allOf:
+        - {$ref: '#/components/schemas/LearningInput'}
+        - type: object
+          properties:
+            id: {type: string, format: uuid}
+            createdAt: {type: string, format: date-time}
+    DoingInput:
+      type: object
+      required: [date, title]
+      properties:
+        date: {type: string, format: date}
+        title: {type: string, maxLength: 160}
+        note: {type: string, maxLength: 2000}
+        category: {type: string, maxLength: 60, default: General}
+        completed: {type: boolean, default: false}
+    DoingEntry:
+      allOf:
+        - {$ref: '#/components/schemas/DoingInput'}
+        - type: object
+          properties:
+            id: {type: string, format: uuid}
+            createdAt: {type: string, format: date-time}
+    WorkoutInput:
+      type: object
+      required: [date, exercise]
+      properties:
+        date: {type: string, format: date}
+        exercise: {type: string, maxLength: 160}
+        category: {type: string, maxLength: 60, default: General}
+        sets: {type: integer, minimum: 0}
+        reps: {type: integer, minimum: 0}
+        durationMinutes: {type: integer, minimum: 0}
+        note: {type: string, maxLength: 2000}
+        completed: {type: boolean, default: false}
+    WorkoutEntry:
+      allOf:
+        - {$ref: '#/components/schemas/WorkoutInput'}
+        - type: object
+          properties:
+            id: {type: string, format: uuid}
+            createdAt: {type: string, format: date-time}
+    JournalInput:
+      type: object
+      required: [date, title, content]
+      properties:
+        date: {type: string, format: date}
+        title: {type: string, maxLength: 160}
+        content: {type: string, maxLength: 50000, description: Markdown content}
+        mood: {type: string, maxLength: 30, default: Neutral}
+        tags: {type: string, maxLength: 500}
+    JournalEntry:
+      allOf:
+        - {$ref: '#/components/schemas/JournalInput'}
+        - type: object
+          properties:
+            id: {type: string, format: uuid}
+            createdAt: {type: string, format: date-time}
+            updatedAt: {type: string, format: date-time}
+    SpendingInput:
+      type: object
+      required: [date, description, amount]
+      properties:
+        date: {type: string, format: date}
+        description: {type: string, maxLength: 160}
+        category: {type: string, maxLength: 60, default: Other}
+        amount: {type: integer, format: int64, minimum: 1, description: Nominal rupiah utuh}
+        paymentMethod: {type: string, maxLength: 60, default: Other}
+        note: {type: string, maxLength: 2000}
+    SpendingEntry:
+      allOf:
+        - {$ref: '#/components/schemas/SpendingInput'}
+        - type: object
+          properties:
+            id: {type: string, format: uuid}
+            createdAt: {type: string, format: date-time}
