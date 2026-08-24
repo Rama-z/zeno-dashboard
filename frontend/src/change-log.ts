@@ -86,4 +86,11 @@ export const changeLogUpdates: ChangeLogUpdate[] = [
     description: 'Menambahkan register email/password, email verification sekali pakai, login, logout, profile, bcrypt password, opaque HttpOnly session, rate limiting, origin check, role admin/user, ownership record, dan Activity audit berbasis actor/action/entity. Admin melihat seluruh activity dan record; user biasa hanya miliknya. Email mendukung Resend, SMTP, dan file outbox development.',
     category: 'General',
   },
+  {
+    id: '2026-08-24-git-monorepo-ci',
+    occurredAt: '2026-08-24T10:59:15+07:00',
+    title: 'Git monorepo dan CI GitHub tersedia',
+    description: 'Menginisialisasi Zeno sebagai satu monorepo pada branch main, menghubungkannya ke Rama-z/zeno-dashboard, menambahkan ignore rules untuk secret dan runtime artifact, dokumentasi root, serta GitHub Actions untuk format, vet, test PostgreSQL, build backend, build frontend, dan build Docker. Initial push, fresh clone, secret scan, dan CI pertama telah diverifikasi berhasil.',
+    category: 'DevOps',
+  },
 ];
