@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "1.0",
+  "contentVersion": 1,
+  "subject": {
+    "id": "english",
+    "title": "English"
+  },
+  "category": {
+    "id": "grammar",
+    "title": "Grammar"
+  },
+  "lessons": [
+    {
+      "id": "present-simple-vs-continuous",
+      "title": "Present Simple vs Present Continuous",
+      "level": "A2",
+      "sequence": 17,
+      "estimatedMinutes": 20,
+      "file": "./lessons/present-simple-vs-continuous.json"
+    },
+    {
+      "id": "present-perfect-vs-past-simple",
+      "title": "Present Perfect vs Past Simple",
+      "level": "B1",
+      "sequence": 21,
+      "estimatedMinutes": 24,
+      "file": "./lessons/present-perfect-vs-past-simple.json"
+    },
+    {
+      "id": "conditionals-zero-first-second",
+      "title": "Zero, First, and Second Conditionals",
+      "level": "B1",
+      "sequence": 26,
+      "estimatedMinutes": 26,
+      "file": "./lessons/conditionals-zero-first-second.json"
+    },
+    {
+      "id": "emphasis-cleft-inversion-auxiliaries",
+      "title": "Emphasis with Clefts, Inversion, and Auxiliaries",
+      "level": "C1",
+      "sequence": 41,
+      "estimatedMinutes": 28,
+      "file": "./lessons/emphasis-cleft-inversion-auxiliaries.json"
+    }
+  ]
+}

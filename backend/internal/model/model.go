@@ -70,6 +70,89 @@ type LearningEntry struct {
 	CreatedAt   time.Time `json:"createdAt"`
 }
 
+type LearningMaterialSeed struct {
+	ID                  string          `json:"id"`
+	SubjectID           string          `json:"subjectId"`
+	SubjectTitle        string          `json:"subjectTitle"`
+	CategoryID          string          `json:"categoryId"`
+	CategoryTitle       string          `json:"categoryTitle"`
+	TopicID             string          `json:"topicId"`
+	TopicTitle          string          `json:"topicTitle"`
+	Locale              string          `json:"locale"`
+	Level               string          `json:"level"`
+	CoverageMode        string          `json:"coverageMode"`
+	Title               string          `json:"title"`
+	Summary             string          `json:"summary"`
+	Sequence            int             `json:"sequence"`
+	PositionWithinTopic int             `json:"positionWithinTopic"`
+	EstimatedMinutes    int             `json:"estimatedMinutes"`
+	SchemaVersion       string          `json:"schemaVersion"`
+	ContentVersion      int             `json:"contentVersion"`
+	Prerequisites       []string        `json:"prerequisites"`
+	Revisits            []string        `json:"revisits"`
+	Mastery             json.RawMessage `json:"mastery"`
+	Review              json.RawMessage `json:"review"`
+	Published           bool            `json:"published"`
+	Content             json.RawMessage `json:"content,omitempty"`
+}
+
+type LearningMaterialProgress struct {
+	OwnerUserID    string          `json:"-"`
+	MaterialID     string          `json:"materialId"`
+	Status         string          `json:"status"`
+	MasteryScore   *int            `json:"masteryScore,omitempty"`
+	ObjectiveState map[string]bool `json:"objectiveState"`
+	AttemptCount   int             `json:"attemptCount"`
+	ContentVersion int             `json:"contentVersion"`
+	LastReviewedAt *time.Time      `json:"lastReviewedAt,omitempty"`
+	NextReviewAt   *time.Time      `json:"nextReviewAt,omitempty"`
+	CreatedAt      time.Time       `json:"createdAt"`
+	UpdatedAt      time.Time       `json:"updatedAt"`
+}
+
+type LearningMaterialProgressInput struct {
+	MaterialID     string          `json:"materialId,omitempty"`
+	ContentVersion int             `json:"contentVersion"`
+	Status         string          `json:"status"`
+	MasteryScore   *int            `json:"masteryScore,omitempty"`
+	ObjectiveState map[string]bool `json:"objectiveState"`
+	AttemptCount   int             `json:"attemptCount"`
+	LastReviewedAt *time.Time      `json:"lastReviewedAt,omitempty"`
+	NextReviewAt   *time.Time      `json:"nextReviewAt,omitempty"`
+}
+
+type LearningMaterialSummary struct {
+	ID                  string                    `json:"id"`
+	SubjectID           string                    `json:"subjectId"`
+	SubjectTitle        string                    `json:"subjectTitle"`
+	CategoryID          string                    `json:"categoryId"`
+	CategoryTitle       string                    `json:"categoryTitle"`
+	TopicID             string                    `json:"topicId"`
+	TopicTitle          string                    `json:"topicTitle"`
+	Locale              string                    `json:"locale"`
+	Level               string                    `json:"level"`
+	CoverageMode        string                    `json:"coverageMode"`
+	Title               string                    `json:"title"`
+	Summary             string                    `json:"summary"`
+	Sequence            int                       `json:"sequence"`
+	PositionWithinTopic int                       `json:"positionWithinTopic"`
+	EstimatedMinutes    int                       `json:"estimatedMinutes"`
+	SchemaVersion       string                    `json:"schemaVersion"`
+	ContentVersion      int                       `json:"contentVersion"`
+	Prerequisites       []string                  `json:"prerequisites"`
+	Revisits            []string                  `json:"revisits"`
+	Published           bool                      `json:"published"`
+	Progress            *LearningMaterialProgress `json:"progress"`
+	ReviewDue           bool                      `json:"reviewDue"`
+}
+
+type LearningMaterial struct {
+	LearningMaterialSummary
+	Content json.RawMessage `json:"content"`
+	Mastery json.RawMessage `json:"mastery"`
+	Review  json.RawMessage `json:"review"`
+}
+
 type DoingEntry struct {
 	ID          string    `json:"id"`
 	OwnerUserID string    `json:"ownerUserId,omitempty"`
@@ -85,6 +168,7 @@ type WorkoutEntry struct {
 	ID              string    `json:"id"`
 	OwnerUserID     string    `json:"ownerUserId,omitempty"`
 	Date            string    `json:"date,omitempty"`
+	MaterialID      string    `json:"materialId,omitempty"`
 	Exercise        string    `json:"exercise"`
 	Category        string    `json:"category"`
 	Sets            int       `json:"sets"`
@@ -95,16 +179,66 @@ type WorkoutEntry struct {
 	CreatedAt       time.Time `json:"createdAt"`
 }
 
+type JournalEditReason string
+
+const (
+	JournalEditReasonTypo                 JournalEditReason = "typo"
+	JournalEditReasonClarify              JournalEditReason = "clarify"
+	JournalEditReasonIncorrectInformation JournalEditReason = "incorrect_information"
+	JournalEditReasonChangedMyMind        JournalEditReason = "changed_my_mind"
+)
+
+func (reason JournalEditReason) Valid() bool {
+	switch reason {
+	case JournalEditReasonTypo, JournalEditReasonClarify, JournalEditReasonIncorrectInformation, JournalEditReasonChangedMyMind:
+		return true
+	default:
+		return false
+	}
+}
+
+type JournalInput struct {
+	Date    string `json:"date"`
+	Title   string `json:"title"`
+	Content string `json:"content"`
+	Mood    string `json:"mood"`
+	Tags    string `json:"tags"`
+}
+
+type JournalRevisionInput struct {
+	BaseRevisionNumber int               `json:"baseRevisionNumber"`
+	Date               string            `json:"date"`
+	Title              string            `json:"title"`
+	Content            string            `json:"content"`
+	Mood               string            `json:"mood"`
+	Tags               string            `json:"tags"`
+	EditReason         JournalEditReason `json:"editReason"`
+}
+
 type JournalEntry struct {
-	ID          string    `json:"id"`
-	OwnerUserID string    `json:"ownerUserId,omitempty"`
-	Date        string    `json:"date,omitempty"`
-	Title       string    `json:"title"`
-	Content     string    `json:"content"`
-	Mood        string    `json:"mood"`
-	Tags        string    `json:"tags"`
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
+	ID                   string             `json:"id"`
+	OwnerUserID          string             `json:"ownerUserId,omitempty"`
+	Date                 string             `json:"date,omitempty"`
+	Title                string             `json:"title"`
+	Content              string             `json:"content"`
+	Mood                 string             `json:"mood"`
+	Tags                 string             `json:"tags"`
+	CreatedAt            time.Time          `json:"createdAt"`
+	UpdatedAt            time.Time          `json:"updatedAt"`
+	LatestRevisionNumber int                `json:"latestRevisionNumber"`
+	LatestEditReason     *JournalEditReason `json:"latestEditReason,omitempty"`
+}
+
+type JournalRevision struct {
+	JournalID      string             `json:"journalId"`
+	RevisionNumber int                `json:"revisionNumber"`
+	Date           string             `json:"date"`
+	Title          string             `json:"title"`
+	Content        string             `json:"content"`
+	Mood           string             `json:"mood"`
+	Tags           string             `json:"tags"`
+	EditReason     *JournalEditReason `json:"editReason,omitempty"`
+	CreatedAt      time.Time          `json:"createdAt"`
 }
 
 type SpendingEntry struct {

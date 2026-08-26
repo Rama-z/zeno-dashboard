@@ -2,9 +2,12 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"embed"
 	"encoding/json"
 	"errors"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -303,6 +306,259 @@ func (p *Postgres) DeleteLearning(ctx context.Context, id, date string) (bool, e
 	return result.RowsAffected() == 1, nil
 }
 
+func (p *Postgres) SeedLearningMaterials(ctx context.Context, rows []model.LearningMaterialSeed) error {
+	tx, err := p.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	now := time.Now().UTC()
+	for _, row := range rows {
+		prerequisites, err := json.Marshal(row.Prerequisites)
+		if err != nil {
+			return err
+		}
+		revisits, err := json.Marshal(row.Revisits)
+		if err != nil {
+			return err
+		}
+		content := row.Content
+		if len(content) == 0 {
+			content = json.RawMessage(`{}`)
+		}
+		mastery := row.Mastery
+		if len(mastery) == 0 {
+			mastery = json.RawMessage(`{}`)
+		}
+		review := row.Review
+		if len(review) == 0 {
+			review = json.RawMessage(`{}`)
+		}
+		_, err = tx.Exec(ctx, `
+			INSERT INTO learning_materials (
+				id, subject_id, subject_title, category_id, category_title, topic_id, topic_title, locale,
+				cefr_level, coverage_mode, title, summary, sequence, position_within_topic, estimated_minutes,
+				schema_version, content_version, prerequisites, revisits, content, mastery, review, published, created_at, updated_at
+			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18::jsonb, $19::jsonb, $20::jsonb, $21::jsonb, $22::jsonb, $23, $24, $24)
+			ON CONFLICT (id) DO UPDATE SET
+				subject_id = EXCLUDED.subject_id,
+				subject_title = EXCLUDED.subject_title,
+				category_id = EXCLUDED.category_id,
+				category_title = EXCLUDED.category_title,
+				topic_id = EXCLUDED.topic_id,
+				topic_title = EXCLUDED.topic_title,
+				locale = EXCLUDED.locale,
+				cefr_level = EXCLUDED.cefr_level,
+				coverage_mode = EXCLUDED.coverage_mode,
+				title = EXCLUDED.title,
+				summary = EXCLUDED.summary,
+				sequence = EXCLUDED.sequence,
+				position_within_topic = EXCLUDED.position_within_topic,
+				estimated_minutes = EXCLUDED.estimated_minutes,
+				schema_version = EXCLUDED.schema_version,
+				content_version = EXCLUDED.content_version,
+				prerequisites = EXCLUDED.prerequisites,
+				revisits = EXCLUDED.revisits,
+				content = EXCLUDED.content,
+				mastery = EXCLUDED.mastery,
+				review = EXCLUDED.review,
+				published = EXCLUDED.published,
+				updated_at = EXCLUDED.updated_at
+			WHERE learning_materials.content_version < EXCLUDED.content_version`,
+			row.ID, row.SubjectID, row.SubjectTitle, row.CategoryID, row.CategoryTitle, row.TopicID, row.TopicTitle, row.Locale,
+			row.Level, row.CoverageMode, row.Title, row.Summary, row.Sequence, row.PositionWithinTopic, row.EstimatedMinutes,
+			row.SchemaVersion, row.ContentVersion, prerequisites, revisits, content, mastery, review, row.Published, now,
+		)
+		if err != nil {
+			return err
+		}
+	}
+	return tx.Commit(ctx)
+}
+
+type rowScanner interface{ Scan(...any) error }
+
+func decodeStringArray(raw []byte) []string {
+	var values []string
+	if len(raw) > 0 {
+		_ = json.Unmarshal(raw, &values)
+	}
+	return values
+}
+
+func learningProgressFromScan(owner, material, status sql.NullString, score sql.NullInt64, objectiveState []byte, attempts, version sql.NullInt64, last, next, created, updated sql.NullTime) *model.LearningMaterialProgress {
+	if !material.Valid {
+		return nil
+	}
+	progress := &model.LearningMaterialProgress{
+		OwnerUserID: owner.String, MaterialID: material.String, Status: status.String,
+		ObjectiveState: map[string]bool{}, AttemptCount: int(attempts.Int64), ContentVersion: int(version.Int64),
+	}
+	if score.Valid {
+		value := int(score.Int64)
+		progress.MasteryScore = &value
+	}
+	if len(objectiveState) > 0 {
+		_ = json.Unmarshal(objectiveState, &progress.ObjectiveState)
+	}
+	if last.Valid {
+		value := last.Time
+		progress.LastReviewedAt = &value
+	}
+	if next.Valid {
+		value := next.Time
+		progress.NextReviewAt = &value
+	}
+	if created.Valid {
+		progress.CreatedAt = created.Time
+	}
+	if updated.Valid {
+		progress.UpdatedAt = updated.Time
+	}
+	return progress
+}
+
+func scanLearningMaterialSummary(scan rowScanner, includeContent bool) (model.LearningMaterial, error) {
+	var material model.LearningMaterial
+	var prerequisites, revisits []byte
+	var content, mastery, review []byte
+	var owner, progressMaterial, progressStatus sql.NullString
+	var progressScore, progressAttempts, progressVersion sql.NullInt64
+	var objectiveState []byte
+	var lastReviewed, nextReview, progressCreated, progressUpdated sql.NullTime
+	var reviewDue bool
+	destinations := []any{
+		&material.ID, &material.SubjectID, &material.SubjectTitle, &material.CategoryID, &material.CategoryTitle,
+		&material.TopicID, &material.TopicTitle, &material.Locale, &material.Level, &material.CoverageMode,
+		&material.Title, &material.Summary, &material.Sequence, &material.PositionWithinTopic, &material.EstimatedMinutes,
+		&material.SchemaVersion, &material.ContentVersion, &prerequisites, &revisits, &material.Published,
+	}
+	if includeContent {
+		destinations = append(destinations, &content, &mastery, &review)
+	}
+	destinations = append(destinations,
+		&owner, &progressMaterial, &progressStatus, &progressScore, &objectiveState, &progressAttempts, &progressVersion,
+		&lastReviewed, &nextReview, &progressCreated, &progressUpdated, &reviewDue,
+	)
+	if err := scan.Scan(destinations...); err != nil {
+		return model.LearningMaterial{}, err
+	}
+	material.Prerequisites = decodeStringArray(prerequisites)
+	material.Revisits = decodeStringArray(revisits)
+	material.ReviewDue = reviewDue
+	material.Progress = learningProgressFromScan(owner, progressMaterial, progressStatus, progressScore, objectiveState, progressAttempts, progressVersion, lastReviewed, nextReview, progressCreated, progressUpdated)
+	if includeContent {
+		material.Content, material.Mastery, material.Review = content, mastery, review
+	}
+	return material, nil
+}
+
+func learningMaterialSelect(includeContent bool) string {
+	selectClause := `m.id, m.subject_id, m.subject_title, m.category_id, m.category_title, m.topic_id, m.topic_title, m.locale,
+		m.cefr_level, m.coverage_mode, m.title, m.summary, m.sequence, m.position_within_topic, m.estimated_minutes,
+		m.schema_version, m.content_version, m.prerequisites, m.revisits, m.published`
+	if includeContent {
+		selectClause += `, m.content, m.mastery, m.review`
+	}
+	return selectClause + `,
+		p.owner_user_id::text, p.material_id, p.status, p.mastery_score, p.objective_state, p.attempt_count,
+		p.content_version, p.last_reviewed_at, p.next_review_at, p.created_at, p.updated_at,
+		CASE WHEN p.material_id IS NOT NULL AND (p.content_version < m.content_version OR (p.next_review_at IS NOT NULL AND p.next_review_at <= $2)) THEN TRUE ELSE FALSE END`
+}
+
+func (p *Postgres) ListLearningMaterials(ctx context.Context, ownerID, subjectID, categoryID, level string, now time.Time) ([]model.LearningMaterialSummary, error) {
+	query := `SELECT ` + learningMaterialSelect(false) + `
+		FROM learning_materials m
+		LEFT JOIN learning_topic_progress p ON p.material_id = m.id AND p.owner_user_id = NULLIF($1, '')::uuid
+		WHERE m.published = TRUE`
+	args := []any{ownerID, now}
+	filters := []string{}
+	if strings.TrimSpace(subjectID) != "" {
+		args = append(args, strings.TrimSpace(subjectID))
+		filters = append(filters, `m.subject_id = $`+strconv.Itoa(len(args)))
+	}
+	if strings.TrimSpace(categoryID) != "" {
+		args = append(args, strings.TrimSpace(categoryID))
+		filters = append(filters, `m.category_id = $`+strconv.Itoa(len(args)))
+	}
+	if strings.TrimSpace(level) != "" {
+		args = append(args, strings.TrimSpace(level))
+		filters = append(filters, `m.cefr_level = $`+strconv.Itoa(len(args)))
+	}
+	if len(filters) > 0 {
+		query += ` AND ` + strings.Join(filters, ` AND `)
+	}
+	query += ` ORDER BY m.sequence ASC`
+	rows, err := p.pool.Query(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	materials := make([]model.LearningMaterialSummary, 0)
+	for rows.Next() {
+		material, err := scanLearningMaterialSummary(rows, false)
+		if err != nil {
+			return nil, err
+		}
+		materials = append(materials, material.LearningMaterialSummary)
+	}
+	return materials, rows.Err()
+}
+
+func (p *Postgres) GetLearningMaterial(ctx context.Context, id, ownerID string, now time.Time) (model.LearningMaterial, bool, error) {
+	query := `SELECT ` + learningMaterialSelect(true) + `
+		FROM learning_materials m
+		LEFT JOIN learning_topic_progress p ON p.material_id = m.id AND p.owner_user_id = NULLIF($1, '')::uuid
+		WHERE m.id = $3 AND m.published = TRUE`
+	material, err := scanLearningMaterialSummary(p.pool.QueryRow(ctx, query, ownerID, now, id), true)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return model.LearningMaterial{}, false, nil
+	}
+	if err != nil {
+		return model.LearningMaterial{}, false, err
+	}
+	return material, true, nil
+}
+
+func (p *Postgres) UpsertLearningMaterialProgress(ctx context.Context, ownerID string, input model.LearningMaterialProgressInput, now time.Time) (model.LearningMaterialProgress, bool, error) {
+	var exists bool
+	if err := p.pool.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM learning_materials WHERE id = $1 AND published = TRUE)`, input.MaterialID).Scan(&exists); err != nil {
+		return model.LearningMaterialProgress{}, false, err
+	}
+	if !exists {
+		return model.LearningMaterialProgress{}, false, nil
+	}
+	objectiveState, err := json.Marshal(input.ObjectiveState)
+	if err != nil {
+		return model.LearningMaterialProgress{}, false, err
+	}
+	if len(objectiveState) == 0 || string(objectiveState) == "null" {
+		objectiveState = []byte(`{}`)
+	}
+	var progress model.LearningMaterialProgress
+	var score sql.NullInt64
+	err = p.pool.QueryRow(ctx, `
+		INSERT INTO learning_topic_progress (owner_user_id, material_id, status, mastery_score, objective_state, attempt_count, content_version, last_reviewed_at, next_review_at, created_at, updated_at)
+		VALUES ($1::uuid, $2, $3, $4, $5::jsonb, $6, $7, $8, $9, $10, $10)
+		ON CONFLICT (owner_user_id, material_id) DO UPDATE SET
+			status = EXCLUDED.status, mastery_score = EXCLUDED.mastery_score, objective_state = EXCLUDED.objective_state,
+			attempt_count = EXCLUDED.attempt_count, content_version = EXCLUDED.content_version,
+			last_reviewed_at = EXCLUDED.last_reviewed_at, next_review_at = EXCLUDED.next_review_at, updated_at = EXCLUDED.updated_at
+		RETURNING owner_user_id::text, material_id, status, mastery_score, objective_state, attempt_count, content_version, last_reviewed_at, next_review_at, created_at, updated_at`,
+		ownerID, input.MaterialID, input.Status, input.MasteryScore, objectiveState, input.AttemptCount, input.ContentVersion, input.LastReviewedAt, input.NextReviewAt, now,
+	).Scan(&progress.OwnerUserID, &progress.MaterialID, &progress.Status, &score, &objectiveState, &progress.AttemptCount, &progress.ContentVersion, &progress.LastReviewedAt, &progress.NextReviewAt, &progress.CreatedAt, &progress.UpdatedAt)
+	if err != nil {
+		return model.LearningMaterialProgress{}, false, err
+	}
+	progress.ObjectiveState = map[string]bool{}
+	if score.Valid {
+		value := int(score.Int64)
+		progress.MasteryScore = &value
+	}
+	_ = json.Unmarshal(objectiveState, &progress.ObjectiveState)
+	return progress, true, nil
+}
+
 func (p *Postgres) CreateDoing(ctx context.Context, entry model.DoingEntry) (model.DoingEntry, error) {
 	err := p.pool.QueryRow(ctx, `
 		INSERT INTO doing_entries (id, owner_user_id, doing_date, title, note, category, completed, created_at)
@@ -361,16 +617,16 @@ func (p *Postgres) DeleteDoing(ctx context.Context, id, date string) (bool, erro
 
 func (p *Postgres) CreateWorkout(ctx context.Context, entry model.WorkoutEntry) (model.WorkoutEntry, error) {
 	err := p.pool.QueryRow(ctx, `
-		INSERT INTO workout_entries (id, owner_user_id, workout_date, exercise, category, sets, reps, duration_minutes, note, completed, created_at)
-		VALUES ($1::uuid, NULLIF($2, '')::uuid, $3::date, $4, $5, $6, $7, $8, $9, $10, $11)
-		RETURNING id::text, COALESCE(owner_user_id::text, ''), workout_date::text, exercise, category, sets, reps, duration_minutes, note, completed, created_at`,
-		entry.ID, entry.OwnerUserID, entry.Date, entry.Exercise, entry.Category, entry.Sets, entry.Reps, entry.DurationMinutes, entry.Note, entry.Completed, entry.CreatedAt,
-	).Scan(&entry.ID, &entry.OwnerUserID, &entry.Date, &entry.Exercise, &entry.Category, &entry.Sets, &entry.Reps, &entry.DurationMinutes, &entry.Note, &entry.Completed, &entry.CreatedAt)
+		INSERT INTO workout_entries (id, owner_user_id, workout_date, material_id, exercise, category, sets, reps, duration_minutes, note, completed, created_at)
+		VALUES ($1::uuid, NULLIF($2, '')::uuid, $3::date, NULLIF($4, ''), $5, $6, $7, $8, $9, $10, $11, $12)
+		RETURNING id::text, COALESCE(owner_user_id::text, ''), workout_date::text, COALESCE(material_id, ''), exercise, category, sets, reps, duration_minutes, note, completed, created_at`,
+		entry.ID, entry.OwnerUserID, entry.Date, entry.MaterialID, entry.Exercise, entry.Category, entry.Sets, entry.Reps, entry.DurationMinutes, entry.Note, entry.Completed, entry.CreatedAt,
+	).Scan(&entry.ID, &entry.OwnerUserID, &entry.Date, &entry.MaterialID, &entry.Exercise, &entry.Category, &entry.Sets, &entry.Reps, &entry.DurationMinutes, &entry.Note, &entry.Completed, &entry.CreatedAt)
 	return entry, err
 }
 
 func (p *Postgres) ListWorkouts(ctx context.Context, date string) ([]model.WorkoutEntry, error) {
-	query := `SELECT id::text, COALESCE(owner_user_id::text, ''), workout_date::text, exercise, category, sets, reps, duration_minutes, note, completed, created_at FROM workout_entries`
+	query := `SELECT id::text, COALESCE(owner_user_id::text, ''), workout_date::text, COALESCE(material_id, ''), exercise, category, sets, reps, duration_minutes, note, completed, created_at FROM workout_entries`
 	args := []any{}
 	if date != "" {
 		query += ` WHERE workout_date = $1`
@@ -385,7 +641,7 @@ func (p *Postgres) ListWorkouts(ctx context.Context, date string) ([]model.Worko
 	entries := make([]model.WorkoutEntry, 0)
 	for rows.Next() {
 		var entry model.WorkoutEntry
-		if err := rows.Scan(&entry.ID, &entry.OwnerUserID, &entry.Date, &entry.Exercise, &entry.Category, &entry.Sets, &entry.Reps, &entry.DurationMinutes, &entry.Note, &entry.Completed, &entry.CreatedAt); err != nil {
+		if err := rows.Scan(&entry.ID, &entry.OwnerUserID, &entry.Date, &entry.MaterialID, &entry.Exercise, &entry.Category, &entry.Sets, &entry.Reps, &entry.DurationMinutes, &entry.Note, &entry.Completed, &entry.CreatedAt); err != nil {
 			return nil, err
 		}
 		entries = append(entries, entry)
@@ -398,9 +654,9 @@ func (p *Postgres) UpdateWorkout(ctx context.Context, entry model.WorkoutEntry) 
 		UPDATE workout_entries
 		SET exercise = $3, category = $4, sets = $5, reps = $6, duration_minutes = $7, note = $8, completed = $9
 		WHERE id = $1::uuid AND workout_date = $2::date
-		RETURNING id::text, COALESCE(owner_user_id::text, ''), workout_date::text, exercise, category, sets, reps, duration_minutes, note, completed, created_at`,
+		RETURNING id::text, COALESCE(owner_user_id::text, ''), workout_date::text, COALESCE(material_id, ''), exercise, category, sets, reps, duration_minutes, note, completed, created_at`,
 		entry.ID, entry.Date, entry.Exercise, entry.Category, entry.Sets, entry.Reps, entry.DurationMinutes, entry.Note, entry.Completed,
-	).Scan(&entry.ID, &entry.OwnerUserID, &entry.Date, &entry.Exercise, &entry.Category, &entry.Sets, &entry.Reps, &entry.DurationMinutes, &entry.Note, &entry.Completed, &entry.CreatedAt)
+	).Scan(&entry.ID, &entry.OwnerUserID, &entry.Date, &entry.MaterialID, &entry.Exercise, &entry.Category, &entry.Sets, &entry.Reps, &entry.DurationMinutes, &entry.Note, &entry.Completed, &entry.CreatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return model.WorkoutEntry{}, false, nil
 	}
@@ -415,24 +671,80 @@ func (p *Postgres) DeleteWorkout(ctx context.Context, id, date string) (bool, er
 	return result.RowsAffected() == 1, nil
 }
 
+type scanFunc func(...any) error
+
+func scanJournalEntry(scan scanFunc) (model.JournalEntry, error) {
+	var entry model.JournalEntry
+	var reason sql.NullString
+	err := scan(
+		&entry.ID, &entry.OwnerUserID, &entry.Date, &entry.Title, &entry.Content, &entry.Mood, &entry.Tags,
+		&entry.CreatedAt, &entry.UpdatedAt, &entry.LatestRevisionNumber, &reason,
+	)
+	if err != nil {
+		return model.JournalEntry{}, err
+	}
+	if reason.Valid {
+		value := model.JournalEditReason(reason.String)
+		entry.LatestEditReason = &value
+	}
+	return entry, nil
+}
+
+func scanJournalRevision(scan scanFunc) (model.JournalRevision, error) {
+	var revision model.JournalRevision
+	var reason sql.NullString
+	err := scan(
+		&revision.JournalID, &revision.RevisionNumber, &revision.Date, &revision.Title, &revision.Content,
+		&revision.Mood, &revision.Tags, &reason, &revision.CreatedAt,
+	)
+	if err != nil {
+		return model.JournalRevision{}, err
+	}
+	if reason.Valid {
+		value := model.JournalEditReason(reason.String)
+		revision.EditReason = &value
+	}
+	return revision, nil
+}
+
 func (p *Postgres) CreateJournal(ctx context.Context, entry model.JournalEntry) (model.JournalEntry, error) {
-	err := p.pool.QueryRow(ctx, `
-		INSERT INTO journal_entries (id, owner_user_id, journal_date, title, content, mood, tags, created_at, updated_at)
-		VALUES ($1::uuid, NULLIF($2, '')::uuid, $3::date, $4, $5, $6, $7, $8, $9)
-		RETURNING id::text, COALESCE(owner_user_id::text, ''), journal_date::text, title, content, mood, tags, created_at, updated_at`,
+	tx, err := p.pool.Begin(ctx)
+	if err != nil {
+		return model.JournalEntry{}, err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	if err := tx.QueryRow(ctx, `
+		INSERT INTO journal_entries (id, owner_user_id, journal_date, title, content, mood, tags, created_at, updated_at, latest_revision_number)
+		VALUES ($1::uuid, NULLIF($2, '')::uuid, $3::date, $4, $5, $6, $7, $8, $9, 1)
+		RETURNING id::text, COALESCE(owner_user_id::text, ''), journal_date::text, title, content, mood, tags, created_at, updated_at, latest_revision_number`,
 		entry.ID, entry.OwnerUserID, entry.Date, entry.Title, entry.Content, entry.Mood, entry.Tags, entry.CreatedAt, entry.UpdatedAt,
-	).Scan(&entry.ID, &entry.OwnerUserID, &entry.Date, &entry.Title, &entry.Content, &entry.Mood, &entry.Tags, &entry.CreatedAt, &entry.UpdatedAt)
-	return entry, err
+	).Scan(&entry.ID, &entry.OwnerUserID, &entry.Date, &entry.Title, &entry.Content, &entry.Mood, &entry.Tags, &entry.CreatedAt, &entry.UpdatedAt, &entry.LatestRevisionNumber); err != nil {
+		return model.JournalEntry{}, err
+	}
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO journal_revisions (journal_entry_id, revision_number, journal_date, title, content, mood, tags, edit_reason, created_at)
+		VALUES ($1::uuid, 1, $2::date, $3, $4, $5, $6, NULL, $7)`,
+		entry.ID, entry.Date, entry.Title, entry.Content, entry.Mood, entry.Tags, entry.CreatedAt,
+	); err != nil {
+		return model.JournalEntry{}, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return model.JournalEntry{}, err
+	}
+	return entry, nil
 }
 
 func (p *Postgres) ListJournals(ctx context.Context, date string) ([]model.JournalEntry, error) {
-	query := `SELECT id::text, COALESCE(owner_user_id::text, ''), journal_date::text, title, content, mood, tags, created_at, updated_at FROM journal_entries`
+	query := `SELECT e.id::text, COALESCE(e.owner_user_id::text, ''), e.journal_date::text, e.title, e.content, e.mood, e.tags, e.created_at, e.updated_at, e.latest_revision_number, r.edit_reason
+		FROM journal_entries e
+		LEFT JOIN journal_revisions r ON r.journal_entry_id = e.id AND r.revision_number = e.latest_revision_number`
 	args := []any{}
 	if date != "" {
-		query += ` WHERE journal_date = $1`
+		query += ` WHERE e.journal_date = $1`
 		args = append(args, date)
 	}
-	query += ` ORDER BY journal_date DESC, updated_at DESC`
+	query += ` ORDER BY e.journal_date DESC, e.updated_at DESC`
 	rows, err := p.pool.Query(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -440,8 +752,8 @@ func (p *Postgres) ListJournals(ctx context.Context, date string) ([]model.Journ
 	defer rows.Close()
 	entries := make([]model.JournalEntry, 0)
 	for rows.Next() {
-		var entry model.JournalEntry
-		if err := rows.Scan(&entry.ID, &entry.OwnerUserID, &entry.Date, &entry.Title, &entry.Content, &entry.Mood, &entry.Tags, &entry.CreatedAt, &entry.UpdatedAt); err != nil {
+		entry, err := scanJournalEntry(rows.Scan)
+		if err != nil {
 			return nil, err
 		}
 		entries = append(entries, entry)
@@ -449,12 +761,105 @@ func (p *Postgres) ListJournals(ctx context.Context, date string) ([]model.Journ
 	return entries, rows.Err()
 }
 
-func (p *Postgres) DeleteJournal(ctx context.Context, id string) (bool, error) {
-	result, err := p.pool.Exec(ctx, `DELETE FROM journal_entries WHERE id = $1::uuid`, id)
-	if err != nil {
-		return false, err
+func (p *Postgres) GetJournal(ctx context.Context, id string) (model.JournalEntry, bool, error) {
+	entry, err := scanJournalEntry(p.pool.QueryRow(ctx, `
+		SELECT e.id::text, COALESCE(e.owner_user_id::text, ''), e.journal_date::text, e.title, e.content, e.mood, e.tags, e.created_at, e.updated_at, e.latest_revision_number, r.edit_reason
+		FROM journal_entries e
+		LEFT JOIN journal_revisions r ON r.journal_entry_id = e.id AND r.revision_number = e.latest_revision_number
+		WHERE e.id = $1::uuid`, id).Scan)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return model.JournalEntry{}, false, nil
 	}
-	return result.RowsAffected() == 1, nil
+	return entry, err == nil, err
+}
+
+func (p *Postgres) ListJournalRevisions(ctx context.Context, journalID string) ([]model.JournalRevision, error) {
+	rows, err := p.pool.Query(ctx, `
+		SELECT journal_entry_id::text, revision_number, journal_date::text, title, content, mood, tags, edit_reason, created_at
+		FROM journal_revisions
+		WHERE journal_entry_id = $1::uuid
+		ORDER BY revision_number DESC`, journalID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	revisions := make([]model.JournalRevision, 0)
+	for rows.Next() {
+		revision, err := scanJournalRevision(rows.Scan)
+		if err != nil {
+			return nil, err
+		}
+		revisions = append(revisions, revision)
+	}
+	return revisions, rows.Err()
+}
+
+func (p *Postgres) AppendJournalRevision(ctx context.Context, journalID, actorID string, isAdmin bool, input model.JournalRevisionInput, now time.Time) (model.JournalEntry, model.JournalRevision, bool, bool, bool, error) {
+	tx, err := p.pool.Begin(ctx)
+	if err != nil {
+		return model.JournalEntry{}, model.JournalRevision{}, false, false, false, err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	var current model.JournalEntry
+	err = tx.QueryRow(ctx, `
+		SELECT id::text, COALESCE(owner_user_id::text, ''), journal_date::text, title, content, mood, tags, created_at, updated_at, latest_revision_number
+		FROM journal_entries
+		WHERE id = $1::uuid AND ($3 OR owner_user_id = NULLIF($2, '')::uuid)
+		FOR UPDATE`, journalID, actorID, isAdmin,
+	).Scan(&current.ID, &current.OwnerUserID, &current.Date, &current.Title, &current.Content, &current.Mood, &current.Tags, &current.CreatedAt, &current.UpdatedAt, &current.LatestRevisionNumber)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return model.JournalEntry{}, model.JournalRevision{}, false, false, false, nil
+	}
+	if err != nil {
+		return model.JournalEntry{}, model.JournalRevision{}, false, false, false, err
+	}
+	if input.BaseRevisionNumber != current.LatestRevisionNumber {
+		return model.JournalEntry{}, model.JournalRevision{}, true, true, false, nil
+	}
+	if input.Date == current.Date && input.Title == current.Title && input.Content == current.Content && input.Mood == current.Mood && input.Tags == current.Tags {
+		return model.JournalEntry{}, model.JournalRevision{}, true, false, true, nil
+	}
+
+	nextRevisionNumber := current.LatestRevisionNumber + 1
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO journal_revisions (journal_entry_id, revision_number, journal_date, title, content, mood, tags, edit_reason, created_at)
+		VALUES ($1::uuid, $2, $3::date, $4, $5, $6, $7, $8, $9)`,
+		journalID, nextRevisionNumber, input.Date, input.Title, input.Content, input.Mood, input.Tags, input.EditReason, now,
+	); err != nil {
+		return model.JournalEntry{}, model.JournalRevision{}, false, false, false, err
+	}
+
+	var entry model.JournalEntry
+	if err := tx.QueryRow(ctx, `
+		UPDATE journal_entries
+		SET journal_date = $2::date, title = $3, content = $4, mood = $5, tags = $6, updated_at = $7, latest_revision_number = $8
+		WHERE id = $1::uuid
+		RETURNING id::text, COALESCE(owner_user_id::text, ''), journal_date::text, title, content, mood, tags, created_at, updated_at, latest_revision_number`,
+		journalID, input.Date, input.Title, input.Content, input.Mood, input.Tags, now, nextRevisionNumber,
+	).Scan(&entry.ID, &entry.OwnerUserID, &entry.Date, &entry.Title, &entry.Content, &entry.Mood, &entry.Tags, &entry.CreatedAt, &entry.UpdatedAt, &entry.LatestRevisionNumber); err != nil {
+		return model.JournalEntry{}, model.JournalRevision{}, false, false, false, err
+	}
+	reasonValue := input.EditReason
+	entry.LatestEditReason = &reasonValue
+	revision := model.JournalRevision{JournalID: journalID, RevisionNumber: nextRevisionNumber, Date: input.Date, Title: input.Title, Content: input.Content, Mood: input.Mood, Tags: input.Tags, EditReason: &reasonValue, CreatedAt: now}
+	if err := tx.Commit(ctx); err != nil {
+		return model.JournalEntry{}, model.JournalRevision{}, false, false, false, err
+	}
+	return entry, revision, true, false, false, nil
+}
+
+func (p *Postgres) DeleteJournal(ctx context.Context, id, actorID string, isAdmin bool) (model.JournalEntry, bool, error) {
+	var entry model.JournalEntry
+	err := p.pool.QueryRow(ctx, `
+		DELETE FROM journal_entries
+		WHERE id = $1::uuid AND ($3 OR owner_user_id = NULLIF($2, '')::uuid)
+		RETURNING id::text, COALESCE(owner_user_id::text, ''), journal_date::text, title, content, mood, tags, created_at, updated_at, latest_revision_number`, id, actorID, isAdmin,
+	).Scan(&entry.ID, &entry.OwnerUserID, &entry.Date, &entry.Title, &entry.Content, &entry.Mood, &entry.Tags, &entry.CreatedAt, &entry.UpdatedAt, &entry.LatestRevisionNumber)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return model.JournalEntry{}, false, nil
+	}
+	return entry, err == nil, err
 }
 
 func (p *Postgres) CreateSpending(ctx context.Context, entry model.SpendingEntry) (model.SpendingEntry, error) {

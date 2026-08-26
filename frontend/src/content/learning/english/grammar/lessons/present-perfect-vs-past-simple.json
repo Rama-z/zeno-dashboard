@@ -1,0 +1,139 @@
+{
+  "schemaVersion": "1.0",
+  "contentVersion": 1,
+  "id": "present-perfect-vs-past-simple",
+  "subject": "english",
+  "category": "grammar",
+  "locale": "en",
+  "title": "Present Perfect vs Past Simple",
+  "level": "B1",
+  "sequence": 21,
+  "estimatedMinutes": 24,
+  "prerequisites": ["past-simple", "present-perfect-experience"],
+  "revisits": ["past-simple", "present-perfect-experience"],
+  "objectives": [
+    "Use the past simple with a finished past time.",
+    "Use the present perfect when a past event connects to the present or the time period is unfinished.",
+    "Choose a tense from the speaker's time viewpoint."
+  ],
+  "concept": {
+    "summary": "The central contrast is not 'recent versus old'; it is finished past time versus a past-to-present connection.",
+    "contrast": "Past simple locates an event in a completed past time. Present perfect looks back from now without locating the event in a finished past time, or describes a situation continuing to now."
+  },
+  "explanation": [
+    {
+      "heading": "Finished past time",
+      "body": "Use the past simple when the sentence states or assumes a finished time such as yesterday, in 2024, or when I was a child. The event can still matter now, but its grammar is anchored to that completed time."
+    },
+    {
+      "heading": "Experience, present result, or unfinished time",
+      "body": "Use have/has + past participle for life experience without a finished date, a present result, or an event within a time period that is still open."
+    },
+    {
+      "heading": "Duration with for and since",
+      "body": "Use the present perfect for a state or activity that started in the past and continues now. 'For' introduces a duration; 'since' introduces the starting point."
+    }
+  ],
+  "examples": [
+    {
+      "sentence": "I visited Singapore in 2023.",
+      "note": "The finished date requires the past simple."
+    },
+    {
+      "sentence": "I have visited Singapore three times.",
+      "note": "Life experience up to now; no finished past date is given."
+    },
+    {
+      "sentence": "Nina has lost her key, so she cannot get in.",
+      "note": "The present result is important."
+    },
+    {
+      "sentence": "Nina lost her key yesterday, but she found it later.",
+      "note": "A completed past sequence."
+    }
+  ],
+  "practice": [
+    {
+      "id": "ppp-p1",
+      "type": "multiple_choice",
+      "prompt": "I ___ this laptop last month.",
+      "options": ["bought", "have bought", "have buy"],
+      "answer": "bought",
+      "explanation": "Last month is a finished past time."
+    },
+    {
+      "id": "ppp-p2",
+      "type": "fill_blank",
+      "prompt": "We ___ (know) each other since primary school.",
+      "answer": "have known",
+      "explanation": "The relationship began then and continues now."
+    },
+    {
+      "id": "ppp-p3",
+      "type": "rewrite",
+      "prompt": "Correct the tense: 'Have you seen Dina yesterday?'",
+      "answer": "Did you see Dina yesterday?",
+      "explanation": "Yesterday is a finished time, so use the past simple question form."
+    }
+  ],
+  "quiz": [
+    {
+      "id": "ppp-q1",
+      "objectiveIndex": 0,
+      "type": "multiple_choice",
+      "prompt": "Which sentence is correct?",
+      "options": [
+        "I have finished the report at 9 a.m. yesterday.",
+        "I finished the report at 9 a.m. yesterday.",
+        "I have finish the report yesterday."
+      ],
+      "answer": "I finished the report at 9 a.m. yesterday.",
+      "explanation": "The exact finished time selects the past simple."
+    },
+    {
+      "id": "ppp-q2",
+      "objectiveIndex": 1,
+      "type": "fill_blank",
+      "prompt": "This week, our team ___ (complete) three tasks. The week is not over.",
+      "answer": "has completed",
+      "explanation": "This week is treated as an unfinished time period."
+    },
+    {
+      "id": "ppp-q3",
+      "objectiveIndex": 2,
+      "type": "multiple_choice",
+      "prompt": "A speaker says, 'I have read that book.' What is emphasized?",
+      "options": [
+        "The exact date of reading",
+        "The experience or result up to now",
+        "A future plan"
+      ],
+      "answer": "The experience or result up to now",
+      "explanation": "No finished time is supplied; the viewpoint is from the present."
+    },
+    {
+      "id": "ppp-q4",
+      "objectiveIndex": 1,
+      "type": "fill_blank",
+      "prompt": "Arman ___ (live) here for six years and still lives here.",
+      "answer": "has lived",
+      "explanation": "The situation began in the past and continues now."
+    }
+  ],
+  "mastery": {
+    "minimumScorePercent": 80,
+    "requiredObjectiveIndexes": [0, 1, 2]
+  },
+  "review": {
+    "keyTakeaways": [
+      "Past simple anchors an event to finished past time.",
+      "Present perfect connects past and present or uses an unfinished time frame.",
+      "A finished time expression normally blocks the present perfect."
+    ],
+    "suggestedReviewAfterDays": [1, 7, 21],
+    "reviewPrompts": [
+      "Write one life-experience sentence, then add a finished date using the past simple.",
+      "Explain why 'I have called her yesterday' is not standard."
+    ]
+  }
+}

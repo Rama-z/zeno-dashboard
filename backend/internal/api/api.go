@@ -54,6 +54,10 @@ type Store interface {
 	CreateLearning(context.Context, model.LearningEntry) (model.LearningEntry, error)
 	UpdateLearning(context.Context, model.LearningEntry) (model.LearningEntry, bool, error)
 	DeleteLearning(context.Context, string, string) (bool, error)
+	SeedLearningMaterials(context.Context, []model.LearningMaterialSeed) error
+	ListLearningMaterials(context.Context, string, string, string, string, time.Time) ([]model.LearningMaterialSummary, error)
+	GetLearningMaterial(context.Context, string, string, time.Time) (model.LearningMaterial, bool, error)
+	UpsertLearningMaterialProgress(context.Context, string, model.LearningMaterialProgressInput, time.Time) (model.LearningMaterialProgress, bool, error)
 	CreateDoing(context.Context, model.DoingEntry) (model.DoingEntry, error)
 	ListDoing(context.Context, string) ([]model.DoingEntry, error)
 	UpdateDoing(context.Context, model.DoingEntry) (model.DoingEntry, bool, error)
@@ -64,7 +68,10 @@ type Store interface {
 	DeleteWorkout(context.Context, string, string) (bool, error)
 	CreateJournal(context.Context, model.JournalEntry) (model.JournalEntry, error)
 	ListJournals(context.Context, string) ([]model.JournalEntry, error)
-	DeleteJournal(context.Context, string) (bool, error)
+	GetJournal(context.Context, string) (model.JournalEntry, bool, error)
+	ListJournalRevisions(context.Context, string) ([]model.JournalRevision, error)
+	AppendJournalRevision(context.Context, string, string, bool, model.JournalRevisionInput, time.Time) (model.JournalEntry, model.JournalRevision, bool, bool, bool, error)
+	DeleteJournal(context.Context, string, string, bool) (model.JournalEntry, bool, error)
 	CreateSpending(context.Context, model.SpendingEntry) (model.SpendingEntry, error)
 	ListSpending(context.Context, string) ([]model.SpendingEntry, error)
 	DeleteSpending(context.Context, string) (bool, error)
@@ -182,6 +189,9 @@ func New(store Store, source Source, version string, options ...Option) http.Han
 	mux.HandleFunc("POST /api/learning", h.createLearning)
 	mux.HandleFunc("PUT /api/learning/{id}", h.updateLearning)
 	mux.HandleFunc("DELETE /api/learning/{id}", h.deleteLearning)
+	mux.HandleFunc("GET /api/learning-materials", h.listLearningMaterials)
+	mux.HandleFunc("GET /api/learning-materials/{id}", h.getLearningMaterial)
+	mux.HandleFunc("PUT /api/learning-materials/{id}/progress", h.upsertLearningMaterialProgress)
 	mux.HandleFunc("POST /api/doing", h.createDoing)
 	mux.HandleFunc("GET /api/doing", h.listDoing)
 	mux.HandleFunc("PUT /api/doing/{id}", h.updateDoing)
@@ -192,6 +202,8 @@ func New(store Store, source Source, version string, options ...Option) http.Han
 	mux.HandleFunc("DELETE /api/workouts/{id}", h.deleteWorkout)
 	mux.HandleFunc("POST /api/journals", h.createJournal)
 	mux.HandleFunc("GET /api/journals", h.listJournals)
+	mux.HandleFunc("GET /api/journals/{id}/revisions", h.listJournalRevisions)
+	mux.HandleFunc("POST /api/journals/{id}/revisions", h.appendJournalRevision)
 	mux.HandleFunc("DELETE /api/journals/{id}", h.deleteJournal)
 	mux.HandleFunc("POST /api/spending", h.createSpending)
 	mux.HandleFunc("GET /api/spending", h.listSpending)
@@ -876,6 +888,134 @@ func (h *handler) deleteLearning(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"deleted": id, "date": date})
 }
 
+func (h *handler) listLearningMaterials(w http.ResponseWriter, r *http.Request) {
+	actor, ok := h.requireActor(w, r)
+	if !ok {
+		return
+	}
+	level := strings.TrimSpace(r.URL.Query().Get("level"))
+	if level != "" && !validLearningLevel(level) {
+		writeError(w, http.StatusBadRequest, "level harus A1, A2, B1, B2, atau C1")
+		return
+	}
+	materials, err := h.store.ListLearningMaterials(r.Context(), actor.ID, r.URL.Query().Get("subjectId"), r.URL.Query().Get("categoryId"), level, h.auth.Now())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "learning materials tidak dapat dibaca")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"materials": materials})
+}
+
+func (h *handler) getLearningMaterial(w http.ResponseWriter, r *http.Request) {
+	actor, ok := h.requireActor(w, r)
+	if !ok {
+		return
+	}
+	id := strings.TrimSpace(r.PathValue("id"))
+	if !validMaterialID(id) {
+		writeError(w, http.StatusBadRequest, "id material tidak valid")
+		return
+	}
+	material, found, err := h.store.GetLearningMaterial(r.Context(), id, actor.ID, h.auth.Now())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "learning material tidak dapat dibaca")
+		return
+	}
+	if !found {
+		writeError(w, http.StatusNotFound, "learning material tidak ditemukan")
+		return
+	}
+	writeJSON(w, http.StatusOK, material)
+}
+
+func (h *handler) upsertLearningMaterialProgress(w http.ResponseWriter, r *http.Request) {
+	actor, ok := h.requireActor(w, r)
+	if !ok {
+		return
+	}
+	id := strings.TrimSpace(r.PathValue("id"))
+	if !validMaterialID(id) {
+		writeError(w, http.StatusBadRequest, "id material tidak valid")
+		return
+	}
+	var input model.LearningMaterialProgressInput
+	if err := decodeJSON(r, &input); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if input.MaterialID != "" && input.MaterialID != id {
+		writeError(w, http.StatusBadRequest, "materialId harus sama dengan id route")
+		return
+	}
+	input.MaterialID = id
+	if input.Status != "in_progress" && input.Status != "mastered" {
+		writeError(w, http.StatusBadRequest, "status progress tidak valid")
+		return
+	}
+	if input.ContentVersion < 1 || input.AttemptCount < 0 || (input.MasteryScore != nil && (*input.MasteryScore < 0 || *input.MasteryScore > 100)) || len(input.ObjectiveState) > 100 {
+		writeError(w, http.StatusBadRequest, "progress material tidak valid")
+		return
+	}
+	material, found, err := h.store.GetLearningMaterial(r.Context(), id, actor.ID, h.auth.Now())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "learning material tidak dapat diperiksa")
+		return
+	}
+	if !found {
+		writeError(w, http.StatusNotFound, "learning material tidak ditemukan")
+		return
+	}
+	if input.ContentVersion != material.ContentVersion {
+		writeError(w, http.StatusConflict, "content material sudah berubah; muat ulang sebelum menyimpan progress")
+		return
+	}
+	var content struct {
+		Objectives []json.RawMessage `json:"objectives"`
+	}
+	if err := json.Unmarshal(material.Content, &content); err != nil {
+		writeError(w, http.StatusInternalServerError, "content material tidak valid")
+		return
+	}
+	for key := range input.ObjectiveState {
+		index, err := strconv.Atoi(key)
+		if err != nil || index < 0 || index >= len(content.Objectives) {
+			writeError(w, http.StatusBadRequest, "objectiveState memiliki objective index yang tidak valid")
+			return
+		}
+	}
+	if input.Status == "mastered" {
+		var mastery struct {
+			MinimumScorePercent      int   `json:"minimumScorePercent"`
+			RequiredObjectiveIndexes []int `json:"requiredObjectiveIndexes"`
+		}
+		if err := json.Unmarshal(material.Mastery, &mastery); err != nil {
+			writeError(w, http.StatusInternalServerError, "mastery policy material tidak valid")
+			return
+		}
+		if input.MasteryScore == nil || *input.MasteryScore < mastery.MinimumScorePercent {
+			writeError(w, http.StatusBadRequest, "mastered membutuhkan masteryScore yang mencapai threshold")
+			return
+		}
+		for _, index := range mastery.RequiredObjectiveIndexes {
+			if !input.ObjectiveState[strconv.Itoa(index)] {
+				writeError(w, http.StatusBadRequest, "mastered membutuhkan seluruh objective wajib")
+				return
+			}
+		}
+	}
+	progress, found, err := h.store.UpsertLearningMaterialProgress(r.Context(), actor.ID, input, h.auth.Now())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "progress material tidak dapat disimpan")
+		return
+	}
+	if !found {
+		writeError(w, http.StatusNotFound, "learning material tidak ditemukan")
+		return
+	}
+	h.audit(r.Context(), actor, "update", "learning_material_progress", id, "Memperbarui progress learning material", map[string]any{"status": progress.Status, "masteryScore": progress.MasteryScore, "attemptCount": progress.AttemptCount, "contentVersion": progress.ContentVersion})
+	writeJSON(w, http.StatusOK, progress)
+}
+
 func (h *handler) createDoing(w http.ResponseWriter, r *http.Request) {
 	actor, ok := h.requireActor(w, r)
 	if !ok {
@@ -1029,6 +1169,7 @@ func (h *handler) createWorkout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	input.Date = strings.TrimSpace(input.Date)
+	input.MaterialID = strings.TrimSpace(input.MaterialID)
 	input.Exercise = strings.TrimSpace(input.Exercise)
 	input.Category = strings.TrimSpace(input.Category)
 	input.Note = strings.TrimSpace(input.Note)
@@ -1036,7 +1177,7 @@ func (h *handler) createWorkout(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "date YYYY-MM-DD dan exercise wajib diisi")
 		return
 	}
-	if len(input.Exercise) > 160 || len(input.Category) > 60 || len(input.Note) > 2000 || input.Sets < 0 || input.Reps < 0 || input.DurationMinutes < 0 {
+	if !validWorkoutMaterialID(input.MaterialID) || len(input.Exercise) > 160 || len(input.Category) > 60 || len(input.Note) > 2000 || input.Sets < 0 || input.Reps < 0 || input.DurationMinutes < 0 {
 		writeError(w, http.StatusBadRequest, "data workout tidak valid")
 		return
 	}
@@ -1051,7 +1192,11 @@ func (h *handler) createWorkout(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "workout tidak dapat disimpan")
 		return
 	}
-	h.audit(r.Context(), actor, "create", "workout", entry.ID, "Menambahkan workout: "+entry.Exercise, map[string]any{"date": entry.Date, "category": entry.Category})
+	metadata := map[string]any{"date": entry.Date, "category": entry.Category}
+	if entry.MaterialID != "" {
+		metadata["materialId"] = entry.MaterialID
+	}
+	h.audit(r.Context(), actor, "create", "workout", entry.ID, "Menambahkan workout: "+entry.Exercise, metadata)
 	writeJSON(w, http.StatusCreated, entry)
 }
 
@@ -1086,10 +1231,11 @@ func (h *handler) updateWorkout(w http.ResponseWriter, r *http.Request) {
 	}
 	input.ID = r.PathValue("id")
 	input.Date = strings.TrimSpace(input.Date)
+	input.MaterialID = strings.TrimSpace(input.MaterialID)
 	input.Exercise = strings.TrimSpace(input.Exercise)
 	input.Category = strings.TrimSpace(input.Category)
 	input.Note = strings.TrimSpace(input.Note)
-	if input.ID == "" || !validDate(input.Date) || input.Exercise == "" || len(input.Exercise) > 160 || len(input.Category) > 60 || len(input.Note) > 2000 || input.Sets < 0 || input.Reps < 0 || input.DurationMinutes < 0 {
+	if input.ID == "" || !validDate(input.Date) || input.Exercise == "" || !validWorkoutMaterialID(input.MaterialID) || len(input.Exercise) > 160 || len(input.Category) > 60 || len(input.Note) > 2000 || input.Sets < 0 || input.Reps < 0 || input.DurationMinutes < 0 {
 		writeError(w, http.StatusBadRequest, "data workout tidak valid")
 		return
 	}
@@ -1107,6 +1253,7 @@ func (h *handler) updateWorkout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	input.OwnerUserID = existing.OwnerUserID
+	input.MaterialID = existing.MaterialID
 	entry, found, err := h.store.UpdateWorkout(r.Context(), input)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "workout tidak dapat diperbarui")
@@ -1159,21 +1306,16 @@ func (h *handler) createJournal(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	var input model.JournalEntry
+	var input model.JournalInput
 	if err := decodeJSON(r, &input); err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	input.Date = strings.TrimSpace(input.Date)
-	input.Title = strings.TrimSpace(input.Title)
-	input.Content = strings.TrimSpace(input.Content)
-	input.Mood = strings.TrimSpace(input.Mood)
-	input.Tags = strings.TrimSpace(input.Tags)
-	if !validDate(input.Date) || input.Title == "" || input.Content == "" {
+	if !normalizeJournalInput(&input) {
 		writeError(w, http.StatusBadRequest, "date YYYY-MM-DD, title, dan content wajib diisi")
 		return
 	}
-	if len(input.Title) > 160 || len(input.Content) > 50000 || len(input.Mood) > 30 || len(input.Tags) > 500 {
+	if !validJournalInput(input) {
 		writeError(w, http.StatusBadRequest, "panjang journal melebihi batas")
 		return
 	}
@@ -1181,17 +1323,27 @@ func (h *handler) createJournal(w http.ResponseWriter, r *http.Request) {
 		input.Mood = "Neutral"
 	}
 	now := h.auth.Now()
-	input.ID = newUUID()
-	input.OwnerUserID = actor.ID
-	input.CreatedAt = now
-	input.UpdatedAt = now
-	entry, err := h.store.CreateJournal(r.Context(), input)
+	entry := model.JournalEntry{ID: newUUID(), OwnerUserID: actor.ID, Date: input.Date, Title: input.Title, Content: input.Content, Mood: input.Mood, Tags: input.Tags, CreatedAt: now, UpdatedAt: now, LatestRevisionNumber: 1}
+	created, err := h.store.CreateJournal(r.Context(), entry)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "journal tidak dapat disimpan")
 		return
 	}
-	h.audit(r.Context(), actor, "create", "journal", entry.ID, "Menambahkan journal: "+entry.Title, map[string]any{"date": entry.Date, "mood": entry.Mood})
-	writeJSON(w, http.StatusCreated, entry)
+	h.audit(r.Context(), actor, "create", "journal", created.ID, "Menambahkan journal: "+created.Title, map[string]any{"date": created.Date, "mood": created.Mood})
+	writeJSON(w, http.StatusCreated, created)
+}
+
+func normalizeJournalInput(input *model.JournalInput) bool {
+	input.Date = strings.TrimSpace(input.Date)
+	input.Title = strings.TrimSpace(input.Title)
+	input.Content = strings.TrimSpace(input.Content)
+	input.Mood = strings.TrimSpace(input.Mood)
+	input.Tags = strings.TrimSpace(input.Tags)
+	return validDate(input.Date) && input.Title != "" && input.Content != ""
+}
+
+func validJournalInput(input model.JournalInput) bool {
+	return len(input.Title) <= 160 && len(input.Content) <= 50000 && len(input.Mood) <= 30 && len(input.Tags) <= 500
 }
 
 func (h *handler) listJournals(w http.ResponseWriter, r *http.Request) {
@@ -1213,27 +1365,106 @@ func (h *handler) listJournals(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"date": nullableString(date), "entries": entries})
 }
 
+func (h *handler) listJournalRevisions(w http.ResponseWriter, r *http.Request) {
+	actor, ok := h.requireActor(w, r)
+	if !ok {
+		return
+	}
+	id := r.PathValue("id")
+	if id == "" || !validUUID(id) {
+		writeError(w, http.StatusBadRequest, "id journal wajib diisi dan harus UUID")
+		return
+	}
+	entry, found, err := h.store.GetJournal(r.Context(), id)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "journal tidak dapat diperiksa")
+		return
+	}
+	if !found || !canAccessOwner(actor, entry.OwnerUserID) {
+		writeError(w, http.StatusNotFound, "journal tidak ditemukan")
+		return
+	}
+	revisions, err := h.store.ListJournalRevisions(r.Context(), id)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "riwayat journal tidak dapat dibaca")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"journalId": id, "latestRevisionNumber": entry.LatestRevisionNumber, "revisions": revisions})
+}
+
+func (h *handler) appendJournalRevision(w http.ResponseWriter, r *http.Request) {
+	actor, ok := h.requireActor(w, r)
+	if !ok {
+		return
+	}
+	id := r.PathValue("id")
+	if id == "" || !validUUID(id) {
+		writeError(w, http.StatusBadRequest, "id journal wajib diisi dan harus UUID")
+		return
+	}
+	var input model.JournalRevisionInput
+	if err := decodeJSON(r, &input); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	journalInput := model.JournalInput{Date: input.Date, Title: input.Title, Content: input.Content, Mood: input.Mood, Tags: input.Tags}
+	if !normalizeJournalInput(&journalInput) || !validJournalInput(journalInput) {
+		writeError(w, http.StatusBadRequest, "data revision journal tidak valid")
+		return
+	}
+	input.Date, input.Title, input.Content, input.Mood, input.Tags = journalInput.Date, journalInput.Title, journalInput.Content, journalInput.Mood, journalInput.Tags
+	if input.Mood == "" {
+		input.Mood = "Neutral"
+	}
+	if input.BaseRevisionNumber < 1 {
+		writeError(w, http.StatusBadRequest, "baseRevisionNumber harus minimal 1")
+		return
+	}
+	if !input.EditReason.Valid() {
+		writeError(w, http.StatusBadRequest, "editReason tidak valid")
+		return
+	}
+	entry, found, err := h.store.GetJournal(r.Context(), id)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "journal tidak dapat diperiksa")
+		return
+	}
+	if !found || !canAccessOwner(actor, entry.OwnerUserID) {
+		writeError(w, http.StatusNotFound, "journal tidak ditemukan")
+		return
+	}
+	created, revision, found, conflict, noop, err := h.store.AppendJournalRevision(r.Context(), id, actor.ID, actor.Role == "admin", input, h.auth.Now())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "revision journal tidak dapat disimpan")
+		return
+	}
+	if !found {
+		writeError(w, http.StatusNotFound, "journal tidak ditemukan")
+		return
+	}
+	if conflict {
+		writeError(w, http.StatusConflict, "journal sudah berubah; muat versi terbaru sebelum mencoba lagi")
+		return
+	}
+	if noop {
+		writeError(w, http.StatusBadRequest, "revision harus mengubah isi journal")
+		return
+	}
+	h.auditSubject(r.Context(), actor, created.OwnerUserID, "update", "journal", created.ID, "Menyimpan revisi journal", map[string]any{"revisionNumber": revision.RevisionNumber, "editReason": revision.EditReason})
+	writeJSON(w, http.StatusCreated, map[string]any{"entry": created, "revision": revision})
+}
+
 func (h *handler) deleteJournal(w http.ResponseWriter, r *http.Request) {
 	actor, ok := h.requireActor(w, r)
 	if !ok {
 		return
 	}
 	id := r.PathValue("id")
-	if id == "" {
-		writeError(w, http.StatusBadRequest, "id journal wajib diisi")
+	if id == "" || !validUUID(id) {
+		writeError(w, http.StatusBadRequest, "id journal wajib diisi dan harus UUID")
 		return
 	}
-	entries, err := h.store.ListJournals(r.Context(), "")
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "journal tidak dapat diperiksa")
-		return
-	}
-	entry, allowed := findOwned(entries, id, actor, func(entry model.JournalEntry) string { return entry.ID }, func(entry model.JournalEntry) string { return entry.OwnerUserID })
-	if !allowed {
-		writeError(w, http.StatusNotFound, "journal tidak ditemukan")
-		return
-	}
-	deleted, err := h.store.DeleteJournal(r.Context(), id)
+	entry, deleted, err := h.store.DeleteJournal(r.Context(), id, actor.ID, actor.Role == "admin")
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "journal tidak dapat dihapus")
 		return
@@ -1242,7 +1473,7 @@ func (h *handler) deleteJournal(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "journal tidak ditemukan")
 		return
 	}
-	h.auditSubject(r.Context(), actor, entry.OwnerUserID, "delete", "journal", id, "Menghapus journal: "+entry.Title, map[string]any{"date": entry.Date})
+	h.auditSubject(r.Context(), actor, entry.OwnerUserID, "delete", "journal", id, "Menghapus journal beserta semua revisinya", map[string]any{"date": entry.Date})
 	writeJSON(w, http.StatusOK, map[string]string{"deleted": id})
 }
 
@@ -1469,6 +1700,68 @@ func (h *handler) cors(next http.Handler) http.Handler {
 func validDate(value string) bool {
 	parsed, err := time.Parse("2006-01-02", value)
 	return err == nil && parsed.Format("2006-01-02") == value
+}
+
+func validLearningLevel(value string) bool {
+	switch value {
+	case "A1", "A2", "B1", "B2", "C1":
+		return true
+	default:
+		return false
+	}
+}
+
+func validMaterialID(value string) bool {
+	if value == "" || len(value) > 120 || value[0] == '-' || value[len(value)-1] == '-' {
+		return false
+	}
+	previousDash := false
+	for _, char := range value {
+		if char == '-' {
+			if previousDash {
+				return false
+			}
+			previousDash = true
+			continue
+		}
+		previousDash = false
+		if (char < 'a' || char > 'z') && (char < '0' || char > '9') {
+			return false
+		}
+	}
+	return true
+}
+
+func validWorkoutMaterialID(value string) bool {
+	if value == "" {
+		return true
+	}
+	if len(value) > 120 || value[0] == '-' || value[len(value)-1] == '-' {
+		return false
+	}
+	previousDash := false
+	for _, char := range value {
+		if char == '-' {
+			if previousDash {
+				return false
+			}
+			previousDash = true
+			continue
+		}
+		previousDash = false
+		if (char < 'a' || char > 'z') && (char < '0' || char > '9') {
+			return false
+		}
+	}
+	return true
+}
+
+func validUUID(value string) bool {
+	if len(value) != 36 || value[8] != '-' || value[13] != '-' || value[18] != '-' || value[23] != '-' {
+		return false
+	}
+	_, err := hex.DecodeString(strings.ReplaceAll(value, "-", ""))
+	return err == nil
 }
 
 func newAuthToken() (string, string, error) {

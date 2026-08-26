@@ -1,0 +1,145 @@
+{
+  "schemaVersion": "1.0",
+  "contentVersion": 1,
+  "id": "emphasis-cleft-inversion-auxiliaries",
+  "subject": "english",
+  "category": "grammar",
+  "locale": "en",
+  "title": "Emphasis with Clefts, Inversion, and Auxiliaries",
+  "level": "C1",
+  "sequence": 41,
+  "estimatedMinutes": 28,
+  "prerequisites": ["linking-ideas", "reported-speech", "advanced-clause-linking"],
+  "revisits": ["basic-questions-frequency", "core-tense-review", "linking-ideas"],
+  "objectives": [
+    "Use an it-cleft or wh-cleft to focus selected information.",
+    "Use inversion after a negative or restrictive fronted adverbial.",
+    "Use do/does/did to add controlled emphasis to an affirmative statement.",
+    "Choose an emphatic structure that fits the intended register."
+  ],
+  "concept": {
+    "summary": "Advanced emphasis changes information structure: it tells the reader or listener what to notice most strongly.",
+    "contrast": "Clefts isolate the focused element, inversion creates formal or dramatic emphasis, and emphatic auxiliaries strengthen a correction or contrast."
+  },
+  "explanation": [
+    {
+      "heading": "Cleft sentences",
+      "body": "An it-cleft uses 'It is/was X that/who...' to focus X. A wh-cleft uses a clause such as 'What I need is...' to place the focus near the end. Use clefts when ordinary word order does not make the intended contrast clear enough."
+    },
+    {
+      "heading": "Negative-adverbial inversion",
+      "body": "After fronted expressions such as 'Never', 'Rarely', 'Only then', or 'Not until...', use auxiliary–subject order. If the ordinary statement has no auxiliary, add do/does/did. This pattern is common in formal writing and dramatic speech."
+    },
+    {
+      "heading": "Emphatic auxiliaries",
+      "body": "Use do, does, or did before a base verb in an affirmative clause to correct an assumption or strengthen a contrast: 'I did send the file.' The emphasis should serve a clear discourse purpose; overuse sounds unnatural."
+    }
+  ],
+  "examples": [
+    {
+      "sentence": "It was the final example that changed my mind.",
+      "note": "The it-cleft focuses 'the final example'."
+    },
+    {
+      "sentence": "What the team needs is a clearer deadline.",
+      "note": "The wh-cleft places the main focus at the end."
+    },
+    {
+      "sentence": "Rarely have I seen such a careful review.",
+      "note": "The fronted negative-frequency adverb triggers inversion."
+    },
+    {
+      "sentence": "I did check the attachment before sending it.",
+      "note": "'Did' corrects or strongly counters an assumption."
+    }
+  ],
+  "practice": [
+    {
+      "id": "ecia-p1",
+      "type": "rewrite",
+      "prompt": "Focus 'Luna' in: 'Luna found the routing bug.'",
+      "answer": "It was Luna who found the routing bug.",
+      "explanation": "The it-cleft isolates the person as the focus."
+    },
+    {
+      "id": "ecia-p2",
+      "type": "rewrite",
+      "prompt": "Rewrite with inversion: 'I had never encountered that error before.'",
+      "answer": "Never had I encountered that error before.",
+      "explanation": "Fronted 'Never' is followed by auxiliary–subject order."
+    },
+    {
+      "id": "ecia-p3",
+      "type": "fill_blank",
+      "prompt": "Add emphatic correction: 'I ___ submit the form; the confirmation email proves it.'",
+      "answer": "did",
+      "explanation": "The affirmative auxiliary counters the assumption that the form was not submitted."
+    }
+  ],
+  "quiz": [
+    {
+      "id": "ecia-q1",
+      "objectiveIndex": 0,
+      "type": "multiple_choice",
+      "prompt": "Which sentence correctly focuses the location?",
+      "options": [
+        "It was in the archive that we found the note.",
+        "It in the archive was that we found the note.",
+        "What in the archive we found was the note."
+      ],
+      "answer": "It was in the archive that we found the note.",
+      "explanation": "The focused prepositional phrase follows 'It was'."
+    },
+    {
+      "id": "ecia-q2",
+      "objectiveIndex": 1,
+      "type": "rewrite",
+      "prompt": "Rewrite formally: 'We understood the risk only then.'",
+      "answer": "Only then did we understand the risk.",
+      "explanation": "The restrictive phrase is fronted, so 'did' precedes the subject."
+    },
+    {
+      "id": "ecia-q3",
+      "objectiveIndex": 2,
+      "type": "multiple_choice",
+      "prompt": "Which sentence naturally corrects the claim that Mira never called?",
+      "options": [
+        "Mira did call yesterday.",
+        "Mira does called yesterday.",
+        "Mira did called yesterday."
+      ],
+      "answer": "Mira did call yesterday.",
+      "explanation": "After emphatic 'did', use the base form."
+    },
+    {
+      "id": "ecia-q4",
+      "objectiveIndex": 3,
+      "type": "multiple_choice",
+      "prompt": "Which structure is most strongly associated with formal or dramatic style?",
+      "options": [
+        "Negative-adverbial inversion",
+        "A normal present-simple statement",
+        "A basic yes/no question"
+      ],
+      "answer": "Negative-adverbial inversion",
+      "explanation": "Clefts and emphatic auxiliaries occur widely, while this inversion is especially marked for register."
+    }
+  ],
+  "mastery": {
+    "minimumScorePercent": 80,
+    "requiredObjectiveIndexes": [0, 1, 2, 3]
+  },
+  "review": {
+    "keyTakeaways": [
+      "Clefts isolate the information in focus.",
+      "Fronted negative or restrictive adverbials trigger auxiliary–subject inversion.",
+      "Emphatic do/does/did strengthens a correction or contrast.",
+      "Advanced emphasis is a discourse and register choice, not decoration."
+    ],
+    "suggestedReviewAfterDays": [1, 7, 21],
+    "reviewPrompts": [
+      "Express the same focus once with an it-cleft and once with a wh-cleft.",
+      "Find one ordinary sentence in formal writing and rewrite it with appropriate inversion."
+    ]
+  }
+}

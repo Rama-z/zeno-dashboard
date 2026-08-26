@@ -12,7 +12,9 @@ Repository ini menggunakan **monorepo** agar perubahan frontend, backend, kontra
 ├── frontend/                        Vite + TypeScript + Nginx
 ├── .github/workflows/ci.yml         Backend dan frontend quality gates
 ├── sesi-hermes-discord-gemini.md    Sumber data session log
-└── frontend-design.md               Catatan desain antarmuka
+├── frontend-design.md               Catatan desain antarmuka
+├── CURRICULUM.md                    English Grammar learning path dan review model
+└── frontend/src/content/learning/   Manifest dan lesson JSON static prototype
 ```
 
 ## Fitur utama
@@ -23,8 +25,12 @@ Repository ini menggunakan **monorepo** agar perubahan frontend, backend, kontra
 - Ownership record per user
 - Activity audit trail dengan actor dan subject
 - Doing, Learning, Workout, Journaling, dan Spending
+- Learning Material List dengan English Grammar catalogue PostgreSQL-backed, 20 topic families, A1–C1 seed batches, practice, quiz, review cycle, dan owner-scoped progress
+- Workout Material List dengan katalog Mobility JSON tervalidasi dan scheduling ke Workout berdasarkan tanggal
+- Immutable journal revision history dengan deliberate edit reasons dan optimistic concurrency
 - Ringkasan pengeluaran harian, mingguan, bulanan, dan tahunan
 - Dark/light theme dengan branding Zeno
+- Font profile UI Compact, Standard, dan Expanded dengan Compact sebagai default
 
 ## Prasyarat
 
@@ -65,6 +71,14 @@ docker compose up --build -d
 
 Frontend tersedia di `http://localhost:8080` dan meneruskan `/api` ke backend lokal.
 
+Learning Material List memakai route client-side tanpa router dependency tambahan:
+`/learning/materials` → `/learning/materials/english` → `/learning/materials/english/grammar` → `/learning/materials/english/grammar/:topicId`.
+Runtime catalogue dibaca dari `GET /api/learning-materials` dan `GET /api/learning-materials/:id`; `PUT /api/learning-materials/:id/progress` menyimpan snapshot mastery/review per user. Seed version-controlled berada di `backend/internal/learningseed/` dan dijalankan secara transactional dengan `make seed-learning` setelah schema tersedia. Frontend lesson JSON lama tetap menjadi arsip authoring/prototype, bukan runtime source.
+
+Workout Material List memakai route client-side yang tetap mempertahankan Workout sebagai halaman aktif:
+`/workout/materials` → `/workout/materials/mobility` → `/workout/materials/mobility/:movementId`.
+Tanggal terpilih dipertahankan lewat `?date=YYYY-MM-DD`; scheduling membuat Workout entry baru dengan optional `materialId` tanpa menggandakan definisi material ke PostgreSQL.
+
 ## Quality gates
 
 Backend:
@@ -82,7 +96,9 @@ Frontend:
 ```bash
 cd frontend
 npm ci
+npm test
 npm run build
+npm audit --omit=dev
 ```
 
 GitHub Actions menjalankan test backend dengan PostgreSQL, frontend production build, dan Docker image build pada setiap push dan pull request.

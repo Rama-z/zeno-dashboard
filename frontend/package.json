@@ -7,10 +7,16 @@
     "dev": "npm run generate && vite",
     "build": "npm run generate && tsc -b && vite build",
     "preview": "vite preview",
-    "generate": "node scripts/generate-log.mjs"
+    "generate": "node scripts/generate-log.mjs",
+    "test": "node --test tests/*.test.mjs"
   },
   "devDependencies": {
     "typescript": "^5.7.2",
     "vite": "^6.0.5"
+  },
+  "dependencies": {
+    "@fontsource-variable/outfit": "^5.3.0",
+    "@fontsource/dm-mono": "^5.3.0",
+    "@phosphor-icons/web": "^2.1.2"
   }
 }

@@ -1,6 +1,6 @@
 GO ?= /usr/local/go/bin/go
 
-.PHONY: run build test fmt
+.PHONY: run build test fmt seed-learning
 
 run:
 	set -a; . ./.env; set +a; $(GO) run ./cmd/api
@@ -14,3 +14,6 @@ test:
 
 fmt:
 	$(GO) fmt ./...
+
+seed-learning:
+	set -a; . ./.env; set +a; GOTOOLCHAIN=local $(GO) run ./cmd/seed-learning

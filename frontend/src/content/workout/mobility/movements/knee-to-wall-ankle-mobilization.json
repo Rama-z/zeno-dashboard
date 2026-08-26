@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "1.0",
+  "contentVersion": 1,
+  "id": "knee-to-wall-ankle-mobilization",
+  "category": "mobility",
+  "name": "Knee-to-Wall Ankle Mobilization",
+  "shortDescription": "Gerakan berdiri yang mengajak lutut bergerak maju untuk melatih dorsifleksi pergelangan kaki.",
+  "equipment": ["Dinding"],
+  "bodyAreas": ["Pergelangan kaki", "Betis"],
+  "primaryTarget": "Dorsifleksi pergelangan kaki dan betis",
+  "difficulty": "Beginner",
+  "recommendation": {
+    "text": "2 set × 10 repetisi per sisi",
+    "sets": 2,
+    "reps": 10
+  },
+  "steps": [
+    "Berdiri menghadap dinding dengan satu kaki di depan dan tumit tetap menempel lantai.",
+    "Gerakkan lutut kaki depan perlahan menuju dinding tanpa membiarkan tumit terangkat.",
+    "Kembali ke posisi awal dengan kontrol.",
+    "Geser kaki sedikit menjauh bila lutut sudah menyentuh dinding dengan mudah."
+  ],
+  "cues": [
+    "Jaga telapak kaki tetap menapak dengan tekanan merata.",
+    "Arahkan lutut mengikuti garis jari kaki kedua atau ketiga.",
+    "Gunakan dinding hanya sebagai panduan keseimbangan."
+  ],
+  "safetyNotes": [
+    "Hentikan atau kurangi jarak bila muncul nyeri tajam pada pergelangan kaki atau lutut.",
+    "Jangan memantulkan lutut ke dinding."
+  ]
+}

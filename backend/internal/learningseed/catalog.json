@@ -1,0 +1,5124 @@
+{
+  "schemaVersion": "2.0",
+  "contentVersion": 1,
+  "subject": {
+    "id": "english",
+    "title": "English"
+  },
+  "category": {
+    "id": "grammar",
+    "title": "Grammar"
+  },
+  "topicFamilies": [
+    {
+      "id": "tenses",
+      "title": "Tenses",
+      "description": "Time viewpoint and basic tense choice.",
+      "sequence": 1
+    },
+    {
+      "id": "modals",
+      "title": "Modals",
+      "description": "Ability, permission, obligation, possibility, and stance.",
+      "sequence": 2
+    },
+    {
+      "id": "passive",
+      "title": "Passive",
+      "description": "Focus on actions, results, and the affected participant.",
+      "sequence": 3
+    },
+    {
+      "id": "conditionals",
+      "title": "Conditionals",
+      "description": "Conditions, consequences, hypotheses, and counterfactuals.",
+      "sequence": 4
+    },
+    {
+      "id": "word-order",
+      "title": "Word order",
+      "description": "Sentence order, information focus, and marked structures.",
+      "sequence": 5
+    },
+    {
+      "id": "questions",
+      "title": "Questions",
+      "description": "Question formation, embedded questions, and rhetorical choice.",
+      "sequence": 6
+    },
+    {
+      "id": "negation",
+      "title": "Negation",
+      "description": "Negative forms, scope, and negative expressions.",
+      "sequence": 7
+    },
+    {
+      "id": "clauses",
+      "title": "Clauses",
+      "description": "Building dependent and embedded clauses.",
+      "sequence": 8
+    },
+    {
+      "id": "articles",
+      "title": "Articles",
+      "description": "Article choice and reference to nouns.",
+      "sequence": 9
+    },
+    {
+      "id": "countability",
+      "title": "Countability",
+      "description": "Countable and uncountable nouns and quantity.",
+      "sequence": 10
+    },
+    {
+      "id": "determiners",
+      "title": "Determiners",
+      "description": "Reference, quantity, and determiner choice.",
+      "sequence": 11
+    },
+    {
+      "id": "pronouns",
+      "title": "Pronouns",
+      "description": "Personal, possessive, reflexive, and reference choices.",
+      "sequence": 12
+    },
+    {
+      "id": "gerunds",
+      "title": "Gerunds",
+      "description": "Verb-ing forms as complements and noun-like units.",
+      "sequence": 13
+    },
+    {
+      "id": "infinitives",
+      "title": "Infinitives",
+      "description": "To-infinitives for complements, purpose, and evaluation.",
+      "sequence": 14
+    },
+    {
+      "id": "participles",
+      "title": "Participles",
+      "description": "Participial adjectives and compressed descriptions.",
+      "sequence": 15
+    },
+    {
+      "id": "reported-speech",
+      "title": "Reported speech",
+      "description": "Reporting words, statements, and basic instructions.",
+      "sequence": 16
+    },
+    {
+      "id": "relative-clauses",
+      "title": "Relative clauses",
+      "description": "Adding identifying information to noun phrases.",
+      "sequence": 17
+    },
+    {
+      "id": "conjunctions",
+      "title": "Conjunctions",
+      "description": "Linking clauses and ideas with common connectors.",
+      "sequence": 18
+    },
+    {
+      "id": "prepositions",
+      "title": "Prepositions",
+      "description": "Place, time, movement, and common combinations.",
+      "sequence": 19
+    },
+    {
+      "id": "comparison",
+      "title": "Comparison",
+      "description": "Comparative, superlative, and equality meanings.",
+      "sequence": 20
+    }
+  ],
+  "matrix": [
+    {
+      "id": "tenses-a1-be-and-present-simple",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "tenses",
+      "topicTitle": "Tenses",
+      "locale": "en",
+      "level": "A1",
+      "coverageMode": "lesson",
+      "title": "Be and Present Simple Foundations",
+      "summary": "This lesson introduces two common ways to talk about the present.",
+      "sequence": 11,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 18,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [],
+      "revisits": [],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Be for identity and state: am, is, and are describe people, places, and states.",
+          "Present simple for routines: the base verb describes habits and facts.",
+          "Negative forms: not follows be; do not supports a main verb."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one new example from your own daily life.",
+          "Explain which meaning makes you choose this form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "present-simple-vs-continuous",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "tenses",
+      "topicTitle": "Tenses",
+      "locale": "en",
+      "level": "A2",
+      "coverageMode": "lesson",
+      "title": "Present Simple vs Present Continuous",
+      "summary": "Both tenses describe the present, but they show different ways of viewing an event.",
+      "sequence": 12,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 20,
+      "schemaVersion": "2.0",
+      "contentVersion": 3,
+      "prerequisites": [
+        "tenses-a1-be-and-present-simple"
+      ],
+      "revisits": [
+        "present-perfect-vs-past-simple"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Present simple presents routines, repeated events, timetables, and facts.",
+          "Present continuous presents actions in progress and temporary situations.",
+          "Choose by intended meaning, not by one signal word alone."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Describe one normal routine and one temporary change this week.",
+          "Explain the difference between 'I live here' and 'I am living here for now.'"
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "present-perfect-vs-past-simple",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "tenses",
+      "topicTitle": "Tenses",
+      "locale": "en",
+      "level": "B1",
+      "coverageMode": "lesson",
+      "title": "Present Perfect vs Past Simple",
+      "summary": "The central contrast is not 'recent versus old'; it is finished past time versus a past-to-present connection.",
+      "sequence": 13,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 24,
+      "schemaVersion": "2.0",
+      "contentVersion": 3,
+      "prerequisites": [
+        "present-simple-vs-continuous"
+      ],
+      "revisits": [
+        "tenses-b2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Past simple anchors an event to finished past time.",
+          "Present perfect connects past and present or uses an unfinished time frame.",
+          "A finished time expression normally blocks the present perfect."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one life-experience sentence, then add a finished date using the past simple.",
+          "Explain why 'I have called her yesterday' is not standard."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "tenses-b2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "tenses",
+      "topicTitle": "Tenses",
+      "locale": "en",
+      "level": "B2",
+      "coverageMode": "lesson",
+      "title": "Past Perfect and Future Perfect Forms",
+      "summary": "Use perfect and continuous aspect to position events precisely in past narratives and future plans.",
+      "sequence": 14,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 27,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "present-perfect-vs-past-simple"
+      ],
+      "revisits": [
+        "present-perfect-vs-past-simple"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Earlier past: Use past perfect for an event completed before another past reference point.",
+          "Future in progress: Use future continuous for an activity that will be happening at a particular future time.",
+          "Future completed result: Use future perfect for something completed before a stated future deadline or point."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a formal or workplace example using this structure.",
+          "Explain the change in meaning, time, or register created by the form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "tenses-c1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "tenses",
+      "topicTitle": "Tenses",
+      "locale": "en",
+      "level": "C1",
+      "coverageMode": "lesson",
+      "title": "Tense Choice for Nuance and Discourse",
+      "summary": "Select tense and aspect to manage narrative viewpoint, discourse framing, and the relationship between events.",
+      "sequence": 15,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 29,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "tenses-b2-planned"
+      ],
+      "revisits": [
+        "tenses-b2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Narrative viewpoint: Use past simple for the main sequence and past perfect for a prior background event.",
+          "Current relevance: Use present perfect for a past event linked to now; use past simple with a finished time reference.",
+          "Marked present: A present form can make a narrative vivid or state a general interpretation of past evidence."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a nuanced formal or spoken example using this structure.",
+          "Explain how the structure affects emphasis, certainty, or register."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "modals-a1-can-requests",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "modals",
+      "topicTitle": "Modals",
+      "locale": "en",
+      "level": "A1",
+      "coverageMode": "lesson",
+      "title": "Can for Ability, Permission, and Requests",
+      "summary": "Can is a flexible beginner modal for what is possible, possible to do, or allowed.",
+      "sequence": 21,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 17,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [],
+      "revisits": [],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Can plus base verb: can is followed by the base verb.",
+          "Cannot and can't: the negative form says that something is not possible or allowed.",
+          "Can I...?: a question can ask for permission or help."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one new example from your own daily life.",
+          "Explain which meaning makes you choose this form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "modals-a2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "modals",
+      "topicTitle": "Modals",
+      "locale": "en",
+      "level": "A2",
+      "coverageMode": "lesson",
+      "title": "Modals A2: Advice and Obligation",
+      "summary": "Use should, must, and have to to manage advice, rules, and everyday obligations.",
+      "sequence": 22,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 20,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "modals-a1-can-requests"
+      ],
+      "revisits": [
+        "modals-a1-can-requests"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Advice with should: Use should + base verb when you recommend an action without making it a rule.",
+          "Strong obligation: Must often expresses the speaker’s strong rule; have to often points to an outside requirement.",
+          "Two different negatives: Mustn’t means prohibited; don’t have to means optional or unnecessary."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one example from your own day.",
+          "Explain why another form would change the meaning."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "modals-b1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "modals",
+      "topicTitle": "Modals",
+      "locale": "en",
+      "level": "B1",
+      "coverageMode": "lesson",
+      "title": "Might, Could, and Basic Deduction",
+      "summary": "Use modal verbs to express possibility and make careful deductions about present situations.",
+      "sequence": 23,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 24,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "modals-a2-planned"
+      ],
+      "revisits": [
+        "modals-a2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Possibility: Use might or could when an event is possible but not certain.",
+          "Strong deduction: Use must when the available evidence makes a conclusion very likely.",
+          "Negative deduction: Use can’t when the evidence makes a conclusion impossible or very unlikely."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a new example from work, study, or daily life.",
+          "Explain the register or meaning choice in your example."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "modals-b2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "modals",
+      "topicTitle": "Modals",
+      "locale": "en",
+      "level": "B2",
+      "coverageMode": "lesson",
+      "title": "Perfect Modals for Past Judgement",
+      "summary": "Use perfect modal forms to assess past possibility, obligation, regret, and alternative outcomes.",
+      "sequence": 24,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 27,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "modals-b1-planned"
+      ],
+      "revisits": [
+        "modals-b1-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Past deduction: Use a perfect modal to assess what probably, possibly, or impossibly happened.",
+          "Past expectation: Should have often expresses criticism or an action that would have been better.",
+          "Unrealised option: Could have describes an option that was available but was not taken."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a formal or workplace example using this structure.",
+          "Explain the change in meaning, time, or register created by the form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "modals-c1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "modals",
+      "topicTitle": "Modals",
+      "locale": "en",
+      "level": "C1",
+      "coverageMode": "lesson",
+      "title": "Nuanced Modality and Hedging",
+      "summary": "Use modal expressions to calibrate certainty, obligation, politeness, and academic or professional stance.",
+      "sequence": 25,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 29,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "modals-b2-planned"
+      ],
+      "revisits": [
+        "modals-b2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Epistemic hedging: These forms signal possibility or a cautious interpretation rather than certainty.",
+          "Calibrated expectation: Choose the expression according to whether the expectation is normative, advisory, or evidence-based.",
+          "Stance and distance: These phrases let a writer state a considered view while leaving room for qualification."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a nuanced formal or spoken example using this structure.",
+          "Explain how the structure affects emphasis, certainty, or register."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "passive-a1-awareness",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "passive",
+      "topicTitle": "Passive",
+      "locale": "en",
+      "level": "A1",
+      "coverageMode": "awareness",
+      "title": "Passive A1 pathway",
+      "summary": "Planned A1 progression for passive.",
+      "sequence": 31,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 18,
+      "schemaVersion": "2.0",
+      "contentVersion": 1,
+      "prerequisites": [],
+      "revisits": [
+        "passive-b1-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 0,
+        "requiredObjectiveIndexes": []
+      },
+      "review": {
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ]
+      },
+      "published": false
+    },
+    {
+      "id": "passive-a2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "passive",
+      "topicTitle": "Passive",
+      "locale": "en",
+      "level": "A2",
+      "coverageMode": "lesson",
+      "title": "Present Passive for Simple Processes",
+      "summary": "Describe products, signs, and repeated processes with the present passive.",
+      "sequence": 32,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 19,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "passive-a1-awareness"
+      ],
+      "revisits": [
+        "passive-a1-awareness"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Be plus past participle: The present passive uses a form of be and the past participle: is made, are checked.",
+          "Singular and plural agreement: Choose is or are from the affected noun, not from the hidden doer.",
+          "Process focus: Use passive wording when the process, product, or result is the useful information."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one example from your own day.",
+          "Explain why another form would change the meaning."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "passive-b1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "passive",
+      "topicTitle": "Passive",
+      "locale": "en",
+      "level": "B1",
+      "coverageMode": "lesson",
+      "title": "Passive Forms Across Common Tenses",
+      "summary": "Use passive forms across present, past, perfect, and modal contexts when the affected thing matters.",
+      "sequence": 33,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 25,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "passive-a2-planned"
+      ],
+      "revisits": [
+        "passive-a2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Tense stays visible: Change the form of be to show tense: is repaired, was repaired, has been repaired.",
+          "Modal passive: After a modal, use be + past participle: The form must be signed.",
+          "Focus and agent: Add a by phrase only when the agent adds useful information."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a new example from work, study, or daily life.",
+          "Explain the register or meaning choice in your example."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "passive-b2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "passive",
+      "topicTitle": "Passive",
+      "locale": "en",
+      "level": "B2",
+      "coverageMode": "lesson",
+      "title": "Passive Voice Across Tenses and Modals",
+      "summary": "Use passive voice flexibly in reports, policies, and explanations across complex tense and modal contexts.",
+      "sequence": 34,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 27,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "passive-b1-planned"
+      ],
+      "revisits": [
+        "passive-b1-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Perfect passive: Perfect passive forms show an affected result completed before a reference point.",
+          "Modal passive: Use modal passive for requirements or deductions about an affected event.",
+          "Agent and focus: Include the agent when accountability, authorship, or source is relevant."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a formal or workplace example using this structure.",
+          "Explain the change in meaning, time, or register created by the form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "passive-c1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "passive",
+      "topicTitle": "Passive",
+      "locale": "en",
+      "level": "C1",
+      "coverageMode": "lesson",
+      "title": "Impersonal and Sophisticated Passive",
+      "summary": "Use passive reporting and causative structures to foreground evidence, processes, and institutional stance.",
+      "sequence": 35,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 29,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "passive-b2-planned"
+      ],
+      "revisits": [
+        "passive-b2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Impersonal reporting: Use an impersonal passive to present a claim as part of an evidence or discourse field.",
+          "Subject raising: Structures such as is thought to have reflect a reported conclusion about the subject.",
+          "Causative passive: Use have or get something done when a subject arranges for another person or process to do it."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a nuanced formal or spoken example using this structure.",
+          "Explain how the structure affects emphasis, certainty, or register."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "conditionals-a1-basic-if",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "conditionals",
+      "topicTitle": "Conditionals",
+      "locale": "en",
+      "level": "A1",
+      "coverageMode": "lesson",
+      "title": "Basic If and When Conditions",
+      "summary": "An if-clause makes a small cause-and-result connection.",
+      "sequence": 41,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 16,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [],
+      "revisits": [],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "If introduces a condition: if says what must happen first.",
+          "Present form for familiar results: both clauses can use the present simple.",
+          "Comma and clause order: a fronted if-clause is followed by a comma."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one new example from your own daily life.",
+          "Explain which meaning makes you choose this form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "conditionals-a2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "conditionals",
+      "topicTitle": "Conditionals",
+      "locale": "en",
+      "level": "A2",
+      "coverageMode": "lesson",
+      "title": "Real Conditions and Likely Results",
+      "summary": "Connect a possible condition with a likely result or practical plan.",
+      "sequence": 42,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 21,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "conditionals-a1-basic-if"
+      ],
+      "revisits": [
+        "conditionals-a1-basic-if"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "If plus present: Use present simple after if even when the meaning is about the future.",
+          "Likely result: Use will in the result clause for a likely consequence, promise, or plan.",
+          "Unless: Unless introduces the condition that something does not happen."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one example from your own day.",
+          "Explain why another form would change the meaning."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "conditionals-zero-first-second",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "conditionals",
+      "topicTitle": "Conditionals",
+      "locale": "en",
+      "level": "B1",
+      "coverageMode": "lesson",
+      "title": "Zero, First, and Second Conditionals",
+      "summary": "Conditionals connect a condition with its result. The form shows how the speaker views that relationship.",
+      "sequence": 43,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 26,
+      "schemaVersion": "2.0",
+      "contentVersion": 3,
+      "prerequisites": [
+        "conditionals-a1-basic-if",
+        "tenses-a1-be-and-present-simple"
+      ],
+      "revisits": [
+        "conditionals-b2-planned",
+        "advanced-integration-review"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Zero = general relationship.",
+          "First = realistic future possibility.",
+          "Second = imagined or remote present/future situation.",
+          "The past form in the second conditional marks distance, not past time."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Describe one general result, one real plan, and one imagined change.",
+          "Change a first conditional into a second conditional and explain the viewpoint shift."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "conditionals-b2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "conditionals",
+      "topicTitle": "Conditionals",
+      "locale": "en",
+      "level": "B2",
+      "coverageMode": "lesson",
+      "title": "Third Conditional and Unfulfilled Past Conditions",
+      "summary": "Use the third conditional to discuss unreal past conditions and their imagined consequences.",
+      "sequence": 44,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 28,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "conditionals-zero-first-second"
+      ],
+      "revisits": [
+        "conditionals-zero-first-second"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Unreal past condition: Use had + past participle for a condition that did not happen in the past.",
+          "Imagined past result: Choose the modal according to certainty, ability, or possibility of the imagined result.",
+          "Mixed consequence: A past condition can explain a present situation when the consequence continues now."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a formal or workplace example using this structure.",
+          "Explain the change in meaning, time, or register created by the form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "conditionals-c1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "conditionals",
+      "topicTitle": "Conditionals",
+      "locale": "en",
+      "level": "C1",
+      "coverageMode": "lesson",
+      "title": "Mixed Conditionals and Inversion",
+      "summary": "Use mixed conditionals and inverted conditional clauses to connect hypothetical causes, consequences, and formal register.",
+      "sequence": 45,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 29,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "conditionals-b2-planned"
+      ],
+      "revisits": [
+        "conditionals-b2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Past cause, present result: Use this mixed form when an unreal past event explains a present situation.",
+          "Conditional inversion: Omit if in formal conditions by placing had, were, or should before the subject.",
+          "Register and reality: Choose the result modal to show consequence, possibility, or tentative evaluation."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a nuanced formal or spoken example using this structure.",
+          "Explain how the structure affects emphasis, certainty, or register."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "word-order-a1-basic-svo",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "word-order",
+      "topicTitle": "Word order",
+      "locale": "en",
+      "level": "A1",
+      "coverageMode": "lesson",
+      "title": "Basic Subject–Verb–Object Order",
+      "summary": "English basic sentences are easiest to understand when the actor comes before the action.",
+      "sequence": 51,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 16,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [],
+      "revisits": [],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Subject before verb: the subject shows who or what acts.",
+          "Object after the verb: the object receives the action.",
+          "Place and time phrases: short place or time phrases often follow the object."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one new example from your own daily life.",
+          "Explain which meaning makes you choose this form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "word-order-a2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "word-order",
+      "topicTitle": "Word order",
+      "locale": "en",
+      "level": "A2",
+      "coverageMode": "lesson",
+      "title": "Adverb Placement in Everyday Sentences",
+      "summary": "Place frequency, manner, time, and place adverbs clearly in everyday sentences.",
+      "sequence": 52,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 22,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "word-order-a1-basic-svo"
+      ],
+      "revisits": [
+        "word-order-a1-basic-svo"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Frequency with be: Frequency adverbs usually follow be: She is often early.",
+          "Frequency with a main verb: Put common frequency adverbs before an ordinary main verb: They usually walk.",
+          "Manner and time: Manner often follows the object; time and place can come later or move to the front."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one example from your own day.",
+          "Explain why another form would change the meaning."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "word-order-b1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "word-order",
+      "topicTitle": "Word order",
+      "locale": "en",
+      "level": "B1",
+      "coverageMode": "lesson",
+      "title": "Word Order in Complex Sentences",
+      "summary": "Keep complex sentences clear by placing clauses, adverbs, and information focus where readers expect them.",
+      "sequence": 53,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 24,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "word-order-a2-planned"
+      ],
+      "revisits": [
+        "word-order-a2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Clause adjacency: Place an adverb or subordinate clause close to the verb or idea it describes.",
+          "Adverb position: Adverbs such as already, still, and probably usually sit near the auxiliary or main verb.",
+          "Fronted information: A fronted time, condition, or contrast phrase can guide the reader before the main point."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a new example from work, study, or daily life.",
+          "Explain the register or meaning choice in your example."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "word-order-b2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "word-order",
+      "topicTitle": "Word order",
+      "locale": "en",
+      "level": "B2",
+      "coverageMode": "lesson",
+      "title": "Emphatic Word Order and Information Focus",
+      "summary": "Reshape sentence order to highlight contrast, correction, or the most important information.",
+      "sequence": 54,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 28,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "word-order-b1-planned"
+      ],
+      "revisits": [
+        "word-order-b1-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "It-cleft focus: Use an it-cleft to identify the element that deserves emphasis.",
+          "What-cleft focus: A what-cleft presents an action or idea first and its important result second.",
+          "Marked inversion: Fronted limiting expressions can trigger auxiliary inversion in formal emphasis."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a formal or workplace example using this structure.",
+          "Explain the change in meaning, time, or register created by the form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "emphasis-cleft-inversion-auxiliaries",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "word-order",
+      "topicTitle": "Word order",
+      "locale": "en",
+      "level": "C1",
+      "coverageMode": "lesson",
+      "title": "Emphasis with Clefts, Inversion, and Auxiliaries",
+      "summary": "Advanced emphasis changes information structure: it tells the reader or listener what to notice most strongly.",
+      "sequence": 55,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 28,
+      "schemaVersion": "2.0",
+      "contentVersion": 3,
+      "prerequisites": [
+        "word-order-b2-planned"
+      ],
+      "revisits": [
+        "advanced-integration-review",
+        "linking-ideas"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Clefts isolate the information in focus.",
+          "Fronted negative or restrictive adverbials trigger auxiliary–subject inversion.",
+          "Emphatic do/does/did strengthens a correction or contrast.",
+          "Advanced emphasis is a discourse and register choice, not decoration."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Express the same focus once with an it-cleft and once with a wh-cleft.",
+          "Find one ordinary sentence in formal writing and rewrite it with appropriate inversion."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "questions-a1-basic-questions",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "questions",
+      "topicTitle": "Questions",
+      "locale": "en",
+      "level": "A1",
+      "coverageMode": "lesson",
+      "title": "Basic Yes/No and Wh- Questions",
+      "summary": "Questions open a conversation by asking for confirmation or one missing detail.",
+      "sequence": 61,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 18,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [],
+      "revisits": [],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Be questions: be comes before the subject.",
+          "Do and does questions: do/does supports a present-simple main verb.",
+          "Wh- words: the wh-word asks for a specific detail."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one new example from your own daily life.",
+          "Explain which meaning makes you choose this form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "questions-a2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "questions",
+      "topicTitle": "Questions",
+      "locale": "en",
+      "level": "A2",
+      "coverageMode": "lesson",
+      "title": "Past and Future Questions",
+      "summary": "Ask clear questions about finished events and future plans.",
+      "sequence": 62,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 22,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "questions-a1-basic-questions"
+      ],
+      "revisits": [
+        "questions-a1-basic-questions"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Past action questions: Did carries the past question, so the main verb stays in its base form.",
+          "Future questions: Use will for a decision or expectation and be going to for a plan.",
+          "Questions with be: When be is the main verb, move was or were before the subject."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one example from your own day.",
+          "Explain why another form would change the meaning."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "questions-b1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "questions",
+      "topicTitle": "Questions",
+      "locale": "en",
+      "level": "B1",
+      "coverageMode": "lesson",
+      "title": "Indirect Questions",
+      "summary": "Ask for information politely and embed questions inside longer clauses.",
+      "sequence": 63,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 24,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "questions-a2-planned"
+      ],
+      "revisits": [
+        "questions-a2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Yes/no embedding: Use if or whether and do not invert the subject and verb after the opening phrase.",
+          "Wh embedding: Keep the wh-word but use normal statement order: Do you know where she lives?",
+          "Polite openings: These openings make a request for information less direct."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a new example from work, study, or daily life.",
+          "Explain the register or meaning choice in your example."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "questions-b2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "questions",
+      "topicTitle": "Questions",
+      "locale": "en",
+      "level": "B2",
+      "coverageMode": "lesson",
+      "title": "Embedded and Complex Questions",
+      "summary": "Build complex questions that combine polite framing, alternatives, and multiple layers of information.",
+      "sequence": 64,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 27,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "questions-b1-planned"
+      ],
+      "revisits": [
+        "questions-b1-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Formal embedding: A formal opening is followed by a clause with statement word order.",
+          "Alternatives: Use whether ... or to ask which of two possibilities is true.",
+          "Question about a subject: When the question word is the subject, do not add do or invert the verb."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a formal or workplace example using this structure.",
+          "Explain the change in meaning, time, or register created by the form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "questions-c1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "questions",
+      "topicTitle": "Questions",
+      "locale": "en",
+      "level": "C1",
+      "coverageMode": "lesson",
+      "title": "Rhetorical and Nuanced Questions",
+      "summary": "Use question forms to challenge assumptions, manage disagreement, and invite reflection without always seeking factual information.",
+      "sequence": 65,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 28,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "questions-b2-planned"
+      ],
+      "revisits": [
+        "questions-b2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Rhetorical framing: A rhetorical question can introduce an issue without requiring a literal answer.",
+          "Negative expectation: A negative question can signal that the speaker expected agreement or confirmation.",
+          "Clarifying distance: A carefully framed question can request precision without sounding openly confrontational."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a nuanced formal or spoken example using this structure.",
+          "Explain how the structure affects emphasis, certainty, or register."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "negation-a1-not-dont",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "negation",
+      "topicTitle": "Negation",
+      "locale": "en",
+      "level": "A1",
+      "coverageMode": "lesson",
+      "title": "Basic Negation with Not, Don’t, and Doesn’t",
+      "summary": "Negation lets a speaker say that a state, place, or routine is not true.",
+      "sequence": 71,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 17,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [],
+      "revisits": [],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Not after be: be + not makes a negative state.",
+          "Do not and does not: do-support carries present-simple negation.",
+          "Base verb after does not: does not already carries the third-person ending."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one new example from your own daily life.",
+          "Explain which meaning makes you choose this form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "negation-a2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "negation",
+      "topicTitle": "Negation",
+      "locale": "en",
+      "level": "A2",
+      "coverageMode": "lesson",
+      "title": "Never, Nothing, and Stronger Negation",
+      "summary": "Use negative adverbs and pronouns without creating double negatives.",
+      "sequence": 72,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 22,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "negation-a1-not-dont"
+      ],
+      "revisits": [
+        "negation-a1-not-dont"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Never for frequency: Never means at no time and normally comes before an ordinary main verb.",
+          "Negative pronouns: Nothing means no thing, nobody no person, and nowhere no place.",
+          "One negative idea: Use one clear negative structure rather than two negatives together."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one example from your own day.",
+          "Explain why another form would change the meaning."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "negation-b1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "negation",
+      "topicTitle": "Negation",
+      "locale": "en",
+      "level": "B1",
+      "coverageMode": "lesson",
+      "title": "Negative Constructions for Nuance",
+      "summary": "Use negative adverbs and patterns to express limits, frequency, and change precisely.",
+      "sequence": 73,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 24,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "negation-a2-planned"
+      ],
+      "revisits": [
+        "negation-a2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Low degree: Hardly means almost not or almost never and is weaker than an absolute negative.",
+          "Rare frequency: Rarely and seldom mean not often and are more formal than not often.",
+          "Changed situation: No longer means that something was true before but is not true now."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a new example from work, study, or daily life.",
+          "Explain the register or meaning choice in your example."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "negation-b2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "negation",
+      "topicTitle": "Negation",
+      "locale": "en",
+      "level": "B2",
+      "coverageMode": "lesson",
+      "title": "Prefixes and Complex Negation",
+      "summary": "Form precise negative meanings with prefixes and multiword negative constructions.",
+      "sequence": 74,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 27,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "negation-b1-planned"
+      ],
+      "revisits": [
+        "negation-b1-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Negative prefixes: Prefixes create a negative, opposite, or incorrect meaning, but the correct prefix depends on the word.",
+          "Negative scope: These expressions limit or reject a conclusion without making an absolute negative claim.",
+          "Formal emphasis: A strong fronted negative expression can require auxiliary inversion in formal writing."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a formal or workplace example using this structure.",
+          "Explain the change in meaning, time, or register created by the form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "negation-c1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "negation",
+      "topicTitle": "Negation",
+      "locale": "en",
+      "level": "C1",
+      "coverageMode": "lesson",
+      "title": "Negative Inversion and Scope",
+      "summary": "Use negative and limiting expressions with inversion to create formal emphasis and control the scope of a claim.",
+      "sequence": 75,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 28,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "negation-b2-planned"
+      ],
+      "revisits": [
+        "negation-b2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Negative inversion: Fronted negative adverbs trigger inversion in formal or emphatic writing.",
+          "Limiting inversion: Only expressions can foreground a condition or time and invert the following clause.",
+          "Scope control: These patterns limit or redirect the negative meaning precisely."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a nuanced formal or spoken example using this structure.",
+          "Explain how the structure affects emphasis, certainty, or register."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "clauses-a1-basic-dependent-clauses",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "clauses",
+      "topicTitle": "Clauses",
+      "locale": "en",
+      "level": "A1",
+      "coverageMode": "lesson",
+      "title": "Basic Dependent Clauses with Because, When, and If",
+      "summary": "Clauses let a learner connect simple ideas instead of writing every idea as a separate sentence.",
+      "sequence": 81,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 18,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [],
+      "revisits": [],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Main and dependent clause: a main clause can stand alone; a dependent clause needs a main idea.",
+          "Because for reason: because explains why.",
+          "When and if: when gives time; if gives a condition."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one new example from your own daily life.",
+          "Explain which meaning makes you choose this form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "clauses-a2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "clauses",
+      "topicTitle": "Clauses",
+      "locale": "en",
+      "level": "A2",
+      "coverageMode": "lesson",
+      "title": "Because, When, and If Clauses",
+      "summary": "Join a main clause to a reason, time, or condition.",
+      "sequence": 82,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 22,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "clauses-a1-basic-dependent-clauses"
+      ],
+      "revisits": [
+        "clauses-a1-basic-dependent-clauses"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Reason with because: Because introduces the reason for an action or situation.",
+          "Time with when: When connects two events by showing when one happens.",
+          "Condition with if: If introduces a possible condition; add a comma when the if-clause comes first."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one example from your own day.",
+          "Explain why another form would change the meaning."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "clauses-b1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "clauses",
+      "topicTitle": "Clauses",
+      "locale": "en",
+      "level": "B1",
+      "coverageMode": "lesson",
+      "title": "Subordinate Clauses for Contrast and Time",
+      "summary": "Combine ideas with subordinate clauses that show contrast, time, and condition.",
+      "sequence": 83,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 25,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "clauses-a2-planned"
+      ],
+      "revisits": [
+        "clauses-a2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Contrast: Although and even though introduce a contrast that does not stop the main result.",
+          "Comparison in clauses: While and whereas can place two situations side by side for contrast.",
+          "Condition and time: Unless introduces an if-not condition; as soon as links an immediate result to a future event."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a new example from work, study, or daily life.",
+          "Explain the register or meaning choice in your example."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "clauses-b2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "clauses",
+      "topicTitle": "Clauses",
+      "locale": "en",
+      "level": "B2",
+      "coverageMode": "lesson",
+      "title": "Complex Clause Combinations",
+      "summary": "Combine coordination and subordination to express layered relationships between ideas.",
+      "sequence": 84,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 28,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "clauses-b1-planned"
+      ],
+      "revisits": [
+        "clauses-b1-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Layered relationships: Use different linkers to show which relationship is primary and which is additional.",
+          "Concession with despite: Despite is followed by a noun phrase or gerund unless it includes the fact that.",
+          "Scope and punctuation: Use commas and clause order to make the scope of a condition or contrast clear."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a formal or workplace example using this structure.",
+          "Explain the change in meaning, time, or register created by the form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "clauses-c1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "clauses",
+      "topicTitle": "Clauses",
+      "locale": "en",
+      "level": "C1",
+      "coverageMode": "lesson",
+      "title": "Reduced and Embedded Clauses",
+      "summary": "Use reduced, nominal, and embedded clauses to package complex propositions concisely.",
+      "sequence": 85,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 29,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "clauses-b2-planned"
+      ],
+      "revisits": [
+        "clauses-b2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Reduced circumstance: Reduce a subordinate clause when the subject is shared and the relationship remains clear.",
+          "Nominal embedding: Package a full proposition as a noun phrase for reference in a larger sentence.",
+          "Non-finite purpose/result: Use non-finite clauses to compress purpose or an unexpected result."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a nuanced formal or spoken example using this structure.",
+          "Explain how the structure affects emphasis, certainty, or register."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "articles-a1-basic-reference",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "articles",
+      "topicTitle": "Articles",
+      "locale": "en",
+      "level": "A1",
+      "coverageMode": "lesson",
+      "title": "Basic Article Reference: a, an, and the",
+      "summary": "Articles help a listener know whether a noun is new, identifiable, or general.",
+      "sequence": 91,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 18,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [],
+      "revisits": [],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "A and an introduce one: a/an introduces one countable noun.",
+          "The identifies: the points to a known or specific noun.",
+          "General uncountable reference: some general substances and activities can have no article."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one new example from your own daily life.",
+          "Explain which meaning makes you choose this form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "articles-a2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "articles",
+      "topicTitle": "Articles",
+      "locale": "en",
+      "level": "A2",
+      "coverageMode": "lesson",
+      "title": "Common Article Choices",
+      "summary": "Choose a, an, the, or no article for new, known, general, and unique things.",
+      "sequence": 92,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 22,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "articles-a1-basic-reference"
+      ],
+      "revisits": [
+        "articles-a1-basic-reference"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "First mention: Use a or an when you mention one non-specific countable thing for the first time.",
+          "Known or unique reference: Use the when both people know which thing you mean or it is unique in context.",
+          "General ideas: Use no article for general plural ideas and many general uncountable ideas."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one example from your own day.",
+          "Explain why another form would change the meaning."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "articles-b1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "articles",
+      "topicTitle": "Articles",
+      "locale": "en",
+      "level": "B1",
+      "coverageMode": "lesson",
+      "title": "Zero Article and Specific Reference",
+      "summary": "Choose articles for institutions, meals, transport, and general concepts when context changes the meaning.",
+      "sequence": 93,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 24,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "articles-a2-planned"
+      ],
+      "revisits": [
+        "articles-a2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Institutional function: Some institutions take zero article when the person is there for the usual function.",
+          "Specific reference: Use the when referring to a particular building, object, or occasion rather than its general function.",
+          "General concepts: General ideas such as education, patience, and books often take no article."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a new example from work, study, or daily life.",
+          "Explain the register or meaning choice in your example."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "articles-b2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "articles",
+      "topicTitle": "Articles",
+      "locale": "en",
+      "level": "B2",
+      "coverageMode": "lesson",
+      "title": "Articles with Abstract and General Reference",
+      "summary": "Use articles to distinguish broad concepts, established institutions, and specific abstract references in formal English.",
+      "sequence": 94,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 27,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "articles-b1-planned"
+      ],
+      "revisits": [
+        "articles-b1-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Broad abstraction: Use no article when discussing an abstract concept in general: Research takes time.",
+          "Defined system: Use the when the concept is limited by a phrase or understood as a particular system.",
+          "General plural reference: Plural nouns can refer to a class or category in general without an article."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a formal or workplace example using this structure.",
+          "Explain the change in meaning, time, or register created by the form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "articles-c1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "articles",
+      "topicTitle": "Articles",
+      "locale": "en",
+      "level": "C1",
+      "coverageMode": "lesson",
+      "title": "Stylistic and Idiomatic Article Use",
+      "summary": "Use articles flexibly in idioms, institutional language, generalisations, and stylistic contrasts.",
+      "sequence": 95,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 27,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "articles-b2-planned"
+      ],
+      "revisits": [
+        "articles-b2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Idiomatic reference: Some fixed expressions require an article regardless of broad meaning.",
+          "Institutional contrast: Zero article can signal institutional function; the can identify a particular place or organisation.",
+          "Category reference: Use the to refer collectively to a social category or a representative class."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a nuanced formal or spoken example using this structure.",
+          "Explain how the structure affects emphasis, certainty, or register."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "countability-a1-singular-plural",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "countability",
+      "topicTitle": "Countability",
+      "locale": "en",
+      "level": "A1",
+      "coverageMode": "lesson",
+      "title": "Singular, Plural, and Basic Quantity",
+      "summary": "Countability changes the noun form and the quantity word that can go with it.",
+      "sequence": 101,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 18,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [],
+      "revisits": [],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Countable nouns: countable nouns can have one or more forms.",
+          "Some and any: some is common in positive clauses; any is common in questions and negatives.",
+          "Much and many: many counts items; much measures an uncountable amount."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one new example from your own daily life.",
+          "Explain which meaning makes you choose this form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "countability-a2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "countability",
+      "topicTitle": "Countability",
+      "locale": "en",
+      "level": "A2",
+      "coverageMode": "lesson",
+      "title": "Much, Many, and Everyday Quantities",
+      "summary": "Match quantity words to countable and uncountable nouns.",
+      "sequence": 102,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 22,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "countability-a1-singular-plural"
+      ],
+      "revisits": [
+        "countability-a1-singular-plural"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Many with countable nouns: Use many when the noun refers to separate items or people.",
+          "Much with uncountable nouns: Use much with uncountable amounts, especially in questions and negatives.",
+          "A lot of in affirmation: A lot of is natural for large amounts and numbers in everyday affirmative sentences."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one example from your own day.",
+          "Explain why another form would change the meaning."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "countability-b1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "countability",
+      "topicTitle": "Countability",
+      "locale": "en",
+      "level": "B1",
+      "coverageMode": "lesson",
+      "title": "Tricky Uncountable Nouns",
+      "summary": "Treat common uncountable nouns accurately and add a unit when you need to count them.",
+      "sequence": 103,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 25,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "countability-a2-planned"
+      ],
+      "revisits": [
+        "countability-a2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Uncountable vocabulary: These nouns describe substance, knowledge, or a collection and normally do not take plural -s.",
+          "Units: Use a unit expression when counting one part or example of an uncountable noun.",
+          "Meaning changes: Some nouns change countability when they mean an event, document, or physical object."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a new example from work, study, or daily life.",
+          "Explain the register or meaning choice in your example."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "countability-b2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "countability",
+      "topicTitle": "Countability",
+      "locale": "en",
+      "level": "B2",
+      "coverageMode": "lesson",
+      "title": "Abstract Nouns and Count Shifts",
+      "summary": "Recognise when abstract nouns change from uncountable concepts to countable events, types, or items.",
+      "sequence": 104,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 27,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "countability-b1-planned"
+      ],
+      "revisits": [
+        "countability-b1-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Concept meaning: Use the uncountable meaning for a general activity, knowledge, trade, or illumination.",
+          "Instance meaning: Use the countable meaning for separate events, companies, lamps, or types.",
+          "Meaning plus determiner: The determiner helps signal whether the noun means a substance/concept or a separate instance."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a formal or workplace example using this structure.",
+          "Explain the change in meaning, time, or register created by the form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "countability-c1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "countability",
+      "topicTitle": "Countability",
+      "locale": "en",
+      "level": "C1",
+      "coverageMode": "lesson",
+      "title": "Nuanced Countability and Mass Reference",
+      "summary": "Choose countable and uncountable readings to express types, substances, practices, and abstract fields precisely.",
+      "sequence": 105,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 28,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "countability-b2-planned"
+      ],
+      "revisits": [
+        "countability-b2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Field versus instance: The uncountable form describes a field or accumulated knowledge; the plural form describes separate studies or events.",
+          "Type and variety: Use type expressions when comparing varieties of an otherwise mass or abstract noun.",
+          "Agreement and scope: Verb agreement follows the reading intended in the sentence."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a nuanced formal or spoken example using this structure.",
+          "Explain how the structure affects emphasis, certainty, or register."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "determiners-a1-this-that-some",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "determiners",
+      "topicTitle": "Determiners",
+      "locale": "en",
+      "level": "A1",
+      "coverageMode": "lesson",
+      "title": "This, That, These, Those, and Some",
+      "summary": "Determiners point to a noun or show how much of it is meant.",
+      "sequence": 111,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 17,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [],
+      "revisits": [],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "This and that: this is near; that is farther away.",
+          "These and those: these and those are plural forms.",
+          "Some for an open set: some avoids naming an exact amount."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one new example from your own daily life.",
+          "Explain which meaning makes you choose this form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "determiners-a2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "determiners",
+      "topicTitle": "Determiners",
+      "locale": "en",
+      "level": "A2",
+      "coverageMode": "lesson",
+      "title": "Any, Many, Few, and A Few",
+      "summary": "Use common quantity determiners for questions, negatives, and small numbers.",
+      "sequence": 112,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 22,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "determiners-a1-this-that-some"
+      ],
+      "revisits": [
+        "determiners-a1-this-that-some"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Any in questions and negatives: Any asks whether even one exists and is common in negative statements.",
+          "Many with plural nouns: Many describes a large number of separate items or people.",
+          "Few and a few: The article changes the speaker’s attitude toward the small number."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one example from your own day.",
+          "Explain why another form would change the meaning."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "determiners-b1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "determiners",
+      "topicTitle": "Determiners",
+      "locale": "en",
+      "level": "B1",
+      "coverageMode": "lesson",
+      "title": "Either, Neither, and Both",
+      "summary": "Use paired determiners to talk about two alternatives, two negative options, or two shared facts.",
+      "sequence": 113,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 24,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "determiners-a2-planned"
+      ],
+      "revisits": [
+        "determiners-a2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Both: Both includes the two people or things in the statement.",
+          "Either: Either selects one of two alternatives, usually in a choice or condition.",
+          "Neither: Neither rejects both alternatives and normally takes a singular noun or verb in formal writing."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a new example from work, study, or daily life.",
+          "Explain the register or meaning choice in your example."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "determiners-b2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "determiners",
+      "topicTitle": "Determiners",
+      "locale": "en",
+      "level": "B2",
+      "coverageMode": "lesson",
+      "title": "Complex Quantification",
+      "summary": "Use quantifiers and distributive determiners precisely when referring to groups, amounts, and alternatives.",
+      "sequence": 114,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 27,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "determiners-b1-planned"
+      ],
+      "revisits": [
+        "determiners-b1-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Group and distribution: All views a group together; each and every distribute attention across members.",
+          "Number and amount: Choose number for countable items and amount for substances or abstract quantities.",
+          "Alternative quantity: Match the determiner and verb to the alternatives being discussed."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a formal or workplace example using this structure.",
+          "Explain the change in meaning, time, or register created by the form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "determiners-c1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "determiners",
+      "topicTitle": "Determiners",
+      "locale": "en",
+      "level": "C1",
+      "coverageMode": "lesson",
+      "title": "Subtle Reference and Quantification",
+      "summary": "Use advanced determiners to distinguish totality, distribution, approximation, and open-ended reference.",
+      "sequence": 115,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 28,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "determiners-b2-planned"
+      ],
+      "revisits": [
+        "determiners-b2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Distribution and totality: Each distributes attention to members; every generalises across members; all views the group collectively.",
+          "Open choice: These forms leave the choice open while preserving the condition or result.",
+          "Scope and exception: Use any for unrestricted choice or emphasis and all but to state an exception."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a nuanced formal or spoken example using this structure.",
+          "Explain how the structure affects emphasis, certainty, or register."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "pronouns-a1-subject-object",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "pronouns",
+      "topicTitle": "Pronouns",
+      "locale": "en",
+      "level": "A1",
+      "coverageMode": "lesson",
+      "title": "Personal and Possessive Pronouns",
+      "summary": "Pronouns keep a sentence from repeating the same noun.",
+      "sequence": 121,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 18,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [],
+      "revisits": [],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Subject pronouns: I, you, he, she, it, we, and they do the action.",
+          "Object pronouns: me, you, him, her, it, us, and them receive an action.",
+          "Possessive adjectives: my, your, his, her, its, our, and their come before a noun."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one new example from your own daily life.",
+          "Explain which meaning makes you choose this form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "pronouns-a2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "pronouns",
+      "topicTitle": "Pronouns",
+      "locale": "en",
+      "level": "A2",
+      "coverageMode": "lesson",
+      "title": "Object and Possessive Pronouns",
+      "summary": "Use object pronouns after verbs and possessive pronouns without repeating nouns.",
+      "sequence": 122,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 22,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "pronouns-a1-subject-object"
+      ],
+      "revisits": [
+        "pronouns-a1-subject-object"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Object forms: Use object pronouns after a verb or preposition.",
+          "Possessive pronouns: Use a possessive pronoun when the noun is already understood.",
+          "Determiner versus pronoun: A possessive determiner comes before a noun; a possessive pronoun stands alone."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one example from your own day.",
+          "Explain why another form would change the meaning."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "pronouns-b1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "pronouns",
+      "topicTitle": "Pronouns",
+      "locale": "en",
+      "level": "B1",
+      "coverageMode": "lesson",
+      "title": "Reflexive and Indefinite Pronouns",
+      "summary": "Use reflexive and indefinite pronouns to identify the actor, shared action, or an unknown person or thing.",
+      "sequence": 123,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 25,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "pronouns-a2-planned"
+      ],
+      "revisits": [
+        "pronouns-a2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Reflexive action: Use a reflexive pronoun when the subject and object refer to the same person.",
+          "Shared action: Use each other when two or more people do the action mutually.",
+          "Indefinite reference: Choose the indefinite pronoun according to affirmative, question, or negative meaning."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a new example from work, study, or daily life.",
+          "Explain the register or meaning choice in your example."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "pronouns-b2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "pronouns",
+      "topicTitle": "Pronouns",
+      "locale": "en",
+      "level": "B2",
+      "coverageMode": "lesson",
+      "title": "Reference Across Complex Text",
+      "summary": "Maintain clear reference with this, that, which, one, ones, and they across connected sentences.",
+      "sequence": 124,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 27,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "pronouns-b1-planned"
+      ],
+      "revisits": [
+        "pronouns-b1-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Idea reference: This and that can refer to a previous statement, with distance or evaluation depending on context.",
+          "Substitution: Use one or ones to avoid repeating a countable noun after a determiner or adjective.",
+          "Clear antecedent: Choose a pronoun only when the reader can identify its antecedent without guessing."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a formal or workplace example using this structure.",
+          "Explain the change in meaning, time, or register created by the form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "pronouns-c1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "pronouns",
+      "topicTitle": "Pronouns",
+      "locale": "en",
+      "level": "C1",
+      "coverageMode": "lesson",
+      "title": "Sophisticated Cohesion and Reference",
+      "summary": "Use pronouns and substitution devices to maintain cohesion across paragraphs without ambiguity or repetition.",
+      "sequence": 125,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 28,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "pronouns-b2-planned"
+      ],
+      "revisits": [
+        "pronouns-b2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Whole-clause reference: A pronoun can refer to an entire preceding proposition rather than one noun.",
+          "Substitution: Use substitution to avoid repeating a noun or verb phrase when the reference is clear.",
+          "Cataphoric reference: A pronoun can anticipate a later explanation, especially in formal framing."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a nuanced formal or spoken example using this structure.",
+          "Explain how the structure affects emphasis, certainty, or register."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "gerunds-a1-like-ing",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "gerunds",
+      "topicTitle": "Gerunds",
+      "locale": "en",
+      "level": "A1",
+      "coverageMode": "lesson",
+      "title": "Verb-ing after Like, Love, and Enjoy",
+      "summary": "A gerund lets a beginner talk about an activity as a thing.",
+      "sequence": 131,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 16,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [],
+      "revisits": [],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Verb-ing as an activity: an -ing form can name an activity.",
+          "Like, love, and enjoy: common preference verbs can be followed by verb-ing.",
+          "Negative preference: do not or does not carries the negative."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one new example from your own daily life.",
+          "Explain which meaning makes you choose this form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "gerunds-a2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "gerunds",
+      "topicTitle": "Gerunds",
+      "locale": "en",
+      "level": "A2",
+      "coverageMode": "lesson",
+      "title": "Common Verb + Gerund Patterns",
+      "summary": "Use -ing after common verbs, prepositions, and leisure expressions.",
+      "sequence": 132,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 22,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "gerunds-a1-like-ing"
+      ],
+      "revisits": [
+        "gerunds-a1-like-ing"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Verb plus gerund: These common verbs are followed by an activity in -ing form.",
+          "Preposition plus gerund: A preposition is followed by the activity form, not an infinitive.",
+          "Go plus activity: Use go + -ing for many leisure activities such as cycling and shopping."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one example from your own day.",
+          "Explain why another form would change the meaning."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "gerunds-b1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "gerunds",
+      "topicTitle": "Gerunds",
+      "locale": "en",
+      "level": "B1",
+      "coverageMode": "lesson",
+      "title": "Verb Patterns with Gerunds",
+      "summary": "Use gerunds after a wider range of verbs and distinguish activity patterns that change meaning.",
+      "sequence": 133,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 25,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "gerunds-a2-planned"
+      ],
+      "revisits": [
+        "gerunds-a2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Recommendation patterns: These verbs can introduce an activity in -ing form: They suggested taking a break.",
+          "Memory and interruption: Remember doing recalls an earlier action; stop doing means end an activity.",
+          "Preposition patterns: Here to is a preposition, so it is followed by a gerund."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a new example from work, study, or daily life.",
+          "Explain the register or meaning choice in your example."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "gerunds-b2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "gerunds",
+      "topicTitle": "Gerunds",
+      "locale": "en",
+      "level": "B2",
+      "coverageMode": "lesson",
+      "title": "Gerunds with Meaning Changes",
+      "summary": "Choose gerund or infinitive patterns when the verb changes meaning according to the complement.",
+      "sequence": 134,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 27,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "gerunds-b1-planned"
+      ],
+      "revisits": [
+        "gerunds-b1-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Memory versus duty: Remember doing recalls a past event; remember to do refers to a duty completed or not completed.",
+          "End versus interruption: Stop doing ends an activity; stop to do pauses one activity in order to do another.",
+          "Experiment and regret: Try doing tests a method; regret doing looks back, while regret to say introduces unwelcome news."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a formal or workplace example using this structure.",
+          "Explain the change in meaning, time, or register created by the form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "gerunds-c1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "gerunds",
+      "topicTitle": "Gerunds",
+      "locale": "en",
+      "level": "C1",
+      "coverageMode": "lesson",
+      "title": "Complex Gerund Constructions",
+      "summary": "Use possessive, passive, and perfect gerund constructions to package actions as precise nominal ideas.",
+      "sequence": 135,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 29,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "gerunds-b2-planned"
+      ],
+      "revisits": [
+        "gerunds-b2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Gerund subject: Use a possessive subject for a formal focus on the fact of someone’s action.",
+          "Passive gerund: Use a passive gerund when the subject of the gerund receives the action.",
+          "Perfect gerund: Use a perfect gerund to place the gerund action before the main verb or evaluation."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a nuanced formal or spoken example using this structure.",
+          "Explain how the structure affects emphasis, certainty, or register."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "infinitives-a1-want-to",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "infinitives",
+      "topicTitle": "Infinitives",
+      "locale": "en",
+      "level": "A1",
+      "coverageMode": "lesson",
+      "title": "To-Infinitives after Want, Need, and Plan",
+      "summary": "The to-infinitive connects a person to an intended action or purpose.",
+      "sequence": 141,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 16,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [],
+      "revisits": [],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Want and need to: to + base verb completes the meaning.",
+          "Plan to: plan to introduces an intended action.",
+          "Purpose to: to can answer why someone does something."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one new example from your own daily life.",
+          "Explain which meaning makes you choose this form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "infinitives-a2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "infinitives",
+      "topicTitle": "Infinitives",
+      "locale": "en",
+      "level": "A2",
+      "coverageMode": "lesson",
+      "title": "Infinitives for Purpose",
+      "summary": "Use to + base verb to explain why an action happens.",
+      "sequence": 142,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 22,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "infinitives-a1-want-to"
+      ],
+      "revisits": [
+        "infinitives-a1-want-to"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Purpose with to: Use to + base verb when the second action explains why the first happens.",
+          "Purpose first: A purpose phrase can lead the sentence and take a comma.",
+          "Explicit purpose: In order to makes the purpose link especially clear in careful writing."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one example from your own day.",
+          "Explain why another form would change the meaning."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "infinitives-b1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "infinitives",
+      "topicTitle": "Infinitives",
+      "locale": "en",
+      "level": "B1",
+      "coverageMode": "lesson",
+      "title": "Verb Patterns with Infinitives",
+      "summary": "Use infinitive patterns after verbs of decision, permission, refusal, and intention.",
+      "sequence": 143,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 25,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "infinitives-a2-planned"
+      ],
+      "revisits": [
+        "infinitives-a2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Verb plus infinitive: These verbs introduce an intended, attempted, or refused action with to + base verb.",
+          "Object plus infinitive: Use an object before the infinitive when one person gives another permission or encouragement.",
+          "Bare infinitive after make/let: Make and let do not take to before the base verb in this pattern."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a new example from work, study, or daily life.",
+          "Explain the register or meaning choice in your example."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "infinitives-b2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "infinitives",
+      "topicTitle": "Infinitives",
+      "locale": "en",
+      "level": "B2",
+      "coverageMode": "lesson",
+      "title": "Perfect and Passive Infinitives",
+      "summary": "Use perfect and passive infinitives to express earlier actions, expected results, and affected subjects.",
+      "sequence": 144,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 28,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "infinitives-b1-planned"
+      ],
+      "revisits": [
+        "infinitives-b1-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Perfect infinitive: Use to have done when the infinitive action happened before the main viewpoint.",
+          "Passive infinitive: Use to be done when the subject receives the action.",
+          "Perfect passive infinitive: Use to have been done for an earlier action received by the subject."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a formal or workplace example using this structure.",
+          "Explain the change in meaning, time, or register created by the form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "infinitives-c1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "infinitives",
+      "topicTitle": "Infinitives",
+      "locale": "en",
+      "level": "C1",
+      "coverageMode": "lesson",
+      "title": "Nuanced Infinitive Structures",
+      "summary": "Use advanced infinitive patterns to express evaluation, purpose, agency, and hypothetical or completed actions.",
+      "sequence": 145,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 29,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "infinitives-b2-planned"
+      ],
+      "revisits": [
+        "infinitives-b2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Explicit infinitive subject: Use for + object when the infinitive has a different understood subject.",
+          "Time and voice: Combine perfect and passive forms when the infinitive action is earlier or received.",
+          "Evaluation and consequence: Use infinitive clauses to express degree, consequence, or an unexpected result."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a nuanced formal or spoken example using this structure.",
+          "Explain how the structure affects emphasis, certainty, or register."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "participles-a1-ed-ing-adjectives",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "participles",
+      "topicTitle": "Participles",
+      "locale": "en",
+      "level": "A1",
+      "coverageMode": "lesson",
+      "title": "Basic -ed and -ing Adjectives",
+      "summary": "Participial adjectives show either the source of a feeling or the person who experiences it.",
+      "sequence": 151,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 17,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [],
+      "revisits": [],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "-ing creates the feeling: an -ing adjective describes a thing or event.",
+          "-ed receives the feeling: an -ed adjective describes a person or animal affected by a feeling.",
+          "Participles as descriptions: some participles describe a state or result."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one new example from your own daily life.",
+          "Explain which meaning makes you choose this form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "participles-a2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "participles",
+      "topicTitle": "Participles",
+      "locale": "en",
+      "level": "A2",
+      "coverageMode": "lesson",
+      "title": "Boring, Bored, and Participial Adjectives",
+      "summary": "Choose -ing for a source of a feeling and -ed for the experience.",
+      "sequence": 152,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 22,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "participles-a1-ed-ing-adjectives"
+      ],
+      "revisits": [
+        "participles-a1-ed-ing-adjectives"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Cause of a feeling: An -ing adjective describes something that causes a reaction.",
+          "Experienced feeling: An -ed adjective describes how someone feels.",
+          "Viewpoint contrast: Choose the ending from whether you mean the source or the experience."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one example from your own day.",
+          "Explain why another form would change the meaning."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "participles-b1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "participles",
+      "topicTitle": "Participles",
+      "locale": "en",
+      "level": "B1",
+      "coverageMode": "lesson",
+      "title": "Basic Participle Phrases",
+      "summary": "Use present and perfect participle phrases to add background information without repeating a full clause.",
+      "sequence": 153,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 25,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "participles-a2-planned"
+      ],
+      "revisits": [
+        "participles-a2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Simultaneous action: An -ing phrase can show an action happening at the same time as the main clause.",
+          "Earlier action: Having finished shows that one action happened before the main clause.",
+          "Logical subject: The person or thing doing the participle action must be the subject of the main clause."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a new example from work, study, or daily life.",
+          "Explain the register or meaning choice in your example."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "participles-b2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "participles",
+      "topicTitle": "Participles",
+      "locale": "en",
+      "level": "B2",
+      "coverageMode": "lesson",
+      "title": "Participle Clauses",
+      "summary": "Compress time, reason, and condition clauses with present, past, and perfect participle clauses.",
+      "sequence": 154,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 28,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "participles-b1-planned"
+      ],
+      "revisits": [
+        "participles-b1-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Simultaneous or causal: An -ing clause can replace a clause with while, because, or as when the subject is shared.",
+          "Earlier event: Having completed the earlier action, the subject then performs the main action.",
+          "Passive compression: A past participle phrase can reduce a passive relative or condition clause."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a formal or workplace example using this structure.",
+          "Explain the change in meaning, time, or register created by the form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "participles-c1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "participles",
+      "topicTitle": "Participles",
+      "locale": "en",
+      "level": "C1",
+      "coverageMode": "lesson",
+      "title": "Compressed Sophisticated Structures",
+      "summary": "Use participle clauses and absolute constructions to compress background, circumstance, and evaluation in formal prose.",
+      "sequence": 155,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 29,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "participles-b2-planned"
+      ],
+      "revisits": [
+        "participles-b2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Perfect passive compression: Use having been done for an earlier action received by the subject.",
+          "Absolute construction: An absolute phrase has its own noun subject and provides background circumstance.",
+          "Dense evaluation: Participle phrases can package evidence, condition, or interpretation efficiently."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a nuanced formal or spoken example using this structure.",
+          "Explain how the structure affects emphasis, certainty, or register."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "reported-speech-a1-say-tell",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "reported-speech",
+      "topicTitle": "Reported speech",
+      "locale": "en",
+      "level": "A1",
+      "coverageMode": "lesson",
+      "title": "Basic Say and Tell Reporting",
+      "summary": "Reporting verbs let a speaker pass on another person's message.",
+      "sequence": 161,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 18,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [],
+      "revisits": [],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Say + message: say introduces the words or message.",
+          "Tell + person + message: tell normally names the listener.",
+          "Tell someone to: tell + person + to gives an instruction."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one new example from your own daily life.",
+          "Explain which meaning makes you choose this form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "reported-speech-a2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "reported-speech",
+      "topicTitle": "Reported speech",
+      "locale": "en",
+      "level": "A2",
+      "coverageMode": "lesson",
+      "title": "Simple Say and Tell Reporting",
+      "summary": "Report short statements and requests with say and tell.",
+      "sequence": 162,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 22,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "reported-speech-a1-say-tell"
+      ],
+      "revisits": [
+        "reported-speech-a1-say-tell"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Say and a message: Use say to introduce the message itself; that can be omitted.",
+          "Tell and a listener: Tell normally needs the person who receives the information.",
+          "Reported requests: Use this pattern when reporting a simple instruction or request."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one example from your own day.",
+          "Explain why another form would change the meaning."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "reported-speech-b1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "reported-speech",
+      "topicTitle": "Reported speech",
+      "locale": "en",
+      "level": "B1",
+      "coverageMode": "lesson",
+      "title": "Reported Speech and Backshift",
+      "summary": "Report statements, questions, and requests while shifting tense and reference when the reporting verb is in the past.",
+      "sequence": 163,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 26,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "reported-speech-a2-planned"
+      ],
+      "revisits": [
+        "reported-speech-a2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Tense backshift: Present becomes past, will becomes would, and can becomes could when the past reporting viewpoint requires it.",
+          "Reference changes: Change pronouns and time or place words to match the new speaker and context.",
+          "Reported questions and requests: Reported questions use statement order; requests use an object plus to-infinitive."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a new example from work, study, or daily life.",
+          "Explain the register or meaning choice in your example."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "reported-speech-b2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "reported-speech",
+      "topicTitle": "Reported speech",
+      "locale": "en",
+      "level": "B2",
+      "coverageMode": "lesson",
+      "title": "Reporting Verbs and Patterns",
+      "summary": "Use reporting verbs with their characteristic complements to describe claims, evidence, advice, and disagreement.",
+      "sequence": 164,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 28,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "reported-speech-b1-planned"
+      ],
+      "revisits": [
+        "reported-speech-b1-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Gerund reporting: Use an -ing complement for an action or fact that is admitted, denied, or mentioned.",
+          "Object and infinitive: Use an object before the infinitive when the report is directed to someone.",
+          "Recommendation patterns: Choose a pattern that keeps the recommendation and its level of directness clear."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a formal or workplace example using this structure.",
+          "Explain the change in meaning, time, or register created by the form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "reported-speech-c1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "reported-speech",
+      "topicTitle": "Reported speech",
+      "locale": "en",
+      "level": "C1",
+      "coverageMode": "lesson",
+      "title": "Nuanced Reporting and Stance",
+      "summary": "Use reporting verbs and patterns to distinguish evidence, concession, allegation, implication, and evaluation.",
+      "sequence": 165,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 29,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "reported-speech-b2-planned"
+      ],
+      "revisits": [
+        "reported-speech-b2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Stance verbs: These verbs present a position while signalling different degrees of distance or challenge.",
+          "Concession and denial: Choose the complement according to whether the focus is a proposition or an action.",
+          "Implication: Use these verbs when evidence points toward a conclusion without stating it directly."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a nuanced formal or spoken example using this structure.",
+          "Explain how the structure affects emphasis, certainty, or register."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "relative-clauses-a1-who-that",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "relative-clauses",
+      "topicTitle": "Relative clauses",
+      "locale": "en",
+      "level": "A1",
+      "coverageMode": "lesson",
+      "title": "Basic Identifying Relative Clauses",
+      "summary": "A relative clause adds identifying information after a noun.",
+      "sequence": 171,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 18,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [],
+      "revisits": [],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Who for people: who connects a person to more information.",
+          "That or which for things: that and which can connect a thing to a description.",
+          "Where for places: where connects a place to its use or action."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one new example from your own daily life.",
+          "Explain which meaning makes you choose this form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "relative-clauses-a2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "relative-clauses",
+      "topicTitle": "Relative clauses",
+      "locale": "en",
+      "level": "A2",
+      "coverageMode": "lesson",
+      "title": "Defining Relative Clauses",
+      "summary": "Use who, that, and which to identify a person or thing.",
+      "sequence": 172,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 22,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "relative-clauses-a1-who-that"
+      ],
+      "revisits": [
+        "relative-clauses-a1-who-that"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "People with who: Use who to add identifying information about a person.",
+          "Things with that or which: Use that or which for a thing in a defining clause.",
+          "Essential information: Do not separate an identifying relative clause with commas."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one example from your own day.",
+          "Explain why another form would change the meaning."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "relative-clauses-b1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "relative-clauses",
+      "topicTitle": "Relative clauses",
+      "locale": "en",
+      "level": "B1",
+      "coverageMode": "lesson",
+      "title": "Defining and Non-Defining Relatives",
+      "summary": "Choose defining or non-defining relative clauses according to whether the information identifies the noun or simply adds detail.",
+      "sequence": 173,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 26,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "relative-clauses-a2-planned"
+      ],
+      "revisits": [
+        "relative-clauses-a2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Defining clause: The clause identifies the noun and cannot be removed without changing the reference.",
+          "Non-defining clause: Commas show that the added information is not needed to identify the noun.",
+          "Relative choice: Use who for people and which for things; do not use that in a non-defining clause."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a new example from work, study, or daily life.",
+          "Explain the register or meaning choice in your example."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "relative-clauses-b2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "relative-clauses",
+      "topicTitle": "Relative clauses",
+      "locale": "en",
+      "level": "B2",
+      "coverageMode": "lesson",
+      "title": "Reduced Relative Clauses",
+      "summary": "Reduce defining relative clauses when the active or passive relationship is clear.",
+      "sequence": 174,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 28,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "relative-clauses-b1-planned"
+      ],
+      "revisits": [
+        "relative-clauses-b1-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Active reduction: Reduce who/which + be + -ing when the noun performs the action.",
+          "Passive reduction: Reduce who/which + be + past participle when the noun receives the action.",
+          "Restrictive focus: Keep the reduced information directly after the noun so the reference remains clear."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a formal or workplace example using this structure.",
+          "Explain the change in meaning, time, or register created by the form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "relative-clauses-c1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "relative-clauses",
+      "topicTitle": "Relative clauses",
+      "locale": "en",
+      "level": "C1",
+      "coverageMode": "lesson",
+      "title": "Complex Embedded Relative Clauses",
+      "summary": "Use whose, preposition relatives, and nested relative structures to maintain precision in formal reference.",
+      "sequence": 175,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 29,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "relative-clauses-b2-planned"
+      ],
+      "revisits": [
+        "relative-clauses-b2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Possessive relative: Whose can refer to a person, organisation, or thing that possesses or contains something.",
+          "Formal preposition relative: Formal writing can place the preposition before which or whom.",
+          "Abstract antecedent: Use relative phrases to connect an abstract noun to its explanation or method."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a nuanced formal or spoken example using this structure.",
+          "Explain how the structure affects emphasis, certainty, or register."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "conjunctions-a1-and-but-or",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "conjunctions",
+      "topicTitle": "Conjunctions",
+      "locale": "en",
+      "level": "A1",
+      "coverageMode": "lesson",
+      "title": "And, But, Or, and So",
+      "summary": "Conjunctions make short sentences work together as one message.",
+      "sequence": 181,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 16,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [],
+      "revisits": [],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "And adds: and joins similar words or ideas.",
+          "But contrasts: but joins ideas that do not match.",
+          "Or and so: or offers a choice; so gives a result."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one new example from your own daily life.",
+          "Explain which meaning makes you choose this form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "conjunctions-a2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "conjunctions",
+      "topicTitle": "Conjunctions",
+      "locale": "en",
+      "level": "A2",
+      "coverageMode": "lesson",
+      "title": "Because and So: Reason and Result",
+      "summary": "Connect everyday ideas by showing why something happens or what results.",
+      "sequence": 182,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 22,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "conjunctions-a1-and-but-or"
+      ],
+      "revisits": [
+        "conjunctions-a1-and-but-or"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Because gives a reason: Because answers why the first clause is true or happens.",
+          "So gives a result: So shows what happens because of the first clause.",
+          "Choose one direction: Choose the linker that matches the direction of the relationship."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one example from your own day.",
+          "Explain why another form would change the meaning."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "conjunctions-b1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "conjunctions",
+      "topicTitle": "Conjunctions",
+      "locale": "en",
+      "level": "B1",
+      "coverageMode": "lesson",
+      "title": "Although, Even Though, and Unless",
+      "summary": "Express concession and conditions with conjunctions that connect complete clauses.",
+      "sequence": 183,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 25,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "conjunctions-a2-planned"
+      ],
+      "revisits": [
+        "conjunctions-a2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Concession: These conjunctions show that the main result happens despite an opposing fact.",
+          "Negative condition: Unless means if not and introduces the condition that prevents or changes a result.",
+          "Clause position: A leading concession or condition clause is followed by a comma."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a new example from work, study, or daily life.",
+          "Explain the register or meaning choice in your example."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "conjunctions-b2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "conjunctions",
+      "topicTitle": "Conjunctions",
+      "locale": "en",
+      "level": "B2",
+      "coverageMode": "lesson",
+      "title": "Whereas, Despite, and Provided That",
+      "summary": "Link formal comparisons, concession, and conditions with precise clause and preposition patterns.",
+      "sequence": 184,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 27,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "conjunctions-b1-planned"
+      ],
+      "revisits": [
+        "conjunctions-b1-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Formal contrast: Whereas places two situations or viewpoints in contrast.",
+          "Concession phrase: Despite is followed by a noun phrase or -ing form, not a finite clause alone.",
+          "Condition for agreement: Provided that means if and only if the stated condition is satisfied."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a formal or workplace example using this structure.",
+          "Explain the change in meaning, time, or register created by the form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "conjunctions-c1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "conjunctions",
+      "topicTitle": "Conjunctions",
+      "locale": "en",
+      "level": "C1",
+      "coverageMode": "lesson",
+      "title": "Sophisticated Discourse Linking",
+      "summary": "Use high-level linkers to organise concession, qualification, cause, and logical consequence across a sustained argument.",
+      "sequence": 185,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 29,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "conjunctions-b2-planned"
+      ],
+      "revisits": [
+        "conjunctions-b2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Concessive transition: These adverbials acknowledge a contrast with the previous proposition while continuing the argument.",
+          "Qualified scope: These linkers limit a claim or identify the premise on which it depends.",
+          "Formal concession: Notwithstanding introduces a concession in formal register and is not followed directly by a finite clause."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a nuanced formal or spoken example using this structure.",
+          "Explain how the structure affects emphasis, certainty, or register."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "prepositions-a1-place-time",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "prepositions",
+      "topicTitle": "Prepositions",
+      "locale": "en",
+      "level": "A1",
+      "coverageMode": "lesson",
+      "title": "Basic Prepositions of Place and Time",
+      "summary": "Prepositions make relationships between a noun and place, time, or movement visible.",
+      "sequence": 191,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 18,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [],
+      "revisits": [],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Place relationships: in, on, under, and next to describe position.",
+          "At, on, and in for time: at names a clock time, on a day, and in a month or year.",
+          "Preposition plus noun: a preposition is followed by a noun phrase."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one new example from your own daily life.",
+          "Explain which meaning makes you choose this form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "prepositions-a2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "prepositions",
+      "topicTitle": "Prepositions",
+      "locale": "en",
+      "level": "A2",
+      "coverageMode": "lesson",
+      "title": "Prepositions of Movement",
+      "summary": "Show destinations, entry, routes, and movement across surfaces.",
+      "sequence": 192,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 22,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "prepositions-a1-place-time"
+      ],
+      "revisits": [
+        "prepositions-a1-place-time"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Destination and origin: Use to for where movement ends and from for where it starts.",
+          "Inside and surface: Into ends inside a space; onto ends on a surface.",
+          "Routes: Through describes a route inside and out; across describes movement from one side to another."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one example from your own day.",
+          "Explain why another form would change the meaning."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "prepositions-b1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "prepositions",
+      "topicTitle": "Prepositions",
+      "locale": "en",
+      "level": "B1",
+      "coverageMode": "lesson",
+      "title": "Dependent Prepositions",
+      "summary": "Use common adjective, verb, and noun combinations with their dependent prepositions.",
+      "sequence": 193,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 25,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "prepositions-a2-planned"
+      ],
+      "revisits": [
+        "prepositions-a2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Adjective patterns: Many adjectives select a particular preposition before a noun or gerund.",
+          "Verb patterns: The preposition is part of the verb pattern and should be learned with it.",
+          "Noun patterns: Nouns also form stable combinations with particular prepositions."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a new example from work, study, or daily life.",
+          "Explain the register or meaning choice in your example."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "prepositions-b2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "prepositions",
+      "topicTitle": "Prepositions",
+      "locale": "en",
+      "level": "B2",
+      "coverageMode": "lesson",
+      "title": "Complex and Idiomatic Preposition Phrases",
+      "summary": "Use formal preposition phrases to frame topics, responsibility, method, risk, and representation.",
+      "sequence": 194,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 27,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "prepositions-b1-planned"
+      ],
+      "revisits": [
+        "prepositions-b1-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Topic framing: These phrases specify the aspect or topic being discussed.",
+          "Method and risk: Use these phrases to describe how something happens or what danger accompanies it.",
+          "Representation and compliance: These phrases express acting for someone or following a rule or plan."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a formal or workplace example using this structure.",
+          "Explain the change in meaning, time, or register created by the form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "prepositions-c1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "prepositions",
+      "topicTitle": "Prepositions",
+      "locale": "en",
+      "level": "C1",
+      "coverageMode": "lesson",
+      "title": "Subtle Idiomatic Preposition Selection",
+      "summary": "Use formal prepositional phrases to express grounds, alignment, purpose, consequence, and institutional stance.",
+      "sequence": 195,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 28,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "prepositions-b2-planned"
+      ],
+      "revisits": [
+        "prepositions-b2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Grounds and evidence: These phrases specify the basis for a decision or reinterpretation.",
+          "Alignment and conflict: Use these phrases to compare a position with a principle, result, or policy.",
+          "Purpose and consequence: These phrases express intended purpose or a cost paid for an outcome."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a nuanced formal or spoken example using this structure.",
+          "Explain how the structure affects emphasis, certainty, or register."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "comparison-a1-basic-comparison",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "comparison",
+      "topicTitle": "Comparison",
+      "locale": "en",
+      "level": "A1",
+      "coverageMode": "lesson",
+      "title": "Basic Comparatives and Superlatives",
+      "summary": "Comparison helps a learner describe difference, equality, and extremes.",
+      "sequence": 201,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 18,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [],
+      "revisits": [],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Comparative -er: short adjectives often take -er for two-way comparison.",
+          "More for longer adjectives: more comes before many longer adjectives.",
+          "Superlative: -est or most identifies the highest degree."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one new example from your own daily life.",
+          "Explain which meaning makes you choose this form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "comparison-a2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "comparison",
+      "topicTitle": "Comparison",
+      "locale": "en",
+      "level": "A2",
+      "coverageMode": "lesson",
+      "title": "More, Less, and As ... As",
+      "summary": "Compare qualities and amounts with more, less, and as ... as.",
+      "sequence": 202,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 22,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "comparison-a1-basic-comparison"
+      ],
+      "revisits": [
+        "comparison-a1-basic-comparison"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "More and less: Use more or less to compare a quality or amount with another one.",
+          "Equal comparison: Use as ... as when two things have the same degree of a quality.",
+          "Second comparison: Than introduces the comparison point."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write one example from your own day.",
+          "Explain why another form would change the meaning."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "comparison-b1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "comparison",
+      "topicTitle": "Comparison",
+      "locale": "en",
+      "level": "B1",
+      "coverageMode": "lesson",
+      "title": "Comparative Structures and Modifiers",
+      "summary": "Make precise comparisons with modifiers, repeated comparatives, and the more ... the more patterns.",
+      "sequence": 203,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 26,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "comparison-a2-planned"
+      ],
+      "revisits": [
+        "comparison-a2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Comparative modifiers: Modifiers show how large the difference is: far more useful, slightly cheaper.",
+          "Linked change: This pattern describes two changes that develop together.",
+          "Quantity comparison: Choose fewer for countable items and less for uncountable amounts."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a new example from work, study, or daily life.",
+          "Explain the register or meaning choice in your example."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "comparison-b2-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "comparison",
+      "topicTitle": "Comparison",
+      "locale": "en",
+      "level": "B2",
+      "coverageMode": "lesson",
+      "title": "Complex Comparison and Degree",
+      "summary": "Build comparisons that express scale, proportion, and evaluation with precise modifiers and structures.",
+      "sequence": 204,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 28,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "comparison-b1-planned"
+      ],
+      "revisits": [
+        "comparison-b1-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Degree modifiers: These modifiers show the size of a difference in formal and analytical comparisons.",
+          "Proportional comparison: Use paired comparatives to show that one change affects another.",
+          "Framed comparison: These structures set a reference point or emphasise an unexpectedly high or equal degree."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a formal or workplace example using this structure.",
+          "Explain the change in meaning, time, or register created by the form."
+        ]
+      },
+      "published": true
+    },
+    {
+      "id": "comparison-c1-planned",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "comparison",
+      "topicTitle": "Comparison",
+      "locale": "en",
+      "level": "C1",
+      "coverageMode": "lesson",
+      "title": "Rhetorical and Nuanced Comparison",
+      "summary": "Use comparison to evaluate degree, proportionality, approximation, and rhetorical contrast in sophisticated argument.",
+      "sequence": 205,
+      "positionWithinTopic": 1,
+      "estimatedMinutes": 29,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [
+        "comparison-b2-planned"
+      ],
+      "revisits": [
+        "comparison-b2-planned"
+      ],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0,
+          1,
+          2
+        ]
+      },
+      "review": {
+        "keyTakeaways": [
+          "Calibrated degree: Use modifiers and stance adverbs to make an evaluation proportionate and defensible.",
+          "Proportional relation: Use paired comparatives to express a systematic relationship between changes.",
+          "Rhetorical quantity: These forms can minimise, emphasise, or question an apparent comparison."
+        ],
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ],
+        "reviewPrompts": [
+          "Write a nuanced formal or spoken example using this structure.",
+          "Explain how the structure affects emphasis, certainty, or register."
+        ]
+      },
+      "published": true
+    }
+  ],
+  "supportingLessons": [
+    {
+      "id": "advanced-integration-review",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "word-order",
+      "topicTitle": "Word order",
+      "locale": "en",
+      "level": "C1",
+      "coverageMode": "planned",
+      "title": "Advanced Integration Review",
+      "summary": "Planned integrated review across tense, voice, conditional, and clause choices.",
+      "sequence": 1001,
+      "positionWithinTopic": 2,
+      "estimatedMinutes": 24,
+      "schemaVersion": "2.0",
+      "contentVersion": 2,
+      "prerequisites": [],
+      "revisits": [],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0
+        ]
+      },
+      "review": {
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ]
+      },
+      "published": false
+    },
+    {
+      "id": "linking-ideas",
+      "subjectId": "english",
+      "subjectTitle": "English",
+      "categoryId": "grammar",
+      "categoryTitle": "Grammar",
+      "topicId": "conjunctions",
+      "topicTitle": "Conjunctions",
+      "locale": "en",
+      "level": "B1",
+      "coverageMode": "planned",
+      "title": "Linking Ideas",
+      "summary": "Planned B1 lesson for cause, contrast, purpose, and concession.",
+      "sequence": 1002,
+      "positionWithinTopic": 2,
+      "estimatedMinutes": 22,
+      "schemaVersion": "2.0",
+      "contentVersion": 1,
+      "prerequisites": [],
+      "revisits": [],
+      "mastery": {
+        "minimumScorePercent": 80,
+        "requiredObjectiveIndexes": [
+          0
+        ]
+      },
+      "review": {
+        "suggestedReviewAfterDays": [
+          1,
+          7,
+          21
+        ]
+      },
+      "published": false
+    }
+  ]
+}

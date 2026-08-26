@@ -10,6 +10,8 @@ internal/api/         router, handler, Swagger/OpenAPI
 internal/model/       kontrak data
 internal/source/      parser Markdown session log
 internal/store/       PostgreSQL repository + migrasi otomatis
+internal/learningseed/ embedded English Grammar catalogue + validator
+cmd/seed-learning/    transactional non-destructive catalogue seeder
 ```
 
 ## Menjalankan
@@ -21,6 +23,9 @@ cd ~/Documents/monitoring/backend
 make test
 make build
 make run
+
+# Setelah schema tersedia, seed catalogue secara eksplisit.
+make seed-learning
 ```
 
 Akses:
@@ -42,18 +47,25 @@ Saat startup, backend menguji koneksi PostgreSQL dan otomatis membuat tabel/inde
 - `GET`, `PUT /api/settings`
 - `GET`, `POST /api/learning`
 - `PUT`, `DELETE /api/learning/{id}`
+- `GET /api/learning-materials?subjectId=&categoryId=&level=`
+- `GET /api/learning-materials/{id}`
+- `PUT /api/learning-materials/{id}/progress`
 - `GET`, `POST /api/doing`
 - `PUT`, `DELETE /api/doing/{id}`
-- `GET`, `POST /api/workouts`
-- `PUT`, `DELETE /api/workouts/{id}`
+- `GET`, `POST /api/workouts` (scheduled catalog entries may include optional stable `materialId`)
+- `PUT`, `DELETE /api/workouts/{id}` (updates preserve `materialId`)
 - `GET`, `POST /api/journals`
+- `GET`, `POST /api/journals/{id}/revisions`
 - `DELETE /api/journals/{id}`
 - `GET`, `POST /api/spending`
 - `DELETE /api/spending/{id}`
 - `GET`, `POST /api/change-logs`
 
-## Authentication dan authorization
+`/api/learning` adalah Learning Journal berbasis tanggal dan tetap terpisah dari Learning Materials. Learning Materials memakai seed JSON version-controlled sebagai input deployment, tetapi runtime list/detail/practice policy dibaca dari PostgreSQL. Seeder memvalidasi 20 topic families, 100 matrix cells, projected metadata, prerequisite/revisit graph, exercise IDs, examples, mastery, dan review sebelum satu transaksi upsert. Seeder tidak menghapus row database yang tidak dikenal atau `learning_topic_progress`, dan hanya mengganti row ketika `content_version` seed lebih baru.
 
+Journaling menyimpan `journal_entries` sebagai logical parent/latest snapshot dan `journal_revisions` sebagai immutable complete snapshot. `POST /api/journals/{id}/revisions` membutuhkan `baseRevisionNumber` dan salah satu reason code `typo`, `clarify`, `incorrect_information`, atau `changed_my_mind`; stale base mengembalikan `409`. History dikembalikan newest-first secara lazy dan penghapusan parent menghapus semua revisions melalui FK cascade. Activity append hanya menyimpan `revisionNumber` dan `editReason`, bukan isi jurnal.
+
+## Authentication dan authorization
 - Dashboard API mewajibkan session user yang emailnya sudah terverifikasi.
 - Password disimpan menggunakan bcrypt; password mentah tidak pernah disimpan.
 - Verification token dan session token bersifat opaque; database hanya menyimpan SHA-256 hash.

@@ -1,0 +1,294 @@
+/* Shared semantic typography application. Loaded after every app surface. */
+
+/* Baseline text inherits the selected reading profile. Icon-only glyphs are excluded below. */
+.zeno-dashboard,
+.auth-shell {
+  font-size: var(--zeno-type-body-size);
+  line-height: var(--zeno-type-body-line-height);
+  letter-spacing: var(--zeno-type-body-tracking);
+}
+
+/* Dashboard page hierarchy */
+.zeno-dashboard .page-heading h1 {
+  font-size: var(--zeno-type-page-title-size);
+  line-height: var(--zeno-type-page-title-line-height);
+  letter-spacing: var(--zeno-type-page-title-tracking);
+}
+.zeno-dashboard .content :is(.subheading,.question p,.answer-body p,.activity-audit-copy p,.feature-empty span,.learning-entry p,.learning-empty,.update-card p,.timeline-item p,.session-card>p:not(.eyebrow),.profile-identity p) {
+  font-size: var(--zeno-type-body-size);
+  line-height: var(--zeno-type-body-line-height);
+  letter-spacing: var(--zeno-type-body-tracking);
+}
+.zeno-dashboard .content :is(.result-count,.entry-excerpt,.metric-card small,.setting-row small,.settings-card-heading p,.update-date span) {
+  font-size: var(--zeno-type-body-small-size);
+  line-height: var(--zeno-type-body-small-line-height);
+  letter-spacing: var(--zeno-type-body-small-tracking);
+}
+.zeno-dashboard .content :is(.section-toolbar h2,.panel-heading h2,.settings-card-heading h2,.calendar-header h2,.detail-heading h2,.spending-anchor h2,.session-card h2) {
+  font-size: var(--zeno-type-section-title-size);
+  line-height: var(--zeno-type-section-title-line-height);
+  letter-spacing: var(--zeno-type-section-title-tracking);
+}
+.zeno-dashboard .content :is(.entry-title,.update-card h3,.activity-audit-copy h3,.timeline-item strong,.learning-entry h3,.workout-copy h3,.journal-card-head h3,.journal-revision-head h3,.spending-copy h3,.writer-topbar strong,.ledger-toolbar h2) {
+  font-size: var(--zeno-type-card-title-size);
+  line-height: var(--zeno-type-card-title-line-height);
+  letter-spacing: var(--zeno-type-card-title-tracking);
+}
+.zeno-dashboard .metric-card strong {
+  font-size: var(--zeno-type-stat-size);
+  line-height: var(--zeno-type-display-line-height);
+  letter-spacing: var(--zeno-type-display-tracking);
+}
+.zeno-dashboard .metric-card.compact strong {
+  font-size: var(--zeno-type-stat-size);
+}
+.zeno-dashboard .brand-copy b {
+  font-size: var(--zeno-type-card-title-size);
+  line-height: var(--zeno-type-card-title-line-height);
+}
+.zeno-dashboard :is(.brand-copy span,.workspace small,.dots,.source-card small,.live-pill,.sync,.activity-audit-meta span,.activity-audit-card time) {
+  font-size: var(--zeno-type-meta-size);
+  line-height: var(--zeno-type-meta-line-height);
+  letter-spacing: var(--zeno-type-meta-tracking);
+}
+.zeno-dashboard :is(.workspace strong,.settings-card-heading p) {
+  font-size: var(--zeno-type-label-size);
+  line-height: var(--zeno-type-label-line-height);
+}
+
+/* Shell, labels, metadata, statuses, and code */
+.zeno-dashboard :is(.skip-link,.sidebar .nav-item,.sidebar-toggle,.theme-toggle,.crumb,.search input,.filter,.learning-form input,.learning-form select,.learning-form button,.learning-action:not(.icon-only),.setting-row input) {
+  font-size: var(--zeno-type-control-size);
+  line-height: var(--zeno-type-control-line-height);
+  letter-spacing: var(--zeno-type-control-tracking);
+}
+.zeno-dashboard :is(.eyebrow,.nav-label,.nav-count,.api-status,.connection,.entry-number,.entry-status,.question>span,.answer>span,.calendar-weekdays span,.calendar-legend,.date-badge,.learning-category,.spending-day-head strong,.update-date i,.update-meta span,.update-meta time,.footnote,.setting-badge,.feature-meta,.journal-card-foot,.journal-date-rail span,.lifestyle-tabs small,.writer-status,.journal-history-status,.journal-version-badge,.journal-edit-reason,.journal-history-loading,.journal-card-kicker,.mood-pill,.journal-tags,.journal-tags span) {
+  font-size: var(--zeno-type-meta-size);
+  line-height: var(--zeno-type-meta-line-height);
+  letter-spacing: var(--zeno-type-meta-tracking);
+}
+.zeno-dashboard :is(.metric-card > span,.setting-row strong,.form-section-title strong) {
+  font-size: var(--zeno-type-label-size);
+  line-height: var(--zeno-type-label-line-height);
+  letter-spacing: var(--zeno-type-label-tracking);
+}
+.zeno-dashboard :is(.footnote code,.answer-body code,.answer-body pre,.journal-rendered code,.journal-live-preview code) {
+  font-size: var(--zeno-type-code-size);
+  line-height: var(--zeno-type-code-line-height);
+  letter-spacing: var(--zeno-type-code-tracking);
+}
+.zeno-dashboard .content :is(.calendar-day,.today-button,.settings-save,.period-filter,.change-log-sort select,.feature-button,.lifestyle-tabs>button,.markdown-toolbar button,.writer-metadata input,.writer-metadata select,.workout-form-grid input,.workout-form-grid select,.workout-edit-form input,.workout-edit-form select,.spending-form input,.spending-form select,.spending-form textarea,.spending-anchor input,.spending-summary-card,.inline-confirm button) {
+  font-size: var(--zeno-type-control-size);
+  line-height: var(--zeno-type-control-line-height);
+  letter-spacing: var(--zeno-type-control-tracking);
+}
+.zeno-dashboard .content input:not([type='radio']):not([type='checkbox']),
+.zeno-dashboard .content select,
+.zeno-dashboard .content textarea {
+  font-size: var(--zeno-type-control-size);
+  line-height: var(--zeno-type-control-line-height);
+  letter-spacing: var(--zeno-type-control-tracking);
+}
+.zeno-dashboard :is(input,textarea)::placeholder {
+  font-size: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+}
+.zeno-dashboard .content :is(.calendar-day i,.calendar-day.all-completed i,.legend-progress,.legend-complete,.learning-entry-icon,.learning-check,.workout-check,.feature-icon-button,.settings-icon,.form-section-title>span,.sidebar .nav-icon,.sidebar-toggle-icon,.theme-icon,.ph) {
+  /* Symbol and icon geometry intentionally stays fixed. */
+}
+
+/* Dashboard empty, confirmation, and feedback states */
+.zeno-dashboard :is(.empty,.feature-empty strong,.learning-empty span,.delete-popover strong,.delete-popover>span,.delete-popover button,.inline-confirm span,.inline-confirm button) {
+  font-size: var(--zeno-type-body-small-size);
+  line-height: var(--zeno-type-body-small-line-height);
+  letter-spacing: var(--zeno-type-body-small-tracking);
+}
+.delete-popover {
+  font-size: var(--zeno-type-body-size);
+  line-height: var(--zeno-type-body-line-height);
+  letter-spacing: var(--zeno-type-body-tracking);
+}
+.delete-popover strong,
+.delete-popover>span,
+.delete-popover button {
+  font-size: var(--zeno-type-body-small-size);
+  line-height: var(--zeno-type-body-small-line-height);
+  letter-spacing: var(--zeno-type-body-small-tracking);
+}
+
+/* Workout, journaling, and spending */
+.zeno-dashboard .content :is(.mini-stat span,.mini-stat small,.form-section-title small,.workout-form-grid label span,.workout-edit-numbers label,.feature-empty strong,.feature-empty span,.feature-search input,.inline-confirm span) {
+  font-size: var(--zeno-type-body-small-size);
+  line-height: var(--zeno-type-body-small-line-height);
+  letter-spacing: var(--zeno-type-body-small-tracking);
+}
+.zeno-dashboard .content :is(.mini-stat strong,.spending-summary-card strong) {
+  font-size: var(--zeno-type-card-title-size);
+  line-height: var(--zeno-type-card-title-line-height);
+}
+.zeno-dashboard .content :is(.journal-rendered.markdown-body,.markdown-body,.journal-live-preview,.workout-copy p,.spending-copy p,.writer-surface textarea,.spending-day-head time,.spending-amount) {
+  font-size: var(--zeno-type-body-size);
+  line-height: var(--zeno-type-body-line-height);
+  letter-spacing: var(--zeno-type-body-tracking);
+}
+.zeno-dashboard .content :is(.markdown-body h2,.journal-section h2) {
+  font-size: var(--zeno-type-section-title-size);
+  line-height: var(--zeno-type-section-title-line-height);
+  letter-spacing: var(--zeno-type-section-title-tracking);
+}
+.zeno-dashboard .content .markdown-body h3 {
+  font-size: var(--zeno-type-subsection-title-size);
+  line-height: var(--zeno-type-subsection-title-line-height);
+  letter-spacing: var(--zeno-type-subsection-title-tracking);
+}
+.zeno-dashboard .content .markdown-body h4 {
+  font-size: var(--zeno-type-body-size);
+  line-height: var(--zeno-type-body-line-height);
+  letter-spacing: var(--zeno-type-body-tracking);
+}
+.zeno-dashboard .content :is(.markdown-body code,.markdown-body pre,.markdown-body pre code) {
+  font-size: var(--zeno-type-code-size);
+  line-height: var(--zeno-type-code-line-height);
+  letter-spacing: var(--zeno-type-code-tracking);
+}
+.zeno-dashboard .content :is(.writer-metadata label>span,.spending-form label>span,.preview-placeholder,.journal-reason-panel legend,.journal-reason-panel label,.writer-edit-hint,.writer-edit-hint strong,.writer-edit-hint span,.journal-history-error,.journal-edit-error) {
+  font-size: var(--zeno-type-meta-size);
+  line-height: var(--zeno-type-meta-line-height);
+  letter-spacing: var(--zeno-type-meta-tracking);
+}
+.zeno-dashboard .content :is(.lifestyle-tabs strong,.journal-reason-panel>p) {
+  font-size: var(--zeno-type-body-size);
+  line-height: var(--zeno-type-body-line-height);
+}
+
+/* Learning Material catalogue and complete lesson cycle */
+.zeno-dashboard .learning-material-breadcrumb,
+.zeno-dashboard .material-kicker,
+.zeno-dashboard .material-meta,
+.zeno-dashboard .material-chip,
+.zeno-dashboard .learning-topic-count,
+.zeno-dashboard .topic-prerequisites,
+.zeno-dashboard .topic-availability,
+.zeno-dashboard .lesson-section-heading p,
+.zeno-dashboard .lesson-stat span,
+.zeno-dashboard .learning-item-header span,
+.zeno-dashboard .mastery-objectives span,
+.zeno-dashboard .review-schedule span,
+.zeno-dashboard .lesson-related span {
+  font-size: var(--zeno-type-meta-size);
+  line-height: var(--zeno-type-meta-line-height);
+  letter-spacing: var(--zeno-type-meta-tracking);
+}
+.zeno-dashboard :is(.learning-material-card h2,.learning-material-card h3) {
+  font-size: var(--zeno-type-section-title-size);
+  line-height: var(--zeno-type-section-title-line-height);
+  letter-spacing: var(--zeno-type-section-title-tracking);
+}
+.zeno-dashboard :is(.learning-material-card p,.learning-material-notice,.learning-topic-card p,.lesson-hero p,.concept-card p,.explanation-card p,.example-card p,.example-card q,.review-card li,.learning-feedback,.mastery-panel p,.learning-material-not-found p) {
+  font-size: var(--zeno-type-body-size);
+  line-height: var(--zeno-type-body-line-height);
+  letter-spacing: var(--zeno-type-body-tracking);
+}
+.zeno-dashboard :is(.learning-topic-card h2,.concept-card strong,.explanation-card h3,.learning-item-header strong,.mastery-panel h3,.review-card h3) {
+  font-size: var(--zeno-type-card-title-size);
+  line-height: var(--zeno-type-card-title-line-height);
+  letter-spacing: var(--zeno-type-card-title-tracking);
+}
+.zeno-dashboard .lesson-hero h1 {
+  font-size: var(--zeno-type-page-title-size);
+  line-height: var(--zeno-type-page-title-line-height);
+  letter-spacing: var(--zeno-type-page-title-tracking);
+}
+.zeno-dashboard :is(.lesson-section-heading h2) {
+  font-size: var(--zeno-type-section-title-size);
+  line-height: var(--zeno-type-section-title-line-height);
+  letter-spacing: var(--zeno-type-section-title-tracking);
+}
+.zeno-dashboard :is(.lesson-stat strong,.mastery-score) {
+  font-size: var(--zeno-type-control-size);
+  line-height: var(--zeno-type-control-line-height);
+}
+.zeno-dashboard .mastery-score strong {
+  font-size: var(--zeno-type-display-size);
+  line-height: var(--zeno-type-display-line-height);
+  letter-spacing: var(--zeno-type-display-tracking);
+}
+.zeno-dashboard :is(.learning-item-form label,.learning-item-form legend,.learning-item-form input[type='text'],.learning-item-form textarea,.learning-item-submit,.learning-material-back,.topic-open) {
+  font-size: var(--zeno-type-control-size);
+  line-height: var(--zeno-type-control-line-height);
+  letter-spacing: var(--zeno-type-control-tracking);
+}
+.zeno-dashboard :is(.learning-answer-reveal,.learning-material-empty strong,.learning-material-not-found h1) {
+  font-size: var(--zeno-type-card-title-size);
+  line-height: var(--zeno-type-card-title-line-height);
+}
+
+/* Auth, registration, verification, and Profile surfaces */
+.auth-shell .auth-brand-lockup strong,
+.auth-shell .profile-identity h2 {
+  font-size: var(--zeno-type-card-title-size);
+  line-height: var(--zeno-type-card-title-line-height);
+}
+.auth-shell .auth-brand-copy h2 {
+  font-size: var(--zeno-type-page-title-size);
+  line-height: var(--zeno-type-page-title-line-height);
+  letter-spacing: var(--zeno-type-page-title-tracking);
+}
+.auth-shell :is(.auth-brand-copy>p:not(.eyebrow),.auth-card-heading p,.session-card>p:not(.eyebrow)) {
+  font-size: var(--zeno-type-body-size);
+  line-height: var(--zeno-type-body-line-height);
+  letter-spacing: var(--zeno-type-body-tracking);
+}
+.auth-shell :is(.auth-card-heading h1,.session-card h2) {
+  font-size: var(--zeno-type-section-title-size);
+  line-height: var(--zeno-type-section-title-line-height);
+  letter-spacing: var(--zeno-type-section-title-tracking);
+}
+.auth-shell :is(.auth-card label>span,.profile-field>span,.auth-brand-lockup span,.auth-security-list span,.profile-identity span,.profile-meta span,.auth-hint) {
+  font-size: var(--zeno-type-meta-size);
+  line-height: var(--zeno-type-meta-line-height);
+  letter-spacing: var(--zeno-type-meta-tracking);
+}
+.auth-shell :is(.auth-card input,.profile-field input,.auth-submit,.auth-switch,.auth-switch button,.logout-button) {
+  font-size: var(--zeno-type-control-size);
+  line-height: var(--zeno-type-control-line-height);
+  letter-spacing: var(--zeno-type-control-tracking);
+}
+.auth-shell :is(.auth-alert,.auth-card-heading p,.auth-hint) {
+  font-size: var(--zeno-type-body-small-size);
+  line-height: var(--zeno-type-body-small-line-height);
+  letter-spacing: var(--zeno-type-body-small-tracking);
+}
+.auth-shell input::placeholder {
+  font-size: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+}
+
+/* The profile control is also available on Profile, not only admin Settings. */
+.font-profile-options {
+  font-size: var(--zeno-type-control-size);
+  line-height: var(--zeno-type-control-line-height);
+}
+.font-profile-option span {
+  font-size: var(--zeno-type-control-size);
+  line-height: var(--zeno-type-control-line-height);
+}
+.font-profile-option small {
+  font-size: var(--zeno-type-meta-size);
+  line-height: var(--zeno-type-meta-line-height);
+  letter-spacing: var(--zeno-type-meta-tracking);
+}
+
+/* Preserve intentional mobile hiding and fixed icon geometry. */
+@media (max-width: 640px) {
+  .zeno-dashboard .api-status {
+    font-size: 0;
+    line-height: 1;
+    letter-spacing: 0;
+  }
+  .zeno-dashboard .entry-status {
+    font-size: 0;
+  }
+}

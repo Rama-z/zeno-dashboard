@@ -31,6 +31,60 @@ type ownershipStore struct {
 	admin bool
 }
 
+const revisionTestUserID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+
+type revisionStore struct {
+	fakeStore
+	journal    model.JournalEntry
+	revisions  []model.JournalRevision
+	activities []model.ActivityEvent
+	admin      bool
+}
+
+func newRevisionStore(owner string) *revisionStore {
+	return &revisionStore{
+		journal:   model.JournalEntry{ID: "22222222-2222-4222-8222-222222222222", OwnerUserID: owner, Date: "2026-08-23", Title: "A focused day", Content: "Reflection", Mood: "Focused", Tags: "work", LatestRevisionNumber: 1, CreatedAt: time.Date(2026, 8, 23, 0, 0, 0, 0, time.UTC), UpdatedAt: time.Date(2026, 8, 23, 0, 0, 0, 0, time.UTC)},
+		revisions: []model.JournalRevision{{JournalID: "22222222-2222-4222-8222-222222222222", RevisionNumber: 1, Date: "2026-08-23", Title: "A focused day", Content: "Reflection", Mood: "Focused", Tags: "work", CreatedAt: time.Date(2026, 8, 23, 0, 0, 0, 0, time.UTC)}},
+	}
+}
+
+func (s *revisionStore) GetSessionUser(_ context.Context, _ string, now time.Time) (model.User, bool, error) {
+	role := "user"
+	if s.admin {
+		role = "admin"
+	}
+	return model.User{ID: revisionTestUserID, Email: "rama@example.com", DisplayName: "Rama", Role: role, EmailVerifiedAt: &now}, true, nil
+}
+
+func (s *revisionStore) GetJournal(context.Context, string) (model.JournalEntry, bool, error) {
+	return s.journal, true, nil
+}
+
+func (s *revisionStore) ListJournalRevisions(context.Context, string) ([]model.JournalRevision, error) {
+	return append([]model.JournalRevision(nil), s.revisions...), nil
+}
+
+func (s *revisionStore) AppendJournalRevision(_ context.Context, id, _ string, _ bool, input model.JournalRevisionInput, now time.Time) (model.JournalEntry, model.JournalRevision, bool, bool, bool, error) {
+	if input.BaseRevisionNumber != s.journal.LatestRevisionNumber {
+		return model.JournalEntry{}, model.JournalRevision{}, true, true, false, nil
+	}
+	if input.Date == s.journal.Date && input.Title == s.journal.Title && input.Content == s.journal.Content && input.Mood == s.journal.Mood && input.Tags == s.journal.Tags {
+		return model.JournalEntry{}, model.JournalRevision{}, true, false, true, nil
+	}
+	reason := input.EditReason
+	number := s.journal.LatestRevisionNumber + 1
+	s.journal.Date, s.journal.Title, s.journal.Content, s.journal.Mood, s.journal.Tags = input.Date, input.Title, input.Content, input.Mood, input.Tags
+	s.journal.LatestRevisionNumber, s.journal.UpdatedAt, s.journal.LatestEditReason = number, now, &reason
+	revision := model.JournalRevision{JournalID: id, RevisionNumber: number, Date: input.Date, Title: input.Title, Content: input.Content, Mood: input.Mood, Tags: input.Tags, EditReason: &reason, CreatedAt: now}
+	s.revisions = append([]model.JournalRevision{revision}, s.revisions...)
+	return s.journal, revision, true, false, false, nil
+}
+
+func (s *revisionStore) CreateActivity(_ context.Context, event model.ActivityEvent) error {
+	s.activities = append(s.activities, event)
+	return nil
+}
+
 func (s ownershipStore) GetSessionUser(_ context.Context, _ string, now time.Time) (model.User, bool, error) {
 	role := "user"
 	if s.admin {
@@ -86,6 +140,18 @@ func (fakeStore) UpdateLearning(_ context.Context, entry model.LearningEntry) (m
 	return entry, true, nil
 }
 func (fakeStore) DeleteLearning(context.Context, string, string) (bool, error) { return true, nil }
+func (fakeStore) SeedLearningMaterials(context.Context, []model.LearningMaterialSeed) error {
+	return nil
+}
+func (fakeStore) ListLearningMaterials(context.Context, string, string, string, string, time.Time) ([]model.LearningMaterialSummary, error) {
+	return []model.LearningMaterialSummary{{ID: "tenses-a1-be-and-present-simple", SubjectID: "english", CategoryID: "grammar", TopicID: "tenses", TopicTitle: "Tenses", Level: "A1", CoverageMode: "lesson", Title: "Be and Present Simple Foundations", Summary: "Present foundations", Sequence: 11, ContentVersion: 1, Published: true}}, nil
+}
+func (fakeStore) GetLearningMaterial(context.Context, string, string, time.Time) (model.LearningMaterial, bool, error) {
+	return model.LearningMaterial{LearningMaterialSummary: model.LearningMaterialSummary{ID: "tenses-a1-be-and-present-simple", SubjectID: "english", CategoryID: "grammar", TopicID: "tenses", Level: "A1", Title: "Be and Present Simple Foundations", ContentVersion: 1, Published: true}, Content: json.RawMessage(`{"objectives":["one"]}`), Mastery: json.RawMessage(`{"minimumScorePercent":80,"requiredObjectiveIndexes":[0]}`), Review: json.RawMessage(`{"suggestedReviewAfterDays":[1,7,21]}`)}, true, nil
+}
+func (fakeStore) UpsertLearningMaterialProgress(context.Context, string, model.LearningMaterialProgressInput, time.Time) (model.LearningMaterialProgress, bool, error) {
+	return model.LearningMaterialProgress{MaterialID: "tenses-a1-be-and-present-simple", Status: "in_progress", ObjectiveState: map[string]bool{}, ContentVersion: 1}, true, nil
+}
 func (fakeStore) CreateDoing(_ context.Context, entry model.DoingEntry) (model.DoingEntry, error) {
 	return entry, nil
 }
@@ -106,13 +172,44 @@ func (fakeStore) UpdateWorkout(_ context.Context, entry model.WorkoutEntry) (mod
 	return entry, true, nil
 }
 func (fakeStore) DeleteWorkout(context.Context, string, string) (bool, error) { return true, nil }
+
+type materialWorkoutStore struct {
+	fakeStore
+	updated model.WorkoutEntry
+}
+
+func (s *materialWorkoutStore) ListWorkouts(context.Context, string) ([]model.WorkoutEntry, error) {
+	return []model.WorkoutEntry{{ID: "11111111-1111-4111-8111-111111111111", Date: "2026-08-23", MaterialID: "90-90-hip-switch", Exercise: "Morning run", Category: "Mobility", DurationMinutes: 30}}, nil
+}
+
+func (s *materialWorkoutStore) UpdateWorkout(_ context.Context, entry model.WorkoutEntry) (model.WorkoutEntry, bool, error) {
+	s.updated = entry
+	return entry, true, nil
+}
+func (s *materialWorkoutStore) CreateActivity(context.Context, model.ActivityEvent) error { return nil }
+
 func (fakeStore) CreateJournal(_ context.Context, entry model.JournalEntry) (model.JournalEntry, error) {
+	entry.LatestRevisionNumber = 1
 	return entry, nil
 }
 func (fakeStore) ListJournals(context.Context, string) ([]model.JournalEntry, error) {
-	return []model.JournalEntry{{ID: "22222222-2222-4222-8222-222222222222", Date: "2026-08-23", Title: "A focused day", Content: "Reflection", Mood: "Focused", Tags: "work"}}, nil
+	return []model.JournalEntry{{ID: "22222222-2222-4222-8222-222222222222", Date: "2026-08-23", Title: "A focused day", Content: "Reflection", Mood: "Focused", Tags: "work", LatestRevisionNumber: 1}}, nil
 }
-func (fakeStore) DeleteJournal(context.Context, string) (bool, error) { return true, nil }
+func (fakeStore) GetJournal(context.Context, string) (model.JournalEntry, bool, error) {
+	return model.JournalEntry{ID: "22222222-2222-4222-8222-222222222222", Date: "2026-08-23", Title: "A focused day", Content: "Reflection", Mood: "Focused", Tags: "work", LatestRevisionNumber: 1}, true, nil
+}
+func (fakeStore) ListJournalRevisions(context.Context, string) ([]model.JournalRevision, error) {
+	return []model.JournalRevision{{JournalID: "22222222-2222-4222-8222-222222222222", RevisionNumber: 1, Date: "2026-08-23", Title: "A focused day", Content: "Reflection", Mood: "Focused", Tags: "work", CreatedAt: time.Date(2026, 8, 23, 0, 0, 0, 0, time.UTC)}}, nil
+}
+func (fakeStore) AppendJournalRevision(_ context.Context, id, _ string, _ bool, input model.JournalRevisionInput, now time.Time) (model.JournalEntry, model.JournalRevision, bool, bool, bool, error) {
+	reason := input.EditReason
+	entry := model.JournalEntry{ID: id, Date: input.Date, Title: input.Title, Content: input.Content, Mood: input.Mood, Tags: input.Tags, LatestRevisionNumber: input.BaseRevisionNumber + 1, LatestEditReason: &reason, UpdatedAt: now}
+	revision := model.JournalRevision{JournalID: id, RevisionNumber: input.BaseRevisionNumber + 1, Date: input.Date, Title: input.Title, Content: input.Content, Mood: input.Mood, Tags: input.Tags, EditReason: &reason, CreatedAt: now}
+	return entry, revision, true, false, false, nil
+}
+func (fakeStore) DeleteJournal(context.Context, string, string, bool) (model.JournalEntry, bool, error) {
+	return model.JournalEntry{ID: "22222222-2222-4222-8222-222222222222", OwnerUserID: "", Date: "2026-08-23", Title: "A focused day"}, true, nil
+}
 func (fakeStore) CreateSpending(_ context.Context, entry model.SpendingEntry) (model.SpendingEntry, error) {
 	return entry, nil
 }
@@ -207,6 +304,89 @@ func TestUpdateLearningSupportsEditAndChecklist(t *testing.T) {
 	}
 }
 
+func TestListLearningMaterialsReturnsPublishedSummaries(t *testing.T) {
+	handler := api.New(fakeStore{}, fakeSource{}, "test")
+	request := httptest.NewRequest(http.MethodGet, "/api/learning-materials?subjectId=english&categoryId=grammar&level=A1", nil)
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", response.Code, response.Body.String())
+	}
+	var body struct {
+		Materials []model.LearningMaterialSummary `json:"materials"`
+	}
+	if err := json.NewDecoder(response.Body).Decode(&body); err != nil {
+		t.Fatal(err)
+	}
+	if len(body.Materials) != 1 || body.Materials[0].ID != "tenses-a1-be-and-present-simple" || body.Materials[0].Level != "A1" {
+		t.Fatalf("unexpected material summaries: %+v", body.Materials)
+	}
+}
+
+func TestLearningMaterialsRequireSessionAndCSRF(t *testing.T) {
+	handler := api.New(fakeStore{}, fakeSource{}, "test", api.WithAuth(api.AuthOptions{Enabled: true}))
+	request := httptest.NewRequest(http.MethodGet, "/api/learning-materials", nil)
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusUnauthorized {
+		t.Fatalf("expected unauthenticated material list to return 401, got %d", response.Code)
+	}
+	request = httptest.NewRequest(http.MethodPut, "/api/learning-materials/tenses-a1-be-and-present-simple/progress", strings.NewReader(`{"contentVersion":1,"status":"in_progress","objectiveState":{},"attemptCount":1}`))
+	request.Header.Set("Content-Type", "application/json")
+	request.AddCookie(&http.Cookie{Name: "zeno_session", Value: "session-token"})
+	response = httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusForbidden {
+		t.Fatalf("expected missing material CSRF token to return 403, got %d", response.Code)
+	}
+}
+
+func TestGetLearningMaterialReturnsStructuredContent(t *testing.T) {
+	handler := api.New(fakeStore{}, fakeSource{}, "test")
+	request := httptest.NewRequest(http.MethodGet, "/api/learning-materials/tenses-a1-be-and-present-simple", nil)
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", response.Code, response.Body.String())
+	}
+	var material model.LearningMaterial
+	if err := json.NewDecoder(response.Body).Decode(&material); err != nil {
+		t.Fatal(err)
+	}
+	if material.ContentVersion != 1 || len(material.Content) == 0 || material.Progress != nil {
+		t.Fatalf("unexpected material detail: %+v", material)
+	}
+}
+
+func TestLearningMaterialProgressRejectsStaleContentVersion(t *testing.T) {
+	handler := api.New(fakeStore{}, fakeSource{}, "test")
+	body := `{"contentVersion":2,"status":"in_progress","objectiveState":{"0":true},"attemptCount":1}`
+	request := httptest.NewRequest(http.MethodPut, "/api/learning-materials/tenses-a1-be-and-present-simple/progress", strings.NewReader(body))
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusConflict {
+		t.Fatalf("expected 409 for stale content version, got %d: %s", response.Code, response.Body.String())
+	}
+}
+
+func TestLearningMaterialProgressAcceptsOwnerScopedSnapshot(t *testing.T) {
+	handler := api.New(fakeStore{}, fakeSource{}, "test")
+	body := `{"contentVersion":1,"status":"in_progress","objectiveState":{"0":true},"attemptCount":2}`
+	request := httptest.NewRequest(http.MethodPut, "/api/learning-materials/tenses-a1-be-and-present-simple/progress", strings.NewReader(body))
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", response.Code, response.Body.String())
+	}
+	var progress model.LearningMaterialProgress
+	if err := json.NewDecoder(response.Body).Decode(&progress); err != nil {
+		t.Fatal(err)
+	}
+	if progress.MaterialID != "tenses-a1-be-and-present-simple" || progress.Status != "in_progress" {
+		t.Fatalf("unexpected progress response: %+v", progress)
+	}
+}
+
 func TestCreateChangeLogPersistsDatedUpdate(t *testing.T) {
 	handler := api.New(fakeStore{}, fakeSource{}, "test")
 	body := `{"id":"change-log-api-test","occurredAt":"2026-08-23T00:50:00+07:00","title":"Persist change log","description":"Stored through backend","category":"Backend"}`
@@ -252,7 +432,7 @@ func TestListChangeLogsReturnsDatedEntries(t *testing.T) {
 
 func TestCreateWorkoutPersistsStructuredSession(t *testing.T) {
 	handler := api.New(fakeStore{}, fakeSource{}, "test")
-	body := `{"date":"2026-08-23","exercise":"Upper body strength","category":"Strength","sets":4,"reps":10,"durationMinutes":45,"note":"Controlled tempo","completed":true}`
+	body := `{"date":"2026-08-23","materialId":"90-90-hip-switch","exercise":"Upper body strength","category":"Strength","sets":4,"reps":10,"durationMinutes":45,"note":"Controlled tempo","completed":true}`
 	request := httptest.NewRequest(http.MethodPost, "/api/workouts", strings.NewReader(body))
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, request)
@@ -262,6 +442,7 @@ func TestCreateWorkoutPersistsStructuredSession(t *testing.T) {
 	}
 	var entry struct {
 		ID              string `json:"id"`
+		MaterialID      string `json:"materialId"`
 		Exercise        string `json:"exercise"`
 		Sets            int    `json:"sets"`
 		DurationMinutes int    `json:"durationMinutes"`
@@ -270,7 +451,7 @@ func TestCreateWorkoutPersistsStructuredSession(t *testing.T) {
 	if err := json.NewDecoder(response.Body).Decode(&entry); err != nil {
 		t.Fatal(err)
 	}
-	if entry.ID == "" || entry.Exercise != "Upper body strength" || entry.Sets != 4 || entry.DurationMinutes != 45 || !entry.Completed {
+	if entry.ID == "" || entry.MaterialID != "90-90-hip-switch" || entry.Exercise != "Upper body strength" || entry.Sets != 4 || entry.DurationMinutes != 45 || !entry.Completed {
 		t.Fatalf("unexpected workout response: %+v", entry)
 	}
 }
@@ -311,6 +492,36 @@ func TestUpdateWorkoutSupportsProgressAndCompletion(t *testing.T) {
 	}
 	if entry.DurationMinutes != 35 || !entry.Completed {
 		t.Fatalf("unexpected workout update: %+v", entry)
+	}
+}
+
+func TestUpdateWorkoutPreservesMaterialProvenance(t *testing.T) {
+	store := &materialWorkoutStore{}
+	handler := api.New(store, fakeSource{}, "test")
+	body := `{"date":"2026-08-23","exercise":"Morning run updated","category":"Mobility","sets":1,"reps":0,"durationMinutes":35,"note":"Easy pace","completed":true}`
+	request := httptest.NewRequest(http.MethodPut, "/api/workouts/11111111-1111-4111-8111-111111111111", strings.NewReader(body))
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", response.Code, response.Body.String())
+	}
+	var entry model.WorkoutEntry
+	if err := json.NewDecoder(response.Body).Decode(&entry); err != nil {
+		t.Fatal(err)
+	}
+	if entry.MaterialID != "90-90-hip-switch" || store.updated.MaterialID != "90-90-hip-switch" {
+		t.Fatalf("material provenance changed during update: response=%+v stored=%+v", entry, store.updated)
+	}
+}
+
+func TestCreateWorkoutRejectsInvalidMaterialID(t *testing.T) {
+	handler := api.New(fakeStore{}, fakeSource{}, "test")
+	body := `{"date":"2026-08-23","materialId":"Shoulder CARs","exercise":"Shoulder CARs","category":"Mobility"}`
+	request := httptest.NewRequest(http.MethodPost, "/api/workouts", strings.NewReader(body))
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 for invalid material ID, got %d: %s", response.Code, response.Body.String())
 	}
 }
 
@@ -357,6 +568,159 @@ func TestCreateJournalPersistsRichWriting(t *testing.T) {
 	}
 	if entry.ID == "" || entry.Title != "A focused day" || !strings.Contains(entry.Content, "## Highlights") || entry.Mood != "Focused" || entry.Tags != "work,reflection" {
 		t.Fatalf("unexpected journal response: %+v", entry)
+	}
+}
+
+func TestCreateJournalIncludesInitialRevisionMetadata(t *testing.T) {
+	handler := api.New(fakeStore{}, fakeSource{}, "test")
+	request := httptest.NewRequest(http.MethodPost, "/api/journals", strings.NewReader(`{"date":"2026-08-23","title":"Revision one","content":"Original","mood":"Focused","tags":"test"}`))
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d: %s", response.Code, response.Body.String())
+	}
+	var body map[string]any
+	if err := json.NewDecoder(response.Body).Decode(&body); err != nil {
+		t.Fatal(err)
+	}
+	if number, ok := body["latestRevisionNumber"].(float64); !ok || number != 1 {
+		t.Fatalf("expected latestRevisionNumber=1, got %#v", body["latestRevisionNumber"])
+	}
+}
+
+func TestJournalRevisionHistoryReturnsNewestFirstEnvelope(t *testing.T) {
+	handler := api.New(fakeStore{}, fakeSource{}, "test")
+	request := httptest.NewRequest(http.MethodGet, "/api/journals/22222222-2222-4222-8222-222222222222/revisions", nil)
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", response.Code, response.Body.String())
+	}
+	var body struct {
+		JournalID      string            `json:"journalId"`
+		LatestRevision int               `json:"latestRevisionNumber"`
+		Revisions      []json.RawMessage `json:"revisions"`
+	}
+	if err := json.NewDecoder(response.Body).Decode(&body); err != nil {
+		t.Fatal(err)
+	}
+	if body.JournalID != "22222222-2222-4222-8222-222222222222" || body.LatestRevision != 1 || len(body.Revisions) != 1 {
+		t.Fatalf("unexpected revision envelope: %+v", body)
+	}
+}
+
+func TestAppendJournalRevisionRequiresAStableReason(t *testing.T) {
+	handler := api.New(fakeStore{}, fakeSource{}, "test")
+	body := `{"baseRevisionNumber":1,"date":"2026-08-23","title":"Updated","content":"Changed","mood":"Focused","tags":"test"}`
+	request := httptest.NewRequest(http.MethodPost, "/api/journals/22222222-2222-4222-8222-222222222222/revisions", strings.NewReader(body))
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 for missing editReason, got %d: %s", response.Code, response.Body.String())
+	}
+}
+
+func revisionHandler(store *revisionStore) http.Handler {
+	return api.New(store, fakeSource{}, "test", api.WithAuth(api.AuthOptions{Enabled: true}))
+}
+
+func authenticatedRevisionRequest(method, path, body string) *http.Request {
+	request := httptest.NewRequest(method, path, strings.NewReader(body))
+	request.AddCookie(&http.Cookie{Name: "zeno_session", Value: "revision-session"})
+	if method != http.MethodGet {
+		request.Header.Set("Content-Type", "application/json")
+		request.AddCookie(&http.Cookie{Name: "zeno_csrf", Value: "revision-csrf"})
+		request.Header.Set("X-CSRF-Token", "revision-csrf")
+	}
+	return request
+}
+
+func TestAppendJournalRevisionReturnsLatestAndAuditsOnlyRevisionMetadata(t *testing.T) {
+	store := newRevisionStore(revisionTestUserID)
+	handler := revisionHandler(store)
+	body := `{"baseRevisionNumber":1,"date":"2026-08-23","title":"A clearer day","content":"Updated reflection","mood":"Focused","tags":"work","editReason":"clarify"}`
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, authenticatedRevisionRequest(http.MethodPost, "/api/journals/22222222-2222-4222-8222-222222222222/revisions", body))
+	if response.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d: %s", response.Code, response.Body.String())
+	}
+	var result struct {
+		Entry    model.JournalEntry    `json:"entry"`
+		Revision model.JournalRevision `json:"revision"`
+	}
+	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
+		t.Fatal(err)
+	}
+	if result.Entry.LatestRevisionNumber != 2 || result.Revision.RevisionNumber != 2 || result.Revision.EditReason == nil || *result.Revision.EditReason != model.JournalEditReasonClarify {
+		t.Fatalf("unexpected append response: %+v", result)
+	}
+	if store.revisions[len(store.revisions)-1].Content != "Reflection" {
+		t.Fatalf("original revision was mutated: %+v", store.revisions)
+	}
+	if len(store.activities) != 1 {
+		t.Fatalf("expected one audit event, got %d", len(store.activities))
+	}
+	metadata, err := json.Marshal(store.activities[0].Metadata)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var metadataMap map[string]any
+	if err := json.Unmarshal(metadata, &metadataMap); err != nil {
+		t.Fatal(err)
+	}
+	if len(metadataMap) != 2 || metadataMap["revisionNumber"] != float64(2) || metadataMap["editReason"] != string(model.JournalEditReasonClarify) {
+		t.Fatalf("unexpected revision audit metadata: %s", metadata)
+	}
+	if strings.Contains(string(metadata), "Updated reflection") {
+		t.Fatalf("audit metadata leaked journal content: %s", metadata)
+	}
+}
+
+func TestAppendJournalRevisionRejectsStaleBaseWithoutMutation(t *testing.T) {
+	store := newRevisionStore(revisionTestUserID)
+	store.journal.LatestRevisionNumber = 2
+	store.revisions = append([]model.JournalRevision{{JournalID: store.journal.ID, RevisionNumber: 2, Date: store.journal.Date, Title: store.journal.Title, Content: "Current", Mood: store.journal.Mood, Tags: store.journal.Tags}}, store.revisions...)
+	handler := revisionHandler(store)
+	body := `{"baseRevisionNumber":1,"date":"2026-08-23","title":"Concurrent edit","content":"Another change","mood":"Focused","tags":"work","editReason":"typo"}`
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, authenticatedRevisionRequest(http.MethodPost, "/api/journals/22222222-2222-4222-8222-222222222222/revisions", body))
+	if response.Code != http.StatusConflict {
+		t.Fatalf("expected 409, got %d: %s", response.Code, response.Body.String())
+	}
+	if store.journal.LatestRevisionNumber != 2 || len(store.revisions) != 2 || len(store.activities) != 0 {
+		t.Fatalf("stale append mutated state: journal=%+v revisions=%+v activities=%+v", store.journal, store.revisions, store.activities)
+	}
+}
+
+func TestAppendJournalRevisionReturnsConflictBeforeNoopForStaleBase(t *testing.T) {
+	store := newRevisionStore(revisionTestUserID)
+	store.journal.LatestRevisionNumber = 2
+	body := `{"baseRevisionNumber":1,"date":"2026-08-23","title":"A focused day","content":"Reflection","mood":"Focused","tags":"work","editReason":"clarify"}`
+	handler := revisionHandler(store)
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, authenticatedRevisionRequest(http.MethodPost, "/api/journals/22222222-2222-4222-8222-222222222222/revisions", body))
+	if response.Code != http.StatusConflict {
+		t.Fatalf("expected stale identical payload to return 409, got %d: %s", response.Code, response.Body.String())
+	}
+}
+
+func TestForeignUserCannotReadJournalRevisionHistory(t *testing.T) {
+	store := newRevisionStore("cccccccc-cccc-4ccc-8ccc-cccccccccccc")
+	handler := revisionHandler(store)
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, authenticatedRevisionRequest(http.MethodGet, "/api/journals/22222222-2222-4222-8222-222222222222/revisions", ""))
+	if response.Code != http.StatusNotFound {
+		t.Fatalf("expected foreign history lookup to be hidden with 404, got %d: %s", response.Code, response.Body.String())
+	}
+}
+
+func TestJournalRevisionRejectsMalformedJournalID(t *testing.T) {
+	handler := api.New(fakeStore{}, fakeSource{}, "test")
+	request := httptest.NewRequest(http.MethodGet, "/api/journals/not-a-uuid/revisions", nil)
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("expected malformed journal id to return 400, got %d: %s", response.Code, response.Body.String())
 	}
 }
 

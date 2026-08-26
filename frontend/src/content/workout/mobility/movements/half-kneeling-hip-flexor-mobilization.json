@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "1.0",
+  "contentVersion": 1,
+  "id": "half-kneeling-hip-flexor-mobilization",
+  "category": "mobility",
+  "name": "Half-Kneeling Hip Flexor Mobilization",
+  "shortDescription": "Posisi setengah berlutut untuk menggabungkan ekstensi pinggul dengan gerak ringan yang terkontrol.",
+  "equipment": ["Mat (opsional)"],
+  "bodyAreas": ["Pinggul", "Paha depan"],
+  "primaryTarget": "Ekstensi pinggul dan fleksor pinggul",
+  "difficulty": "Beginner",
+  "recommendation": {
+    "text": "2 set × 30 detik per sisi",
+    "sets": 2,
+    "durationMinutes": 2
+  },
+  "steps": [
+    "Ambil posisi setengah berlutut dengan satu lutut di bawah pinggul dan kaki lainnya di depan.",
+    "Kencangkan ringan area perut dan arahkan panggul sedikit ke bawah.",
+    "Geser tubuh beberapa sentimeter ke depan sampai terasa regangan ringan di sisi depan pinggul belakang.",
+    "Tahan dengan napas tenang, lalu ulangi pada sisi lain."
+  ],
+  "cues": [
+    "Pertahankan tulang rusuk tetap tertumpuk di atas panggul.",
+    "Jangan mengandalkan lengkung punggung bawah untuk mendapatkan jarak.",
+    "Regangan boleh terasa, tetapi tidak perlu dipaksa."
+  ],
+  "safetyNotes": [
+    "Gunakan bantalan tambahan bila lutut tidak nyaman menyentuh lantai.",
+    "Kurangi dorongan ke depan bila sensasi berubah menjadi nyeri."
+  ]
+}

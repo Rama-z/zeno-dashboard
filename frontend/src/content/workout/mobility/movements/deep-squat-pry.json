@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "1.0",
+  "contentVersion": 1,
+  "id": "deep-squat-pry",
+  "category": "mobility",
+  "name": "Deep Squat Pry",
+  "shortDescription": "Eksplorasi posisi squat dalam dengan dorongan lembut untuk pinggul, pergelangan kaki, dan paha dalam.",
+  "equipment": [],
+  "bodyAreas": ["Pinggul", "Pergelangan kaki", "Adduktor"],
+  "primaryTarget": "Pinggul, pergelangan kaki, dan paha dalam",
+  "difficulty": "Intermediate",
+  "recommendation": {
+    "text": "2 set × 45–60 detik",
+    "sets": 2,
+    "durationMinutes": 3
+  },
+  "steps": [
+    "Turun ke posisi squat senyaman mungkin dengan dada tetap terbuka.",
+    "Letakkan siku bagian dalam dekat lutut dan gunakan tangan sebagai penyeimbang bila perlu.",
+    "Dorong satu lutut sedikit ke luar, lalu pindah ke sisi lain tanpa memantul.",
+    "Tahan napas tetap tenang dan kembali berdiri dengan kontrol."
+  ],
+  "cues": [
+    "Pertahankan seluruh telapak kaki menapak atau gunakan counterbalance ringan bila dibutuhkan.",
+    "Gerakkan lutut dengan tekanan lembut, bukan paksaan.",
+    "Jaga tulang belakang panjang dan pandangan netral."
+  ],
+  "safetyNotes": [
+    "Gunakan pegangan yang stabil atau kurangi kedalaman bila keseimbangan belum siap.",
+    "Hentikan bila ada nyeri tajam atau sensasi tidak biasa."
+  ]
+}

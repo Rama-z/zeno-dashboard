@@ -19,6 +19,13 @@ type ProfileCallbacks = {
   onLogout: () => void;
 };
 
+export type FontProfileOption = {
+  value: string;
+  label: string;
+  description: string;
+  selected: boolean;
+};
+
 const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]!));
 
 export function authViewFromPath(pathname: string): AuthView {
@@ -64,8 +71,9 @@ export function bindAuthEvents(callbacks: AuthCallbacks) {
   });
 }
 
-export function renderProfilePage(user: AuthUser, busy: boolean, message: string, error: string) {
-  return `<div class="page-heading"><div><p class="eyebrow">ACCOUNT</p><h1>Profile</h1><p class="subheading">Kelola identitas akun dan session Zeno.</p></div><div class="connection"><span class="pulse"></span><span>Email verified</span></div></div><div class="profile-grid"><form class="settings-card profile-card" id="profile-form"><div class="profile-identity"><div class="profile-avatar">${escapeHtml(user.displayName.slice(0, 1).toUpperCase())}</div><div><h2>${escapeHtml(user.displayName)}</h2><p>${escapeHtml(user.email)}</p><span>${escapeHtml(user.role)}</span></div></div>${error ? `<div class="auth-alert error">${escapeHtml(error)}</div>` : message ? `<div class="auth-alert success">${escapeHtml(message)}</div>` : ''}<label class="profile-field"><span>Display name</span><input name="displayName" value="${escapeHtml(user.displayName)}" minlength="2" maxlength="80" required /></label><label class="profile-field"><span>Email</span><input value="${escapeHtml(user.email)}" readonly /></label><div class="profile-meta"><span>Role <strong>${escapeHtml(user.role)}</strong></span><span>Verified <strong>${new Date(user.emailVerifiedAt).toLocaleDateString('id-ID')}</strong></span></div><button class="settings-save" type="submit" ${busy ? 'disabled' : ''}>${busy ? 'Menyimpan…' : 'Save profile'}</button></form><section class="settings-card session-card"><p class="eyebrow">SESSION</p><h2>Logout</h2><p>Keluar dari session aktif pada browser ini. Session token akan dihapus dari database.</p><button class="logout-button" id="logout-button" type="button" ${busy ? 'disabled' : ''}>Logout dari Zeno</button></section></div>`;
+export function renderProfilePage(user: AuthUser, busy: boolean, message: string, error: string, fontProfiles: FontProfileOption[] = []) {
+  const appearance = fontProfiles.length ? `<section class="settings-card appearance-card"><div class="settings-card-heading"><span class="settings-icon" aria-hidden="true">Aa</span><div><h2>Appearance</h2><p>Preferensi pribadi untuk keterbacaan di semua halaman Zeno.</p></div></div><fieldset class="font-profile-options" role="radiogroup" aria-label="Font profile"><legend class="sr-only">Font profile</legend>${fontProfiles.map((profile) => `<label class="font-profile-option"><input type="radio" name="fontProfile" value="${escapeHtml(profile.value)}" data-font-profile aria-label="${escapeHtml(profile.label)}" ${profile.selected ? 'checked' : ''} /><span>${escapeHtml(profile.label)}</span><small>${escapeHtml(profile.description)}</small></label>`).join('')}</fieldset></section>` : '';
+  return `<div class="page-heading"><div><p class="eyebrow">ACCOUNT</p><h1>Profile</h1><p class="subheading">Kelola identitas akun dan session Zeno.</p></div><div class="connection"><span class="pulse"></span><span>Email verified</span></div></div><div class="profile-grid"><form class="settings-card profile-card" id="profile-form"><div class="profile-identity"><div class="profile-avatar">${escapeHtml(user.displayName.slice(0, 1).toUpperCase())}</div><div><h2>${escapeHtml(user.displayName)}</h2><p>${escapeHtml(user.email)}</p><span>${escapeHtml(user.role)}</span></div></div>${error ? `<div class="auth-alert error">${escapeHtml(error)}</div>` : message ? `<div class="auth-alert success">${escapeHtml(message)}</div>` : ''}<label class="profile-field"><span>Display name</span><input name="displayName" value="${escapeHtml(user.displayName)}" minlength="2" maxlength="80" required /></label><label class="profile-field"><span>Email</span><input value="${escapeHtml(user.email)}" readonly /></label><div class="profile-meta"><span>Role <strong>${escapeHtml(user.role)}</strong></span><span>Verified <strong>${new Date(user.emailVerifiedAt).toLocaleDateString('id-ID')}</strong></span></div><button class="settings-save" type="submit" ${busy ? 'disabled' : ''}>${busy ? 'Menyimpan…' : 'Save profile'}</button></form><section class="settings-card session-card"><p class="eyebrow">SESSION</p><h2>Logout</h2><p>Keluar dari session aktif pada browser ini. Session token akan dihapus dari database.</p><button class="logout-button" id="logout-button" type="button" ${busy ? 'disabled' : ''}>Logout dari Zeno</button></section>${appearance}</div>`;
 }
 
 export function bindProfileEvents(callbacks: ProfileCallbacks) {

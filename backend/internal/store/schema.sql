@@ -113,6 +113,7 @@ CREATE TABLE IF NOT EXISTS workout_entries (
     id UUID PRIMARY KEY,
     owner_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
     workout_date DATE NOT NULL,
+    material_id VARCHAR(120) NULL,
     exercise VARCHAR(160) NOT NULL,
     category VARCHAR(60) NOT NULL,
     sets INTEGER NOT NULL DEFAULT 0 CHECK (sets >= 0),
@@ -127,6 +128,7 @@ CREATE INDEX IF NOT EXISTS workout_entries_date_created_idx
 ON workout_entries (workout_date, created_at DESC);
 
 ALTER TABLE workout_entries ADD COLUMN IF NOT EXISTS owner_user_id UUID REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE workout_entries ADD COLUMN IF NOT EXISTS material_id VARCHAR(120) NULL;
 CREATE INDEX IF NOT EXISTS workout_entries_owner_date_idx ON workout_entries (owner_user_id, workout_date DESC);
 
 CREATE TABLE IF NOT EXISTS journal_entries (
@@ -138,7 +140,9 @@ CREATE TABLE IF NOT EXISTS journal_entries (
     mood VARCHAR(30) NOT NULL,
     tags VARCHAR(500) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    latest_revision_number INTEGER NOT NULL DEFAULT 1,
+    CONSTRAINT journal_entries_latest_revision_number_check CHECK (latest_revision_number >= 1)
 );
 
 CREATE INDEX IF NOT EXISTS journal_entries_date_updated_idx
@@ -146,6 +150,61 @@ ON journal_entries (journal_date DESC, updated_at DESC);
 
 ALTER TABLE journal_entries ADD COLUMN IF NOT EXISTS owner_user_id UUID REFERENCES users(id) ON DELETE SET NULL;
 CREATE INDEX IF NOT EXISTS journal_entries_owner_date_idx ON journal_entries (owner_user_id, journal_date DESC);
+ALTER TABLE journal_entries ADD COLUMN IF NOT EXISTS latest_revision_number INTEGER NOT NULL DEFAULT 1;
+UPDATE journal_entries SET latest_revision_number = 1 WHERE latest_revision_number IS NULL;
+ALTER TABLE journal_entries ALTER COLUMN latest_revision_number SET DEFAULT 1;
+ALTER TABLE journal_entries ALTER COLUMN latest_revision_number SET NOT NULL;
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'journal_entries_latest_revision_number_check'
+          AND conrelid = 'journal_entries'::regclass
+    ) THEN
+        ALTER TABLE journal_entries
+            ADD CONSTRAINT journal_entries_latest_revision_number_check CHECK (latest_revision_number >= 1);
+    END IF;
+END $$;
+
+CREATE TABLE IF NOT EXISTS journal_revisions (
+    journal_entry_id UUID NOT NULL REFERENCES journal_entries(id) ON DELETE CASCADE,
+    revision_number INTEGER NOT NULL,
+    journal_date DATE NOT NULL,
+    title VARCHAR(160) NOT NULL,
+    content TEXT NOT NULL,
+    mood VARCHAR(30) NOT NULL,
+    tags VARCHAR(500) NOT NULL,
+    edit_reason VARCHAR(40),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (journal_entry_id, revision_number),
+    CONSTRAINT journal_revisions_number_check CHECK (revision_number >= 1),
+    CONSTRAINT journal_revisions_reason_check CHECK (edit_reason IS NULL OR edit_reason IN ('typo', 'clarify', 'incorrect_information', 'changed_my_mind')),
+    CONSTRAINT journal_revisions_original_reason_check CHECK ((revision_number = 1 AND edit_reason IS NULL) OR (revision_number > 1 AND edit_reason IS NOT NULL))
+);
+
+CREATE OR REPLACE FUNCTION prevent_journal_revision_mutation()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    -- PostgreSQL's ON DELETE CASCADE invokes child triggers at a deeper depth;
+    -- allow that intentional purge while rejecting direct row mutation.
+    IF TG_OP = 'DELETE' AND pg_trigger_depth() > 1 THEN
+        RETURN OLD;
+    END IF;
+    RAISE EXCEPTION 'journal revisions are immutable';
+END;
+$$;
+
+DROP TRIGGER IF EXISTS journal_revisions_immutable_trigger ON journal_revisions;
+CREATE TRIGGER journal_revisions_immutable_trigger
+BEFORE UPDATE OR DELETE ON journal_revisions
+FOR EACH ROW EXECUTE FUNCTION prevent_journal_revision_mutation();
+
+INSERT INTO journal_revisions (journal_entry_id, revision_number, journal_date, title, content, mood, tags, edit_reason, created_at)
+SELECT id, 1, journal_date, title, content, mood, tags, NULL, created_at
+FROM journal_entries
+ON CONFLICT (journal_entry_id, revision_number) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS spending_entries (
     id UUID PRIMARY KEY,
@@ -177,5 +236,93 @@ CREATE TABLE IF NOT EXISTS change_log_entries (
 CREATE INDEX IF NOT EXISTS change_log_entries_occurred_idx
 ON change_log_entries (occurred_at DESC, id DESC);
 
+CREATE TABLE IF NOT EXISTS learning_materials (
+    id VARCHAR(120) PRIMARY KEY,
+    subject_id VARCHAR(120) NOT NULL,
+    subject_title VARCHAR(160) NOT NULL,
+    category_id VARCHAR(120) NOT NULL,
+    category_title VARCHAR(160) NOT NULL,
+    topic_id VARCHAR(120) NOT NULL,
+    topic_title VARCHAR(160) NOT NULL,
+    locale VARCHAR(20) NOT NULL,
+    cefr_level VARCHAR(2) NOT NULL CHECK (cefr_level IN ('A1', 'A2', 'B1', 'B2', 'C1')),
+    coverage_mode VARCHAR(20) NOT NULL CHECK (coverage_mode IN ('lesson', 'awareness', 'planned')),
+    title VARCHAR(200) NOT NULL,
+    summary VARCHAR(2000) NOT NULL,
+    sequence INTEGER NOT NULL CHECK (sequence >= 1),
+    position_within_topic INTEGER NOT NULL CHECK (position_within_topic >= 1),
+    estimated_minutes INTEGER NOT NULL CHECK (estimated_minutes >= 1),
+    schema_version VARCHAR(30) NOT NULL,
+    content_version INTEGER NOT NULL CHECK (content_version >= 1),
+    prerequisites JSONB NOT NULL DEFAULT '[]'::jsonb,
+    revisits JSONB NOT NULL DEFAULT '[]'::jsonb,
+    content JSONB NOT NULL DEFAULT '{}'::jsonb,
+    mastery JSONB NOT NULL DEFAULT '{}'::jsonb,
+    review JSONB NOT NULL DEFAULT '{}'::jsonb,
+    published BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT learning_materials_published_planned_check CHECK (NOT published OR coverage_mode <> 'planned'),
+    CONSTRAINT learning_materials_prerequisites_array_check CHECK (jsonb_typeof(prerequisites) = 'array'),
+    CONSTRAINT learning_materials_revisits_array_check CHECK (jsonb_typeof(revisits) = 'array')
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS learning_materials_subject_category_sequence_idx
+ON learning_materials (subject_id, category_id, sequence);
+
+CREATE UNIQUE INDEX IF NOT EXISTS learning_materials_topic_level_position_idx
+ON learning_materials (topic_id, cefr_level, position_within_topic);
+
+CREATE INDEX IF NOT EXISTS learning_materials_published_catalogue_idx
+ON learning_materials (subject_id, category_id, published, cefr_level, sequence);
+
+CREATE TABLE IF NOT EXISTS learning_topic_progress (
+    owner_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    material_id VARCHAR(120) NOT NULL REFERENCES learning_materials(id) ON DELETE RESTRICT,
+    status VARCHAR(20) NOT NULL CHECK (status IN ('in_progress', 'mastered')),
+    mastery_score INTEGER CHECK (mastery_score IS NULL OR (mastery_score >= 0 AND mastery_score <= 100)),
+    objective_state JSONB NOT NULL DEFAULT '{}'::jsonb CHECK (jsonb_typeof(objective_state) = 'object'),
+    attempt_count INTEGER NOT NULL DEFAULT 0 CHECK (attempt_count >= 0),
+    content_version INTEGER NOT NULL CHECK (content_version >= 1),
+    last_reviewed_at TIMESTAMPTZ,
+    next_review_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (owner_user_id, material_id)
+);
+
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'learning_topic_progress_material_id_fkey'
+          AND conrelid = 'learning_topic_progress'::regclass
+    ) THEN
+        ALTER TABLE learning_topic_progress
+            DROP CONSTRAINT learning_topic_progress_material_id_fkey;
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'learning_topic_progress_material_fk'
+          AND conrelid = 'learning_topic_progress'::regclass
+    ) THEN
+        ALTER TABLE learning_topic_progress
+            ADD CONSTRAINT learning_topic_progress_material_fk
+            FOREIGN KEY (material_id) REFERENCES learning_materials(id) ON DELETE RESTRICT;
+    END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS learning_topic_progress_owner_review_idx
+ON learning_topic_progress (owner_user_id, next_review_at);
+
+CREATE INDEX IF NOT EXISTS learning_topic_progress_material_idx
+ON learning_topic_progress (material_id);
+
 INSERT INTO schema_migrations (version) VALUES (15)
+ON CONFLICT (version) DO NOTHING;
+
+INSERT INTO schema_migrations (version) VALUES (16)
+ON CONFLICT (version) DO NOTHING;
+
+INSERT INTO schema_migrations (version) VALUES (17)
 ON CONFLICT (version) DO NOTHING;

@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "1.0",
+  "contentVersion": 1,
+  "id": "shoulder-cars",
+  "category": "mobility",
+  "name": "Shoulder CARs",
+  "shortDescription": "Lingkaran sendi bahu yang dilakukan perlahan untuk melatih kontrol melalui rentang gerak yang tersedia.",
+  "equipment": [],
+  "bodyAreas": ["Bahu", "Punggung atas"],
+  "primaryTarget": "Rentang gerak bahu terkontrol",
+  "difficulty": "Intermediate",
+  "recommendation": {
+    "text": "2 set × 5 repetisi lambat per sisi",
+    "sets": 2,
+    "reps": 5
+  },
+  "steps": [
+    "Berdiri tegak dengan lengan di samping dan tubuh tetap stabil.",
+    "Angkat satu lengan ke depan lalu ke atas, bergerak dalam lingkaran yang paling terkontrol.",
+    "Lewati sisi belakang tubuh dan kembali ke posisi awal.",
+    "Ulangi dengan arah yang sama, lalu ganti sisi."
+  ],
+  "cues": [
+    "Bayangkan membuat lingkaran terbesar tanpa mengorbankan posisi tulang rusuk.",
+    "Gerakkan bahu perlahan, bukan dengan momentum.",
+    "Jaga leher rileks dan rahang tidak mengatup."
+  ],
+  "safetyNotes": [
+    "Gunakan lingkaran yang lebih kecil bila rentang penuh terasa tidak nyaman.",
+    "Jangan mengejar ukuran lingkaran bila muncul nyeri tajam."
+  ]
+}

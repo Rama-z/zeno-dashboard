@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "1.0",
+  "contentVersion": 1,
+  "id": "open-book-thoracic-rotation",
+  "category": "mobility",
+  "name": "Open Book Thoracic Rotation",
+  "shortDescription": "Rotasi menyamping untuk menggerakkan tulang belakang bagian atas dengan panggul tetap stabil.",
+  "equipment": ["Mat"],
+  "bodyAreas": ["Tulang belakang torakal", "Dada", "Bahu"],
+  "primaryTarget": "Rotasi torakal, dada, dan bahu",
+  "difficulty": "Beginner",
+  "recommendation": {
+    "text": "2 set × 8 repetisi per sisi",
+    "sets": 2,
+    "reps": 8
+  },
+  "steps": [
+    "Berbaring menyamping dengan lutut ditekuk dan kedua lengan lurus di depan dada.",
+    "Pertahankan lutut bertumpuk, lalu buka lengan atas melewati tubuh ke arah lantai di belakang.",
+    "Ikuti tangan dengan pandangan tanpa memaksa bahu menyentuh lantai.",
+    "Kembali ke posisi awal dan ulangi secara perlahan."
+  ],
+  "cues": [
+    "Biarkan rotasi datang dari punggung bagian atas.",
+    "Jaga lutut tetap menyatu agar panggul tidak ikut berguling.",
+    "Tarik napas saat membuka dada, buang napas saat kembali."
+  ],
+  "safetyNotes": [
+    "Letakkan bantal di antara lutut bila posisi samping terasa kurang stabil.",
+    "Hindari memaksa bahu ke lantai."
+  ]
+}

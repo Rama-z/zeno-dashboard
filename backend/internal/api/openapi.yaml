@@ -226,6 +226,65 @@ paths:
       responses:
         '200': {description: Entry dihapus}
         '404': {description: Entry tidak ditemukan}
+  /api/learning-materials:
+    get:
+      tags: [Learning Materials]
+      summary: Baca published English Grammar material summaries
+      security: [{CookieAuth: []}]
+      parameters:
+        - {in: query, name: subjectId, schema: {type: string, example: english}}
+        - {in: query, name: categoryId, schema: {type: string, example: grammar}}
+        - {in: query, name: level, schema: {type: string, enum: [A1, A2, B1, B2, C1]}}
+      responses:
+        '200':
+          description: Published material summaries with the current user's progress
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [materials]
+                properties:
+                  materials:
+                    type: array
+                    items: {$ref: '#/components/schemas/LearningMaterialSummary'}
+        '400': {description: Filter tidak valid}
+  /api/learning-materials/{id}:
+    get:
+      tags: [Learning Materials]
+      summary: Baca structured content untuk satu published material
+      security: [{CookieAuth: []}]
+      parameters:
+        - {in: path, name: id, required: true, schema: {type: string, maxLength: 120}}
+      responses:
+        '200':
+          description: Full material content and current-user progress
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/LearningMaterial'}
+        '404': {description: Material tidak ditemukan atau belum published}
+  /api/learning-materials/{id}/progress:
+    put:
+      tags: [Learning Materials]
+      summary: Simpan owner-scoped mastery and review snapshot
+      security: [{CookieAuth: [], CSRFToken: []}]
+      parameters:
+        - {in: path, name: id, required: true, schema: {type: string, maxLength: 120}}
+        - {in: header, name: X-CSRF-Token, required: true, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/LearningMaterialProgressInput'}
+      responses:
+        '200':
+          description: Progress tersimpan
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/LearningMaterialProgress'}
+        '400': {description: Progress tidak valid}
+        '401': {description: Login diperlukan}
+        '404': {description: Material tidak ditemukan atau belum published}
+        '409': {description: Content version sudah berubah}
   /api/doing:
     get:
       tags: [Doing]
@@ -313,30 +372,66 @@ paths:
   /api/journals:
     get:
       tags: [Journaling]
-      summary: Baca arsip jurnal berdasarkan tanggal opsional
+      summary: Baca arsip jurnal terbaru berdasarkan tanggal opsional
       parameters:
         - {in: query, name: date, schema: {type: string, format: date}}
       responses:
-        '200': {description: Journal entries}
+        '200': {description: Latest journal snapshots including current content, without historical revision arrays}
     post:
       tags: [Journaling]
-      summary: Simpan jurnal Markdown
+      summary: Simpan jurnal Markdown dan revision pertama secara atomik
       requestBody:
         required: true
         content:
           application/json:
             schema: {$ref: '#/components/schemas/JournalInput'}
       responses:
-        '201': {description: Journal dibuat}
+        '201':
+          description: Journal dibuat dengan revision 1
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/JournalEntry'}
         '400': {description: Input tidak valid}
-  /api/journals/{id}:
-    delete:
+  /api/journals/{id}/revisions:
+    get:
       tags: [Journaling]
-      summary: Hapus jurnal
+      summary: Baca riwayat jurnal secara newest-first
       parameters:
         - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
       responses:
-        '200': {description: Journal dihapus}
+        '200':
+          description: Semua immutable journal revisions
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/JournalRevisionHistory'}
+        '404': {description: Journal tidak ditemukan atau bukan milik user}
+    post:
+      tags: [Journaling]
+      summary: Tambah immutable journal revision dengan optimistic concurrency
+      parameters:
+        - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/JournalRevisionInput'}
+      responses:
+        '201':
+          description: Revision baru dan latest parent snapshot dibuat atomik
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/JournalRevisionAppendResponse'}
+        '400': {description: Input invalid atau tidak mengubah snapshot terbaru}
+        '404': {description: Journal tidak ditemukan atau bukan milik user}
+        '409': {description: baseRevisionNumber sudah stale}
+  /api/journals/{id}:
+    delete:
+      tags: [Journaling]
+      summary: Hapus logical journal beserta semua revisions melalui FK cascade
+      parameters:
+        - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200': {description: Journal dan seluruh revisions dihapus}
         '404': {description: Journal tidak ditemukan}
   /api/spending:
     get:
@@ -367,6 +462,15 @@ paths:
         '200': {description: Pengeluaran dihapus}
         '404': {description: Pengeluaran tidak ditemukan}
 components:
+  securitySchemes:
+    CookieAuth:
+      type: apiKey
+      in: cookie
+      name: zeno_session
+    CSRFToken:
+      type: apiKey
+      in: header
+      name: X-CSRF-Token
   schemas:
     RegisterInput:
       type: object
@@ -444,6 +548,62 @@ components:
           properties:
             id: {type: string, format: uuid}
             createdAt: {type: string, format: date-time}
+    LearningMaterialSummary:
+      type: object
+      required: [id, subjectId, categoryId, topicId, level, coverageMode, title, summary, contentVersion, published, reviewDue]
+      properties:
+        id: {type: string, maxLength: 120}
+        subjectId: {type: string}
+        subjectTitle: {type: string}
+        categoryId: {type: string}
+        categoryTitle: {type: string}
+        topicId: {type: string}
+        topicTitle: {type: string}
+        locale: {type: string}
+        level: {type: string, enum: [A1, A2, B1, B2, C1]}
+        coverageMode: {type: string, enum: [lesson, awareness, planned]}
+        title: {type: string}
+        summary: {type: string}
+        sequence: {type: integer}
+        positionWithinTopic: {type: integer}
+        estimatedMinutes: {type: integer}
+        schemaVersion: {type: string}
+        contentVersion: {type: integer}
+        prerequisites: {type: array, items: {type: string}}
+        revisits: {type: array, items: {type: string}}
+        published: {type: boolean}
+        progress: {$ref: '#/components/schemas/LearningMaterialProgress', nullable: true}
+        reviewDue: {type: boolean}
+    LearningMaterial:
+      allOf:
+        - {$ref: '#/components/schemas/LearningMaterialSummary'}
+        - type: object
+          required: [content, mastery, review]
+          properties:
+            content: {type: object, additionalProperties: true}
+            mastery: {type: object, additionalProperties: true}
+            review: {type: object, additionalProperties: true}
+    LearningMaterialProgressInput:
+      type: object
+      required: [contentVersion, status, objectiveState, attemptCount]
+      properties:
+        materialId: {type: string, maxLength: 120, description: Optional consistency check; route id is authoritative}
+        contentVersion: {type: integer, minimum: 1}
+        status: {type: string, enum: [in_progress, mastered]}
+        masteryScore: {type: integer, minimum: 0, maximum: 100, nullable: true}
+        objectiveState: {type: object, additionalProperties: {type: boolean}}
+        attemptCount: {type: integer, minimum: 0}
+        lastReviewedAt: {type: string, format: date-time, nullable: true}
+        nextReviewAt: {type: string, format: date-time, nullable: true}
+    LearningMaterialProgress:
+      allOf:
+        - {$ref: '#/components/schemas/LearningMaterialProgressInput'}
+        - type: object
+          required: [materialId, status, objectiveState, attemptCount, contentVersion, createdAt, updatedAt]
+          properties:
+            materialId: {type: string}
+            createdAt: {type: string, format: date-time}
+            updatedAt: {type: string, format: date-time}
     DoingInput:
       type: object
       required: [date, title]
@@ -465,6 +625,7 @@ components:
       required: [date, exercise]
       properties:
         date: {type: string, format: date}
+        materialId: {type: string, nullable: true, maxLength: 120, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$', description: Stable static Workout Material ID; preserved on update}
         exercise: {type: string, maxLength: 160}
         category: {type: string, maxLength: 60, default: General}
         sets: {type: integer, minimum: 0}
@@ -492,10 +653,50 @@ components:
       allOf:
         - {$ref: '#/components/schemas/JournalInput'}
         - type: object
+          required: [id, createdAt, updatedAt, latestRevisionNumber]
           properties:
             id: {type: string, format: uuid}
+            createdAt: {type: string, format: date-time, description: Original creation time}
+            updatedAt: {type: string, format: date-time, description: Latest saved revision time}
+            latestRevisionNumber: {type: integer, minimum: 1}
+            latestEditReason: {$ref: '#/components/schemas/JournalEditReason'}
+    JournalEditReason:
+      type: string
+      enum: [typo, clarify, incorrect_information, changed_my_mind]
+    JournalRevisionInput:
+      allOf:
+        - {$ref: '#/components/schemas/JournalInput'}
+        - type: object
+          required: [baseRevisionNumber, editReason]
+          properties:
+            baseRevisionNumber: {type: integer, minimum: 1}
+            editReason: {$ref: '#/components/schemas/JournalEditReason'}
+    JournalRevision:
+      allOf:
+        - {$ref: '#/components/schemas/JournalInput'}
+        - type: object
+          required: [journalId, revisionNumber, createdAt]
+          properties:
+            journalId: {type: string, format: uuid}
+            revisionNumber: {type: integer, minimum: 1}
+            editReason: {$ref: '#/components/schemas/JournalEditReason'}
             createdAt: {type: string, format: date-time}
-            updatedAt: {type: string, format: date-time}
+    JournalRevisionHistory:
+      type: object
+      required: [journalId, latestRevisionNumber, revisions]
+      properties:
+        journalId: {type: string, format: uuid}
+        latestRevisionNumber: {type: integer, minimum: 1}
+        revisions:
+          type: array
+          description: Newest revision first
+          items: {$ref: '#/components/schemas/JournalRevision'}
+    JournalRevisionAppendResponse:
+      type: object
+      required: [entry, revision]
+      properties:
+        entry: {$ref: '#/components/schemas/JournalEntry'}
+        revision: {$ref: '#/components/schemas/JournalRevision'}
     SpendingInput:
       type: object
       required: [date, description, amount]

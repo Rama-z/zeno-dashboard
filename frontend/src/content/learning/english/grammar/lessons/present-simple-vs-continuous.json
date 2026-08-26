@@ -1,0 +1,143 @@
+{
+  "schemaVersion": "1.0",
+  "contentVersion": 1,
+  "id": "present-simple-vs-continuous",
+  "subject": "english",
+  "category": "grammar",
+  "locale": "en",
+  "title": "Present Simple vs Present Continuous",
+  "level": "A2",
+  "sequence": 17,
+  "estimatedMinutes": 20,
+  "prerequisites": ["present-simple", "basic-questions-frequency", "present-continuous"],
+  "revisits": ["present-simple", "present-continuous"],
+  "objectives": [
+    "Choose the present simple for routines, facts, and repeated events.",
+    "Choose the present continuous for actions in progress and temporary situations.",
+    "Explain how the tense changes the meaning of a short sentence."
+  ],
+  "concept": {
+    "summary": "Both tenses describe the present, but they show different ways of viewing an event.",
+    "contrast": "Use the present simple when you present something as regular or generally true. Use the present continuous when you present it as happening around now or as temporary."
+  },
+  "explanation": [
+    {
+      "heading": "Regular or generally true",
+      "body": "Use the present simple for routines, repeated actions, timetables, and facts. With he, she, or it, the main verb usually takes -s. Questions and negatives normally use do or does."
+    },
+    {
+      "heading": "In progress or temporary",
+      "body": "Use am/is/are + verb-ing for an action happening now, around now, or for a temporary situation. The action does not need to be happening at the exact second if it is part of a temporary period."
+    },
+    {
+      "heading": "Meaning decides the tense",
+      "body": "Time expressions can help, but they are not automatic rules. Compare 'I work from home' (my usual arrangement) with 'I am working from home this week' (temporary)."
+    }
+  ],
+  "examples": [
+    {
+      "sentence": "Maya walks to work every day.",
+      "note": "A repeated routine."
+    },
+    {
+      "sentence": "Maya is taking the bus today.",
+      "note": "A temporary change happening around now."
+    },
+    {
+      "sentence": "The shop closes at nine.",
+      "note": "A timetable or regular fact."
+    },
+    {
+      "sentence": "The shop is closing early this week.",
+      "note": "A temporary arrangement."
+    }
+  ],
+  "practice": [
+    {
+      "id": "psc-p1",
+      "type": "multiple_choice",
+      "prompt": "Rina usually ___ coffee, but today she ___ tea.",
+      "options": [
+        "drinks / is having",
+        "is drinking / has",
+        "drink / having"
+      ],
+      "answer": "drinks / is having",
+      "explanation": "Usually signals a routine; today presents a temporary current situation."
+    },
+    {
+      "id": "psc-p2",
+      "type": "fill_blank",
+      "prompt": "Complete: I ___ (study) online this month because my classroom is closed.",
+      "answer": "am studying",
+      "explanation": "This month is a temporary period around now."
+    },
+    {
+      "id": "psc-p3",
+      "type": "rewrite",
+      "prompt": "Change the meaning to a temporary situation: 'Leo works in Jakarta.'",
+      "answer": "Leo is working in Jakarta for now.",
+      "explanation": "The continuous form plus a temporary time phrase changes the viewpoint."
+    }
+  ],
+  "quiz": [
+    {
+      "id": "psc-q1",
+      "objectiveIndex": 0,
+      "type": "multiple_choice",
+      "prompt": "Which sentence describes a routine?",
+      "options": [
+        "We meet every Friday.",
+        "We are meeting the client right now.",
+        "We are staying with friends this week."
+      ],
+      "answer": "We meet every Friday.",
+      "explanation": "Every Friday presents a repeated event."
+    },
+    {
+      "id": "psc-q2",
+      "objectiveIndex": 1,
+      "type": "fill_blank",
+      "prompt": "Listen! Someone ___ (knock) at the door.",
+      "answer": "is knocking",
+      "explanation": "The action is in progress now."
+    },
+    {
+      "id": "psc-q3",
+      "objectiveIndex": 2,
+      "type": "multiple_choice",
+      "prompt": "What does 'Sam is working nights this month' suggest?",
+      "options": [
+        "It is a permanent fact.",
+        "It is a temporary arrangement.",
+        "It happened in the past."
+      ],
+      "answer": "It is a temporary arrangement.",
+      "explanation": "The continuous form and this month frame the situation as temporary."
+    },
+    {
+      "id": "psc-q4",
+      "objectiveIndex": 0,
+      "type": "fill_blank",
+      "prompt": "The library ___ (open) at 8 a.m. on weekdays.",
+      "answer": "opens",
+      "explanation": "A timetable normally uses the present simple."
+    }
+  ],
+  "mastery": {
+    "minimumScorePercent": 80,
+    "requiredObjectiveIndexes": [0, 1, 2]
+  },
+  "review": {
+    "keyTakeaways": [
+      "Present simple presents routines, repeated events, timetables, and facts.",
+      "Present continuous presents actions in progress and temporary situations.",
+      "Choose by intended meaning, not by one signal word alone."
+    ],
+    "suggestedReviewAfterDays": [1, 7, 21],
+    "reviewPrompts": [
+      "Describe one normal routine and one temporary change this week.",
+      "Explain the difference between 'I live here' and 'I am living here for now.'"
+    ]
+  }
+}

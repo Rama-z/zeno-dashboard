@@ -1,27 +1,31 @@
-import './styles.css';
-import './lifestyle.css';
-import './auth.css';
+import '@fontsource-variable/outfit/wght.css';
+import '@fontsource/dm-mono/latin-400.css';
+import '@fontsource/dm-mono/latin-500.css';
+import './landing.css';
 import { sessionLog as initialLogs, sourceFile, generatedAt } from './generated-log';
 import { api, ApiError, type ActivityEvent, type ApiLog, type AuthUser, type SettingsResponse } from './api';
 import { changeLogUpdates, type ChangeLogUpdate } from './change-log';
-import { bindLifestyleEvents, isLifestylePage, renderLifestylePage, syncLifestyleData, syncLifestyleRoute } from './lifestyle';
+import { bindLifestyleEvents, currentWorkoutDate, isLifestylePage, renderLifestylePage, scheduleWorkout, syncLifestyleData, syncLifestyleRoute } from './lifestyle';
 import { bindDoingEvents, renderDoingPage, syncDoingData } from './doing';
-import { authPath, authViewFromPath, bindAuthEvents, bindProfileEvents, renderAuthScreen, renderProfilePage, type AuthScreenState, type AuthView } from './auth';
+import { authPath, authViewFromPath, bindAuthEvents, bindProfileEvents, renderAuthScreen, renderProfilePage, type AuthScreenState, type AuthView, type FontProfileOption } from './auth';
 import { bindLandingEvents, renderLandingPage } from './landing';
-import './landing.css';
+import { bindLearningMaterialsEvents, ensureLearningMaterialData, renderLearningMaterials as learningMaterials } from './learning-materials';
+import { bindWorkoutMaterialEvents, renderWorkoutMaterials } from './workout-materials';
+import { isLearningMaterialRoute, isLearningRoute, isWorkoutMaterialsRoute, pageForRoute, pagePaths, resolveAppRoute, type AppRoute, type Page } from './app-route';
 
 type Filter = 'all' | 'success' | 'info';
-type Page = 'overview' | 'activity' | 'settings' | 'profile' | 'changelog' | 'doing' | 'learning' | 'workout' | 'journaling' | 'spending';
 type ChangeLogPeriod = 'all' | 'today' | 'yesterday' | 'week' | 'older';
 type ChangeLogSort = 'newest' | 'oldest';
 type LearningEntry = { id: string; title: string; note: string; category: string; completed: boolean };
-const pagePaths: Record<Page, string> = { overview: '/', activity: '/activity', changelog: '/change-log', doing: '/doing', learning: '/learning', workout: '/workout', journaling: '/journaling', spending: '/spending', profile: '/profile', settings: '/settings' };
-function pageFromPath(pathname: string): Page {
-  return (Object.entries(pagePaths).find(([, path]) => path === pathname)?.[0] as Page | undefined) ?? 'overview';
-}
 const app = document.querySelector<HTMLDivElement>('#app')!;
+let appStylesPromise: Promise<unknown> | null = null;
+function ensureAppStyles() {
+  return appStylesPromise ??= import('./app-styles');
+}
 let filter: Filter = 'all';
-let page: Page = pageFromPath(window.location.pathname);
+let route: AppRoute = resolveAppRoute(window.location.pathname);
+let page: Page = pageForRoute(route);
+if (isLifestylePage(page)) syncLifestyleRoute(page);
 let query = '';
 let expanded = new Set<number>();
 let changeLogPeriod: ChangeLogPeriod = 'all';
@@ -43,6 +47,22 @@ let profileMessage = '';
 let profileError = '';
 type Theme = 'dark' | 'light';
 let theme: Theme = (localStorage.getItem('hermes-monitor-theme') as Theme) === 'light' ? 'light' : 'dark';
+type FontProfile = 'compact' | 'standard' | 'expanded';
+const fontProfileLabels: Record<FontProfile, string> = { compact: 'Compact', standard: 'Standard', expanded: 'Expanded' };
+const fontProfileDescriptions: Record<FontProfile, string> = { compact: 'Lebih padat', standard: 'Seimbang', expanded: 'Lebih lega' };
+const fontProfileStorageKey = 'hermes-monitor-font-profile';
+function isFontProfile(value: string | null): value is FontProfile {
+  return value === 'compact' || value === 'standard' || value === 'expanded';
+}
+function fontProfileOptions(): FontProfileOption[] {
+  return (Object.keys(fontProfileLabels) as FontProfile[]).map((value) => ({
+    value,
+    label: fontProfileLabels[value],
+    description: fontProfileDescriptions[value],
+    selected: fontProfile === value,
+  }));
+}
+let fontProfile: FontProfile = isFontProfile(localStorage.getItem(fontProfileStorageKey)) ? localStorage.getItem(fontProfileStorageKey) as FontProfile : 'compact';
 let sidebarCollapsed = localStorage.getItem('hermes-monitor-sidebar') === 'collapsed';
 const learningStorageKey = 'hermes-monitor-learning-v1';
 const today = new Date();
@@ -70,14 +90,14 @@ let learningEntries: Record<string, LearningEntry[]> = (() => {
 
 function applyTheme() {
   document.documentElement.dataset.theme = theme;
+  document.documentElement.dataset.fontProfile = fontProfile;
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'light' ? '#f5f7fb' : '#08090a');
 }
 
-const icon = (name: string) => ({
-  grid: '▦', activity: '⌁', settings: '⚙', profile: '●', search: '⌕', arrow: '↗', check: '✓', info: 'i', chevron: '⌄', file: '▤', doing: '◈', calendar: '◫', workout: '◆', journal: '✎', spending: '◉', sun: '☼', moon: '☾', collapse: '‹', expand: '›',
-  edit: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/></svg>',
-  trash: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5"/></svg>'
-}[name] ?? '•');
+const iconNames: Record<string, string> = {
+  grid: 'squares-four', activity: 'pulse', settings: 'sliders-horizontal', profile: 'user-circle', search: 'magnifying-glass', arrow: 'arrow-up-right', check: 'check', info: 'info', chevron: 'caret-down', file: 'notebook', doing: 'check-square', calendar: 'calendar-dots', workout: 'barbell', journal: 'note-pencil', spending: 'wallet', sun: 'sun', moon: 'moon', collapse: 'caret-left', expand: 'caret-right', edit: 'pencil-simple', trash: 'trash',
+};
+const icon = (name: string) => `<span class="ph ph-${iconNames[name] ?? 'circle'}" aria-hidden="true"></span>`;
 
 function learningCalendar() {
   const year = learningMonth.getFullYear();
@@ -97,7 +117,7 @@ function renderLearningPage() {
   const monthName = learningMonth.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
   const selectedLabel = new Date(`${selectedLearningDate}T12:00:00`).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   return `
-          <div class="page-heading"><div><p class="eyebrow">LEARNING JOURNAL</p><h1>What I learned</h1><p class="subheading">Catat dan pantau pembelajaran harian dalam kalender lintas tahun.</p></div><div class="connection"><span class="pulse"></span><span>${Object.values(learningEntries).reduce((total, entries) => total + entries.length, 0)} lessons logged</span></div></div>
+          <div class="page-heading"><div><p class="eyebrow">LEARNING JOURNAL</p><h1>What I learned</h1><p class="subheading">Catat dan pantau pembelajaran harian dalam kalender lintas tahun.</p></div><div class="learning-heading-actions"><button type="button" class="feature-button primary" data-learning-materials>Learning Material List</button><div class="connection"><span class="pulse"></span><span>${Object.values(learningEntries).reduce((total, entries) => total + entries.length, 0)} lessons logged</span></div></div></div>
           <div class="learning-layout"><section class="calendar-panel"><div class="calendar-header"><button class="calendar-nav" data-calendar-prev aria-label="Previous month">‹</button><div><p class="eyebrow">LEARNING CALENDAR</p><h2>${monthName}</h2></div><button class="calendar-nav" data-calendar-next aria-label="Next month">›</button></div><div class="calendar-weekdays"><span>Min</span><span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span></div><div class="calendar-grid">${learningCalendar().map((day) => { if (!day) return '<span class="calendar-day empty-day"></span>'; const key = dateKey(new Date(learningMonth.getFullYear(), learningMonth.getMonth(), day)); const entries = learningEntries[key] ?? []; const count = entries.length; const unfinishedCount = entries.filter((entry) => !entry.completed).length; const allCompleted = count > 0 && unfinishedCount === 0; const isToday = key === todayKey; return `<button class="calendar-day ${key === selectedLearningDate ? 'selected' : ''} ${isToday ? 'today' : ''} ${count ? 'has-lessons' : ''} ${allCompleted ? 'all-completed' : ''}" data-day="${key}" title="${allCompleted ? 'All lessons completed' : count ? `${unfinishedCount} unfinished lessons` : 'No lessons'}"><span>${day}</span>${count ? `<i aria-label="${allCompleted ? 'All completed' : `${unfinishedCount} unfinished lessons`}">${allCompleted ? icon('check') : unfinishedCount}</i>` : ''}</button>`; }).join('')}</div><div class="calendar-legend"><span><i class="legend-progress">3</i> In progress</span><span><i class="legend-complete">${icon('check')}</i> All completed</span></div><button class="today-button" data-today>Jump to today</button></section><section class="learning-detail"><div class="detail-heading"><div><p class="eyebrow">SELECTED DAY</p><h2>${selectedLabel}</h2></div><span class="date-badge">${selectedEntries.length} ${selectedEntries.length === 1 ? 'lesson' : 'lessons'}</span></div><div class="learning-list">${selectedEntries.length ? selectedEntries.map(renderLearningEntry).join('') : '<div class="learning-empty">Belum ada catatan untuk tanggal ini.<br><span>Tambahkan materi pertama di form di bawah.</span></div>'}</div><form class="learning-form" id="learning-form"><input name="title" placeholder="Apa yang dipelajari?" aria-label="What was learned" required /><input name="note" placeholder="Catatan singkat (opsional)" aria-label="Learning note" /><select name="category" aria-label="Learning category"><option>General</option><option>Hermes</option><option>Frontend</option><option>DevOps</option><option>Research</option></select><button type="submit">Add lesson <span>↗</span></button></form></section></div>`;
 }
 
@@ -137,8 +157,8 @@ function periodForUpdate(occurredAt: string, reference = new Date()): Exclude<Ch
 
 function renderSessionEntriesContent(visible: { log: ApiLog; index: number }[], successCount: number) {
   return `
-          <div class="metrics"><div class="metric-card"><span>Total entries</span><strong>${logs.length}</strong><small>Sections loaded from backend</small></div><div class="metric-card accent"><span>Verified outcomes</span><strong>${successCount}<em>/${logs.length}</em></strong><small><span class="mini-dot"></span> Positive signals detected</small></div><div class="metric-card"><span>Coverage</span><strong>100<em>%</em></strong><small>Latest source: ${new Date(runtimeGeneratedAt).toLocaleDateString('id-ID')}</small></div></div>
-          <div class="section-toolbar"><div><h2>Session entries</h2><span class="result-count">${visible.length} of ${logs.length} visible</span></div><div class="toolbar-controls"><label class="search"><span>${icon('search')}</span><input id="search" placeholder="Search entries…" value="${escapeHtml(query)}" /></label><div class="filters"><button class="filter ${filter === 'all' ? 'selected' : ''}" data-filter="all">All</button><button class="filter ${filter === 'success' ? 'selected' : ''}" data-filter="success">Verified</button><button class="filter ${filter === 'info' ? 'selected' : ''}" data-filter="info">Info</button></div></div></div>
+          <div class="metrics"><div class="metric-card featured accent" data-metric="verified"><span>Verified outcomes</span><strong>${successCount}<em>/${logs.length}</em></strong><small>${icon('check')} Positive signals in the active source</small></div><div class="metric-card compact" data-metric="entries"><span>Total entries</span><strong>${logs.length}</strong><small>Source-backed sections</small></div><div class="metric-card compact" data-metric="coverage"><span>Coverage</span><strong>100<em>%</em></strong><small>Updated ${new Date(runtimeGeneratedAt).toLocaleDateString('id-ID')}</small></div></div>
+          <div class="section-toolbar"><div><h2>Session log</h2><span class="result-count">${visible.length} of ${logs.length} entries visible</span></div><div class="toolbar-controls"><label class="search" aria-label="Search session entries"><span>${icon('search')}</span><input id="search" placeholder="Search entries" value="${escapeHtml(query)}" /></label><div class="filters" aria-label="Filter session entries"><button class="filter ${filter === 'all' ? 'selected' : ''}" data-filter="all" aria-pressed="${filter === 'all'}">All</button><button class="filter ${filter === 'success' ? 'selected' : ''}" data-filter="success" aria-pressed="${filter === 'success'}">Verified</button><button class="filter ${filter === 'info' ? 'selected' : ''}" data-filter="info" aria-pressed="${filter === 'info'}">Info</button></div></div></div>
           <div class="log-list">${visible.length ? visible.map(({ log, index }) => `
             <article class="log-entry ${expanded.has(index) ? 'open' : ''}"><button class="entry-header" data-expand="${index}"><span class="entry-number">${String(index + 1).padStart(2, '0')}</span><span class="entry-main"><span class="entry-title">${escapeHtml(log.title.replace(/^\d+\.\s*/, ''))}</span><span class="entry-excerpt">${escapeHtml(log.excerpt)}</span></span><span class="entry-status ${log.status}"><i>${log.status === 'success' ? icon('check') : icon('info')}</i>${log.status === 'success' ? 'Verified' : 'Reference'}</span><span class="entry-chevron">${icon('chevron')}</span></button>${expanded.has(index) ? `<div class="entry-detail"><div class="question"><span>QUESTION</span><p>${renderMarkdown(log.question)}</p></div><div class="answer"><span>ANSWER</span><div class="answer-body"><p>${renderMarkdown(log.answer)}</p></div></div></div>` : ''}</article>
           `).join('') : '<div class="empty">No entries match your search.</div>'}</div>
@@ -175,8 +195,26 @@ function isAuthPath(pathname: string) {
   return pathname === '/login' || pathname === '/register' || pathname === '/verify-email';
 }
 
-function isLandingPath(pathname: string) {
+function isPublicLandingPath(pathname: string) {
   return pathname === '/';
+}
+
+function syncRouteFromLocation() {
+  route = resolveAppRoute(window.location.pathname);
+  page = pageForRoute(route);
+  if (isLifestylePage(page)) syncLifestyleRoute(page);
+}
+
+function navigateTo(pathname: string) {
+  history.pushState({ pathname }, '', pathname);
+  syncRouteFromLocation();
+  editingLearningId = null;
+  render();
+  window.scrollTo({ top: 0, behavior: 'auto' });
+}
+
+function renderRouteNotFound(pathname: string) {
+  return `<div class="learning-materials"><div class="page-heading"><div><p class="eyebrow">ZENO ROUTING</p><h1>Page tidak ditemukan</h1><p class="subheading">Alamat ini belum tersedia di workspace Zeno.</p></div></div><article class="learning-material-not-found" role="alert"><span class="material-kicker">404 · ROUTE</span><h1>Route tidak tersedia</h1><p>Alamat <code>${escapeHtml(pathname)}</code> tidak dapat ditemukan.</p><button type="button" class="learning-material-back" data-page="overview">Kembali ke Overview</button></article></div>`;
 }
 
 function errorMessage(error: unknown) {
@@ -218,6 +256,7 @@ async function loginAccount(email: string, password: string) {
     currentUser = (await api.login(email, password)).user;
     authChecked = true;
     authState = { busy: false, message: '', error: '', verificationStatus: 'idle' };
+    route = { kind: 'page', page: 'overview' };
     page = 'overview';
     history.replaceState({ page }, '', pagePaths.overview);
     render();
@@ -278,25 +317,31 @@ async function bootstrapAuth() {
     currentUser = (await api.me()).user;
     authChecked = true;
     if (isAuthPath(window.location.pathname)) {
+      route = { kind: 'page', page: 'overview' };
       page = 'overview';
       history.replaceState({ page }, '', pagePaths.overview);
     } else {
-      page = pageFromPath(window.location.pathname);
+      syncRouteFromLocation();
     }
     if (page === 'settings' && currentUser.role !== 'admin') {
+      route = { kind: 'page', page: 'profile' };
       page = 'profile';
       history.replaceState({ page }, '', pagePaths.profile);
     }
+    await ensureAppStyles();
     render();
     await syncBackend();
   } catch (error) {
+    const publicLandingAlreadyRendered = isPublicLandingPath(window.location.pathname) && Boolean(app.querySelector('.zeno-landing'));
     if (!(error instanceof ApiError) || error.status !== 401) backendError = errorMessage(error);
     currentUser = null; authChecked = true;
     authView = authViewFromPath(window.location.pathname);
-    if (!isAuthPath(window.location.pathname) && !isLandingPath(window.location.pathname)) {
+    if (!isAuthPath(window.location.pathname) && !isPublicLandingPath(window.location.pathname)) {
       authView = 'login';
       history.replaceState({ authView }, '', '/login');
     }
+    if (publicLandingAlreadyRendered) return;
+    await ensureAppStyles();
     render();
   }
 }
@@ -363,24 +408,33 @@ async function removeLearningEntry(entry: LearningEntry) {
   }
   render();
 }
+
+function renderPublicLanding() {
+  document.title = 'Zeno | Personal workspace';
+  app.innerHTML = renderLandingPage(theme);
+  bindLandingEvents({
+    onThemeToggle: () => {
+      theme = theme === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('hermes-monitor-theme', theme);
+      applyTheme();
+      render();
+    },
+  });
+}
+
 function render() {
   if (!authChecked) {
+    if (isPublicLandingPath(window.location.pathname)) {
+      renderPublicLanding();
+      return;
+    }
     document.title = 'Loading · Zeno';
     app.innerHTML = '<main class="auth-shell"><section class="auth-brand-panel"><div class="auth-brand-lockup"><img src="/zeno-logo.png" alt="Zeno" /><div><strong>Zeno</strong><span>PERSONAL WORKSPACE</span></div></div></section><section class="auth-form-panel"><div class="auth-card auth-verify-card"><div class="auth-spinner" aria-label="Loading"></div><p>Memeriksa session…</p></div></section></main>';
     return;
   }
   if (!currentUser) {
-    if (isLandingPath(window.location.pathname)) {
-      document.title = 'Zeno | Personal workspace';
-      app.innerHTML = renderLandingPage(theme);
-      bindLandingEvents({
-        onThemeToggle: () => {
-          theme = theme === 'dark' ? 'light' : 'dark';
-          localStorage.setItem('hermes-monitor-theme', theme);
-          applyTheme();
-          render();
-        },
-      });
+    if (isPublicLandingPath(window.location.pathname)) {
+      renderPublicLanding();
       return;
     }
     document.title = `${authView === 'register' ? 'Register' : authView === 'verify' ? 'Verify Email' : 'Login'} · Zeno`;
@@ -394,7 +448,8 @@ function render() {
   const pageLabel = ({ overview: 'Overview', activity: 'Activity', settings: 'Settings', profile: 'Profile', changelog: 'Change Log', doing: 'Doing', learning: 'Learning', workout: 'Workout', journaling: 'Journaling', spending: 'Spending' } as Record<Page, string>)[page];
   const pendingDeleteEntry = (learningEntries[selectedLearningDate] ?? []).find((entry) => entry.id === pendingDeleteLearningId);
   document.title = `${pageLabel} · Zeno`;
-  const pageContent = page === 'overview' ? `
+  if (isLearningMaterialRoute(route)) ensureLearningMaterialData(route, render);
+  const pageContent = route.kind !== 'page' ? (isLearningRoute(route) ? learningMaterials(route) : isWorkoutMaterialsRoute(route) ? renderWorkoutMaterials(route) : renderRouteNotFound(window.location.pathname)) : page === 'overview' ? `
           <div class="page-heading"><div><p class="eyebrow">SESSION OBSERVABILITY</p><h1>Zeno session log</h1><p class="subheading">Pantau ringkasan percakapan dan konfigurasi agent dalam satu tempat.</p></div><div class="connection"><span class="pulse"></span><span>Source connected</span></div></div>
           ${renderSessionEntriesContent(visible, successCount)}` : page === 'changelog' ? `
           <div class="page-heading"><div><p class="eyebrow">CHANGE HISTORY</p><h1>Change log</h1><p class="subheading">Lacak riwayat update berdasarkan hari, tanggal, dan permintaan.</p></div><div class="connection"><span class="pulse"></span><span>${changeLogEntries.length} updates · ${backendOnline ? 'PostgreSQL' : 'local fallback'}</span></div></div>
@@ -405,24 +460,36 @@ function render() {
           ${renderDoingPage()}` : page === 'learning' ? `
           ${renderLearningPage()}` : isLifestylePage(page) ? `
           ${renderLifestylePage(page)}` : page === 'profile' ? `
-          ${renderProfilePage(currentUser, profileBusy, profileMessage, profileError)}` : `
+          ${renderProfilePage(currentUser, profileBusy, profileMessage, profileError, fontProfileOptions())}` : `
           <div class="page-heading"><div><p class="eyebrow">WORKSPACE CONFIGURATION</p><h1>Settings</h1><p class="subheading">Kelola preferensi yang tersimpan di backend PostgreSQL.</p></div><div class="connection"><span class="status-dot"></span><span>${backendOnline ? 'Backend connected' : 'Backend unavailable'}</span></div></div>
-          <div class="settings-grid"><form class="settings-card" id="settings-form"><div class="settings-card-heading"><span class="settings-icon">${icon('settings')}</span><div><h2>Workspace</h2><p>Identitas dan sumber data dari API.</p></div></div><label class="setting-row"><span><strong>Workspace name</strong><small>Disimpan melalui PUT /api/settings</small></span><input name="workspaceName" value="${escapeHtml(backendSettings.workspaceName)}" aria-label="Workspace name" required /></label><label class="setting-row"><span><strong>Source file</strong><small>File Markdown yang dipantau backend</small></span><input value="${escapeHtml(backendSettings.sourceFile)}" aria-label="Source file" readonly /></label><button class="settings-save" type="submit">Save to backend</button></form><div class="settings-card"><div class="settings-card-heading"><span class="settings-icon">${icon('moon')}</span><div><h2>Appearance</h2><p>Preferensi tampilan dashboard.</p></div></div><div class="setting-row"><span><strong>Color mode</strong><small>Gunakan tombol di topbar untuk mengganti tema.</small></span><span class="setting-badge">${theme === 'dark' ? 'Dark mode' : 'Light mode'}</span></div><div class="setting-row"><span><strong>Sidebar state</strong><small>State disimpan di browser ini.</small></span><span class="setting-badge">${sidebarCollapsed ? 'Collapsed' : 'Expanded'}</span></div></div></div>`;
+          <div class="settings-grid"><form class="settings-card" id="settings-form"><div class="settings-card-heading"><span class="settings-icon">${icon('settings')}</span><div><h2>Workspace</h2><p>Identitas dan sumber data dari API.</p></div></div><label class="setting-row"><span><strong>Workspace name</strong><small>Disimpan melalui PUT /api/settings</small></span><input name="workspaceName" value="${escapeHtml(backendSettings.workspaceName)}" aria-label="Workspace name" required /></label><label class="setting-row"><span><strong>Source file</strong><small>File Markdown yang dipantau backend</small></span><input value="${escapeHtml(backendSettings.sourceFile)}" aria-label="Source file" readonly /></label><button class="settings-save" type="submit">Save to backend</button></form><div class="settings-card"><div class="settings-card-heading"><span class="settings-icon">${icon('moon')}</span><div><h2>Appearance</h2><p>Preferensi tampilan dashboard.</p></div></div><div class="setting-row"><span><strong>Color mode</strong><small>Gunakan tombol di topbar untuk mengganti tema.</small></span><span class="setting-badge">${theme === 'dark' ? 'Dark mode' : 'Light mode'}</span></div><div class="setting-row"><span><strong>Sidebar state</strong><small>State disimpan di browser ini.</small></span><span class="setting-badge">${sidebarCollapsed ? 'Collapsed' : 'Expanded'}</span></div><div class="setting-row font-profile-row"><span><strong>Font profile</strong><small>Atur ukuran dan jarak teks dashboard.</small></span><fieldset class="font-profile-options" role="radiogroup" aria-label="Font profile"><legend class="sr-only">Font profile</legend>${(Object.keys(fontProfileLabels) as FontProfile[]).map((profile) => `<label class="font-profile-option"><input type="radio" name="fontProfile" value="${profile}" data-font-profile aria-label="${fontProfileLabels[profile]}" ${fontProfile === profile ? 'checked' : ''} /><span>${fontProfileLabels[profile]}</span><small>${fontProfileDescriptions[profile]}</small></label>`).join('')}</fieldset></div></div></div>`;
   app.innerHTML = `
-    <div class="shell ${sidebarCollapsed ? 'sidebar-collapsed' : ''}">
-      <aside class="sidebar">
-        <div class="brand"><div class="brand-mark zeno-brand-mark"><img src="/zeno-logo.png" alt="Zeno" /></div><div class="brand-copy"><b>Zeno</b><span>MONITORING</span></div></div>
-        <nav><p class="nav-label">WORKSPACE</p><button class="nav-item ${page === 'overview' ? 'active' : ''}" data-page="overview"><span class="nav-icon">${icon('grid')}</span><span class="nav-text">Overview</span></button><button class="nav-item ${page === 'activity' ? 'active' : ''}" data-page="activity"><span class="nav-icon">${icon('activity')}</span><span class="nav-text">Activity</span><span class="nav-count">${activityEvents.length}</span></button><button class="nav-item ${page === 'changelog' ? 'active' : ''}" data-page="changelog"><span class="nav-icon">${icon('file')}</span><span class="nav-text">Change Log</span></button><button class="nav-item ${page === 'doing' ? 'active' : ''}" data-page="doing"><span class="nav-icon">${icon('doing')}</span><span class="nav-text">Doing</span></button><button class="nav-item ${page === 'learning' ? 'active' : ''}" data-page="learning"><span class="nav-icon">${icon('calendar')}</span><span class="nav-text">Learning</span></button><button class="nav-item ${page === 'workout' ? 'active' : ''}" data-page="workout"><span class="nav-icon">${icon('workout')}</span><span class="nav-text">Workout</span></button><button class="nav-item ${page === 'journaling' ? 'active' : ''}" data-page="journaling"><span class="nav-icon">${icon('journal')}</span><span class="nav-text">Journaling</span></button><button class="nav-item ${page === 'spending' ? 'active' : ''}" data-page="spending"><span class="nav-icon">${icon('spending')}</span><span class="nav-text">Spending</span></button><button class="nav-item ${page === 'profile' ? 'active' : ''}" data-page="profile"><span class="nav-icon">${icon('profile')}</span><span class="nav-text">Profile</span></button>${currentUser.role === 'admin' ? `<button class="nav-item ${page === 'settings' ? 'active' : ''}" data-page="settings"><span class="nav-icon">${icon('settings')}</span><span class="nav-text">Settings</span></button>` : ''}</nav>
+    <a class="skip-link" href="#dashboard-content">Skip to dashboard content</a>
+    <div class="shell zeno-dashboard ${sidebarCollapsed ? 'sidebar-collapsed' : ''}">
+      <aside class="sidebar" aria-label="Primary navigation">
+        <div class="brand"><div class="brand-mark zeno-brand-mark"><img src="/zeno-logo-96.webp" alt="Zeno" /></div><div class="brand-copy"><b>Zeno</b><span>PERSONAL OS</span></div></div>
+        <nav aria-label="Workspace sections">
+          <div class="nav-section"><p class="nav-label">OBSERVE</p><button class="nav-item ${page === 'overview' ? 'active' : ''}" data-page="overview" aria-label="Overview" aria-current="${page === 'overview' ? 'page' : 'false'}"><span class="nav-icon">${icon('grid')}</span><span class="nav-text">Overview</span></button><button class="nav-item ${page === 'activity' ? 'active' : ''}" data-page="activity" aria-label="Activity" aria-current="${page === 'activity' ? 'page' : 'false'}"><span class="nav-icon">${icon('activity')}</span><span class="nav-text">Activity</span><span class="nav-count">${activityEvents.length}</span></button><button class="nav-item ${page === 'changelog' ? 'active' : ''}" data-page="changelog" aria-label="Change Log" aria-current="${page === 'changelog' ? 'page' : 'false'}"><span class="nav-icon">${icon('file')}</span><span class="nav-text">Change Log</span></button></div>
+          <div class="nav-section"><p class="nav-label">PERSONAL</p><button class="nav-item ${page === 'doing' ? 'active' : ''}" data-page="doing" aria-label="Doing" aria-current="${page === 'doing' ? 'page' : 'false'}"><span class="nav-icon">${icon('doing')}</span><span class="nav-text">Doing</span></button><button class="nav-item ${page === 'learning' ? 'active' : ''}" data-page="learning" aria-label="Learning" aria-current="${page === 'learning' ? 'page' : 'false'}"><span class="nav-icon">${icon('calendar')}</span><span class="nav-text">Learning</span></button><button class="nav-item ${page === 'workout' ? 'active' : ''}" data-page="workout" aria-label="Workout" aria-current="${page === 'workout' ? 'page' : 'false'}"><span class="nav-icon">${icon('workout')}</span><span class="nav-text">Workout</span></button><button class="nav-item ${page === 'journaling' ? 'active' : ''}" data-page="journaling" aria-label="Journaling" aria-current="${page === 'journaling' ? 'page' : 'false'}"><span class="nav-icon">${icon('journal')}</span><span class="nav-text">Journaling</span></button><button class="nav-item ${page === 'spending' ? 'active' : ''}" data-page="spending" aria-label="Spending" aria-current="${page === 'spending' ? 'page' : 'false'}"><span class="nav-icon">${icon('spending')}</span><span class="nav-text">Spending</span></button></div>
+          <div class="nav-section"><p class="nav-label">ACCOUNT</p><button class="nav-item ${page === 'profile' ? 'active' : ''}" data-page="profile" aria-label="Profile" aria-current="${page === 'profile' ? 'page' : 'false'}"><span class="nav-icon">${icon('profile')}</span><span class="nav-text">Profile</span></button>${currentUser.role === 'admin' ? `<button class="nav-item ${page === 'settings' ? 'active' : ''}" data-page="settings" aria-label="Settings" aria-current="${page === 'settings' ? 'page' : 'false'}"><span class="nav-icon">${icon('settings')}</span><span class="nav-text">Settings</span></button>` : ''}</div>
+        </nav>
         <button class="sidebar-toggle" id="sidebar-toggle" title="${sidebarCollapsed ? 'Expand' : 'Collapse'} sidebar" aria-label="${sidebarCollapsed ? 'Expand' : 'Collapse'} sidebar"><span class="sidebar-toggle-icon">${sidebarCollapsed ? icon('expand') : icon('collapse')}</span><span class="sidebar-toggle-text">${sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}</span></button>
       </aside>
       <main class="main">
-        <header class="topbar"><div class="crumb"><span>Workspace</span><b>/</b><strong>${pageLabel}</strong></div><div class="top-actions"><span class="api-status ${backendOnline ? 'connected' : 'offline'}" title="${escapeHtml(backendError || 'Zeno API connected')}"><i></i>${backendOnline ? 'API' : 'Offline'}</span><button class="icon-button" title="Search">${icon('search')}</button><button class="theme-toggle" id="theme-toggle" title="Switch to ${theme === 'dark' ? 'light' : 'dark'} mode" aria-label="Switch to ${theme === 'dark' ? 'light' : 'dark'} mode"><span class="theme-icon">${theme === 'dark' ? icon('sun') : icon('moon')}</span><span>${theme === 'dark' ? 'Light' : 'Dark'}</span></button><button class="avatar" data-page="profile" title="${escapeHtml(currentUser.displayName)}" aria-label="Open profile">${escapeHtml(currentUser.displayName.slice(0, 1).toUpperCase())}</button></div></header>
-        <section class="content">
+        <header class="topbar"><div class="crumb"><span>Workspace</span><b>/</b><strong>${pageLabel}</strong></div><div class="top-actions"><span class="api-status ${backendOnline ? 'connected' : 'offline'}" title="${escapeHtml(backendError || 'Zeno API connected')}"><i></i>${backendOnline ? 'API' : 'Offline'}</span><button class="icon-button" type="button" data-global-search title="Search session log" aria-label="Search session log">${icon('search')}</button><button class="theme-toggle" type="button" id="theme-toggle" title="Switch to ${theme === 'dark' ? 'light' : 'dark'} mode" aria-label="Switch to ${theme === 'dark' ? 'light' : 'dark'} mode"><span class="theme-icon">${theme === 'dark' ? icon('sun') : icon('moon')}</span><span>${theme === 'dark' ? 'Light' : 'Dark'}</span></button><button class="avatar" type="button" data-page="profile" title="${escapeHtml(currentUser.displayName)}" aria-label="Open profile">${escapeHtml(currentUser.displayName.slice(0, 1).toUpperCase())}</button></div></header>
+        <section class="content" id="dashboard-content" tabindex="-1">
           ${pageContent}
         </section>
       </main>
     </div>${pendingDeleteEntry ? `<button class="delete-popover-backdrop" data-learning-delete-cancel aria-label="Cancel delete"></button><div class="delete-popover" role="dialog" aria-label="Confirm delete" style="top:${deletePopoverPosition.top}px;left:${deletePopoverPosition.left}px"><strong>Delete lesson?</strong><span>${escapeHtml(pendingDeleteEntry.title)}</span><div><button class="delete-confirm" data-learning-delete-confirm>Delete</button><button data-learning-delete-cancel>Cancel</button></div></div>` : ''}`;
   restoreLearningListScroll();
+  if (isLearningRoute(route)) bindLearningMaterialsEvents({ onNavigate: navigateTo, rerender: render });
+  if (isWorkoutMaterialsRoute(route)) bindWorkoutMaterialEvents({
+    onNavigate: navigateTo,
+    rerender: render,
+    scheduleWorkout,
+    onStatus: (online, error) => { backendOnline = online; backendError = error; },
+  });
   if (page === 'profile') bindProfileEvents({
     onSave: (displayName) => { void saveProfile(displayName); },
     onLogout: () => { void logoutAccount(); },
@@ -435,10 +502,26 @@ function render() {
     rerender: render,
     onStatus: (online, error) => { backendOnline = online; backendError = error; },
   });
+  document.querySelector<HTMLButtonElement>('[data-learning-materials]')?.addEventListener('click', () => navigateTo('/learning/materials'));
+  document.querySelector<HTMLButtonElement>('[data-workout-materials]')?.addEventListener('click', () => navigateTo(`/workout/materials?date=${encodeURIComponent(currentWorkoutDate())}`));
+  document.querySelector<HTMLButtonElement>('[data-global-search]')?.addEventListener('click', () => {
+    if (window.location.pathname !== pagePaths.overview) {
+      navigateTo(pagePaths.overview);
+    }
+    requestAnimationFrame(() => {
+      const input = document.querySelector<HTMLInputElement>('#search');
+      input?.focus();
+      input?.select();
+    });
+  });
   document.querySelector<HTMLInputElement>('#search')?.addEventListener('input', (event) => { query = (event.target as HTMLInputElement).value; render(); document.querySelector<HTMLInputElement>('#search')?.focus(); });
   document.querySelectorAll<HTMLButtonElement>('[data-filter]').forEach((button) => button.addEventListener('click', () => { filter = button.dataset.filter as Filter; render(); }));
   document.querySelectorAll<HTMLButtonElement>('[data-expand]').forEach((button) => button.addEventListener('click', () => { const index = Number(button.dataset.expand); expanded.has(index) ? expanded.delete(index) : expanded.add(index); render(); }));
-  document.querySelectorAll<HTMLButtonElement>('[data-page]').forEach((button) => button.addEventListener('click', () => { const nextPage = button.dataset.page as Page; if (nextPage !== page) history.pushState({ page: nextPage }, '', pagePaths[nextPage]); page = nextPage; if (isLifestylePage(page)) syncLifestyleRoute(page); editingLearningId = null; render(); window.scrollTo({ top: 0 }); }));
+  document.querySelectorAll<HTMLButtonElement>('[data-page]').forEach((button) => button.addEventListener('click', () => {
+    const nextPage = button.dataset.page as Page;
+    const destination = pagePaths[nextPage];
+    if (window.location.pathname !== destination) navigateTo(destination);
+  }));
   document.querySelectorAll<HTMLButtonElement>('[data-change-period]').forEach((button) => button.addEventListener('click', () => { changeLogPeriod = button.dataset.changePeriod as ChangeLogPeriod; render(); }));
   document.querySelector<HTMLSelectElement>('#change-log-sort')?.addEventListener('change', (event) => { changeLogSort = (event.target as HTMLSelectElement).value as ChangeLogSort; render(); });
   document.querySelector<HTMLButtonElement>('[data-calendar-prev]')?.addEventListener('click', () => { learningMonth = new Date(learningMonth.getFullYear(), learningMonth.getMonth() - 1, 1); render(); });
@@ -455,11 +538,19 @@ function render() {
   document.querySelector<HTMLFormElement>('#learning-form')?.addEventListener('submit', async (event) => { event.preventDefault(); const form = new FormData(event.currentTarget as HTMLFormElement); const title = String(form.get('title') ?? '').trim(); if (!title) return; const payload = { date: selectedLearningDate, title, note: String(form.get('note') ?? '').trim() || 'Catatan pembelajaran ditambahkan.', category: String(form.get('category') ?? 'General') }; try { const created = await api.createLearning(payload); const entry: LearningEntry = { id: created.id, title: created.title, note: created.note, category: created.category, completed: created.completed }; learningEntries[selectedLearningDate] = [...(learningEntries[selectedLearningDate] ?? []), entry]; localStorage.setItem(learningStorageKey, JSON.stringify(learningEntries)); backendOnline = true; backendError = ''; } catch (error) { backendOnline = false; backendError = error instanceof Error ? error.message : 'Backend tidak tersedia'; } render(); });
   document.querySelector<HTMLFormElement>('#settings-form')?.addEventListener('submit', async (event) => { event.preventDefault(); const form = new FormData(event.currentTarget as HTMLFormElement); const workspaceName = String(form.get('workspaceName') ?? '').trim(); if (!workspaceName) return; try { backendSettings = await api.updateSettings(workspaceName); backendOnline = true; backendError = ''; } catch (error) { backendOnline = false; backendError = error instanceof Error ? error.message : 'Backend tidak tersedia'; } render(); });
   document.querySelector<HTMLButtonElement>('#theme-toggle')?.addEventListener('click', () => { theme = theme === 'dark' ? 'light' : 'dark'; localStorage.setItem('hermes-monitor-theme', theme); applyTheme(); render(); });
+  document.querySelectorAll<HTMLInputElement>('input[data-font-profile]').forEach((input) => input.addEventListener('change', () => {
+    if (!isFontProfile(input.value)) return;
+    fontProfile = input.value;
+    localStorage.setItem(fontProfileStorageKey, fontProfile);
+    applyTheme();
+    render();
+    requestAnimationFrame(() => [...document.querySelectorAll<HTMLInputElement>('input[data-font-profile]')].find((option) => option.value === fontProfile)?.focus());
+  }));
   document.querySelector<HTMLButtonElement>('#sidebar-toggle')?.addEventListener('click', () => { sidebarCollapsed = !sidebarCollapsed; localStorage.setItem('hermes-monitor-sidebar', sidebarCollapsed ? 'collapsed' : 'expanded'); render(); });
 }
 window.addEventListener('popstate', () => {
   if (!currentUser) {
-    if (isLandingPath(window.location.pathname)) {
+    if (isPublicLandingPath(window.location.pathname)) {
       render();
       return;
     }
@@ -470,16 +561,17 @@ window.addEventListener('popstate', () => {
     return;
   }
   if (isAuthPath(window.location.pathname)) {
+    route = { kind: 'page', page: 'overview' };
     page = 'overview';
     history.replaceState({ page }, '', pagePaths.overview);
   } else {
-    page = pageFromPath(window.location.pathname);
+    syncRouteFromLocation();
   }
   if (page === 'settings' && currentUser.role !== 'admin') {
+    route = { kind: 'page', page: 'profile' };
     page = 'profile';
     history.replaceState({ page }, '', pagePaths.profile);
   }
-  if (isLifestylePage(page)) syncLifestyleRoute(page);
   editingLearningId = null;
   render();
 });
@@ -492,6 +584,12 @@ window.addEventListener('zeno:unauthorized', () => {
   history.replaceState({ authView }, '', '/login');
   render();
 });
-applyTheme();
-render();
-void bootstrapAuth();
+
+async function start() {
+  applyTheme();
+  if (!isPublicLandingPath(window.location.pathname)) await ensureAppStyles();
+  render();
+  void bootstrapAuth();
+}
+
+void start();

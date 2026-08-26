@@ -1,0 +1,141 @@
+{
+  "schemaVersion": "1.0",
+  "contentVersion": 1,
+  "id": "conditionals-zero-first-second",
+  "subject": "english",
+  "category": "grammar",
+  "locale": "en",
+  "title": "Zero, First, and Second Conditionals",
+  "level": "B1",
+  "sequence": 26,
+  "estimatedMinutes": 26,
+  "prerequisites": ["present-simple", "future-plans-predictions", "zero-first-conditionals"],
+  "revisits": ["present-simple", "future-plans-predictions", "zero-first-conditionals"],
+  "objectives": [
+    "Use the zero conditional for general results.",
+    "Use the first conditional for a realistic future possibility.",
+    "Use the second conditional for an unreal or unlikely present/future situation.",
+    "Explain how the speaker's viewpoint changes the conditional choice."
+  ],
+  "concept": {
+    "summary": "Conditionals connect a condition with its result. The form shows how the speaker views that relationship.",
+    "contrast": "Zero presents a regular result, first presents a real future possibility, and second presents an imagined or remote situation."
+  },
+  "explanation": [
+    {
+      "heading": "Zero conditional: general result",
+      "body": "Use if + present simple, present simple when the result is generally true or regularly follows. 'When' can often replace 'if' without much change."
+    },
+    {
+      "heading": "First conditional: realistic future",
+      "body": "Use if + present simple, will + base verb for a possible future condition and its likely result. Do not normally put 'will' in the if-clause."
+    },
+    {
+      "heading": "Second conditional: imagined or remote",
+      "body": "Use if + past simple, would + base verb for an unreal, hypothetical, or unlikely present/future situation. The past form marks distance, not past time."
+    }
+  ],
+  "examples": [
+    {
+      "sentence": "If water reaches 100°C at sea level, it boils.",
+      "note": "A general result: zero conditional."
+    },
+    {
+      "sentence": "If it rains tomorrow, we will move the event indoors.",
+      "note": "A realistic future possibility: first conditional."
+    },
+    {
+      "sentence": "If I had more free time, I would learn Korean.",
+      "note": "An imagined present situation: second conditional."
+    },
+    {
+      "sentence": "If I were you, I would back up the files first.",
+      "note": "A common second-conditional pattern for advice."
+    }
+  ],
+  "practice": [
+    {
+      "id": "c012-p1",
+      "type": "multiple_choice",
+      "prompt": "If you heat ice, it ___.",
+      "options": ["melts", "will melt", "would melt"],
+      "answer": "melts",
+      "explanation": "The sentence presents a general result."
+    },
+    {
+      "id": "c012-p2",
+      "type": "fill_blank",
+      "prompt": "If the server goes offline tonight, I ___ (call) you.",
+      "answer": "will call",
+      "explanation": "The condition is a realistic future possibility."
+    },
+    {
+      "id": "c012-p3",
+      "type": "rewrite",
+      "prompt": "Make this an imagined situation: 'I do not know the answer, so I cannot help.'",
+      "answer": "If I knew the answer, I would help.",
+      "explanation": "Past form plus would marks an unreal present situation."
+    }
+  ],
+  "quiz": [
+    {
+      "id": "c012-q1",
+      "objectiveIndex": 0,
+      "type": "multiple_choice",
+      "prompt": "Which sentence states a regular consequence?",
+      "options": [
+        "If I miss the bus tomorrow, I will take a taxi.",
+        "If people do not sleep enough, they feel tired.",
+        "If I lived nearer, I would walk."
+      ],
+      "answer": "If people do not sleep enough, they feel tired.",
+      "explanation": "Both clauses use the present simple for a general relationship."
+    },
+    {
+      "id": "c012-q2",
+      "objectiveIndex": 1,
+      "type": "fill_blank",
+      "prompt": "If Hana finishes early, she ___ (join) us.",
+      "answer": "will join",
+      "explanation": "This is a realistic future result."
+    },
+    {
+      "id": "c012-q3",
+      "objectiveIndex": 2,
+      "type": "fill_blank",
+      "prompt": "If I ___ (be) the manager, I would change the schedule.",
+      "answer": "were",
+      "explanation": "'Were' is the standard formal choice in this hypothetical pattern."
+    },
+    {
+      "id": "c012-q4",
+      "objectiveIndex": 3,
+      "type": "multiple_choice",
+      "prompt": "What difference does the second conditional add to 'If I win, I will travel'?",
+      "options": [
+        "It presents winning as more remote or imagined.",
+        "It moves winning into the completed past.",
+        "It states a scientific fact."
+      ],
+      "answer": "It presents winning as more remote or imagined.",
+      "explanation": "Second-conditional past form expresses distance from reality."
+    }
+  ],
+  "mastery": {
+    "minimumScorePercent": 80,
+    "requiredObjectiveIndexes": [0, 1, 2, 3]
+  },
+  "review": {
+    "keyTakeaways": [
+      "Zero = general relationship.",
+      "First = realistic future possibility.",
+      "Second = imagined or remote present/future situation.",
+      "The past form in the second conditional marks distance, not past time."
+    ],
+    "suggestedReviewAfterDays": [1, 7, 21],
+    "reviewPrompts": [
+      "Describe one general result, one real plan, and one imagined change.",
+      "Change a first conditional into a second conditional and explain the viewpoint shift."
+    ]
+  }
+}

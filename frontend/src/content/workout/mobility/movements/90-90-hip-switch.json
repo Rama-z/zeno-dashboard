@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "1.0",
+  "contentVersion": 1,
+  "id": "90-90-hip-switch",
+  "category": "mobility",
+  "name": "90/90 Hip Switch",
+  "shortDescription": "Latihan duduk untuk mengeksplorasi rotasi internal dan eksternal pinggul secara perlahan.",
+  "equipment": ["Mat (opsional)"],
+  "bodyAreas": ["Pinggul", "Paha dalam"],
+  "primaryTarget": "Rotasi internal dan eksternal pinggul",
+  "difficulty": "Beginner",
+  "recommendation": {
+    "text": "2 set × 8 repetisi per sisi",
+    "sets": 2,
+    "reps": 8
+  },
+  "steps": [
+    "Duduk dengan kedua lutut ditekuk dan kaki sedikit lebih lebar dari pinggul.",
+    "Jatuhkan kedua lutut ke satu sisi sambil menjaga dada tetap panjang.",
+    "Kembali ke tengah, lalu pindahkan kedua lutut ke sisi berlawanan.",
+    "Bergerak dalam rentang yang dapat dikontrol tanpa memaksa lutut atau pinggul."
+  ],
+  "cues": [
+    "Gunakan tangan di belakang tubuh bila perlu agar posisi tetap stabil.",
+    "Putar dari pinggul, bukan dengan mendorong lutut secara agresif.",
+    "Perlambat fase kembali untuk menjaga kontrol."
+  ],
+  "safetyNotes": [
+    "Kurangi rentang gerak bila terasa mencubit atau menimbulkan nyeri tajam.",
+    "Gerakan ini adalah referensi kebugaran umum, bukan diagnosis atau terapi cedera."
+  ]
+}
