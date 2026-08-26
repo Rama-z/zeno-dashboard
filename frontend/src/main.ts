@@ -7,6 +7,8 @@ import { changeLogUpdates, type ChangeLogUpdate } from './change-log';
 import { bindLifestyleEvents, isLifestylePage, renderLifestylePage, syncLifestyleData, syncLifestyleRoute } from './lifestyle';
 import { bindDoingEvents, renderDoingPage, syncDoingData } from './doing';
 import { authPath, authViewFromPath, bindAuthEvents, bindProfileEvents, renderAuthScreen, renderProfilePage, type AuthScreenState, type AuthView } from './auth';
+import { bindLandingEvents, renderLandingPage } from './landing';
+import './landing.css';
 
 type Filter = 'all' | 'success' | 'info';
 type Page = 'overview' | 'activity' | 'settings' | 'profile' | 'changelog' | 'doing' | 'learning' | 'workout' | 'journaling' | 'spending';
@@ -173,6 +175,10 @@ function isAuthPath(pathname: string) {
   return pathname === '/login' || pathname === '/register' || pathname === '/verify-email';
 }
 
+function isLandingPath(pathname: string) {
+  return pathname === '/';
+}
+
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'Terjadi kesalahan.';
 }
@@ -287,7 +293,7 @@ async function bootstrapAuth() {
     if (!(error instanceof ApiError) || error.status !== 401) backendError = errorMessage(error);
     currentUser = null; authChecked = true;
     authView = authViewFromPath(window.location.pathname);
-    if (!isAuthPath(window.location.pathname)) {
+    if (!isAuthPath(window.location.pathname) && !isLandingPath(window.location.pathname)) {
       authView = 'login';
       history.replaceState({ authView }, '', '/login');
     }
@@ -364,6 +370,19 @@ function render() {
     return;
   }
   if (!currentUser) {
+    if (isLandingPath(window.location.pathname)) {
+      document.title = 'Zeno | Personal workspace';
+      app.innerHTML = renderLandingPage(theme);
+      bindLandingEvents({
+        onThemeToggle: () => {
+          theme = theme === 'dark' ? 'light' : 'dark';
+          localStorage.setItem('hermes-monitor-theme', theme);
+          applyTheme();
+          render();
+        },
+      });
+      return;
+    }
     document.title = `${authView === 'register' ? 'Register' : authView === 'verify' ? 'Verify Email' : 'Login'} · Zeno`;
     app.innerHTML = renderAuthScreen(authView, authState);
     bindCurrentAuthScreen();
@@ -440,6 +459,10 @@ function render() {
 }
 window.addEventListener('popstate', () => {
   if (!currentUser) {
+    if (isLandingPath(window.location.pathname)) {
+      render();
+      return;
+    }
     authView = authViewFromPath(window.location.pathname);
     authState = { busy: false, message: '', error: '', verificationStatus: authView === 'verify' ? 'pending' : 'idle' };
     render();

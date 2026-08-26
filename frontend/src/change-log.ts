@@ -93,4 +93,11 @@ export const changeLogUpdates: ChangeLogUpdate[] = [
     description: 'Menginisialisasi Zeno sebagai satu monorepo pada branch main, menghubungkannya ke Rama-z/zeno-dashboard, menambahkan ignore rules untuk secret dan runtime artifact, dokumentasi root, serta GitHub Actions untuk format, vet, test PostgreSQL, build backend, build frontend, dan build Docker. Initial push, fresh clone, secret scan, dan CI pertama telah diverifikasi berhasil.',
     category: 'DevOps',
   },
+  {
+    id: '2026-08-24-dashboard-compact-redesign',
+    occurredAt: '2026-08-24T13:02:56+07:00',
+    title: 'Dashboard overview dipadatkan dengan visual Zeno',
+    description: 'Merapikan shell dashboard, memperlebar area konten, memadatkan spacing heading, metric, toolbar, dan row session, serta menjaga state expand, filter, sidebar, responsive layout, dan dark/light mode.',
+    category: 'Frontend',
+  },
 ];
