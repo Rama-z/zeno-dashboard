@@ -294,24 +294,108 @@ func TestPostgresDoingRoundTrip(t *testing.T) {
 	}
 	defer db.Close()
 
-	entry := model.DoingEntry{ID: "00000000-0000-4000-8000-000000000002", Date: "2099-12-30", Title: "Doing integration test", Note: "Temporary", Category: "Test", CreatedAt: time.Now().UTC()}
+	completedAt := time.Date(2099, 12, 30, 14, 27, 0, 0, time.UTC)
+	entry := model.DoingEntry{ID: "00000000-0000-4000-8000-000000000002", Date: "2099-12-30", Title: "Doing integration test", Note: "Need handle refresh token", Category: "Work", Status: "doing", Priority: "high", TimeBlockStart: "09:00", TimeBlockEnd: "11:00", EstimatedMinutes: 120, ActualMinutes: 90, Project: "Zeno Dashboard", GoalOutcome: "OAuth reaches dashboard", Progress: 60, EnergyFocus: "deep", Dependency: "Google OAuth credentials", CarryOver: true, CreatedAt: time.Now().UTC()}
 	created, err := db.CreateDoing(ctx, entry)
 	if err != nil {
 		t.Fatal(err)
 	}
 	created.Title = "Updated doing integration test"
+	created.Status = "done"
 	created.Completed = true
-	updated, found, err := db.UpdateDoing(ctx, created)
-	if err != nil || !found || updated.Title != created.Title || !updated.Completed {
+	created.Progress = 100
+	created.CompletedAt = &completedAt
+	updated, found, err := db.UpdateDoing(ctx, created, "", true)
+	if err != nil || !found || updated.Title != created.Title || !updated.Completed || updated.Status != "done" || updated.CompletedAt == nil {
 		t.Fatalf("expected doing update success: %+v, %v, %v", updated, found, err)
 	}
-	entries, err := db.ListDoing(ctx, entry.Date)
-	if err != nil || len(entries) != 1 || entries[0].ID != entry.ID {
+	entries, err := db.ListDoing(ctx, entry.Date, "", true)
+	if err != nil || len(entries) != 1 || entries[0].ID != entry.ID || entries[0].Priority != "high" || entries[0].EstimatedMinutes != 120 || entries[0].Project != "Zeno Dashboard" || !entries[0].CarryOver {
 		t.Fatalf("expected stored doing entry: %+v, %v", entries, err)
 	}
-	deleted, err := db.DeleteDoing(ctx, created.ID, entry.Date)
+	deleted, err := db.DeleteDoing(ctx, created.ID, entry.Date, "", true)
 	if err != nil || !deleted {
 		t.Fatalf("expected doing cleanup success: %v, %v", deleted, err)
+	}
+}
+
+func TestPostgresDoingTenantIsolation(t *testing.T) {
+	dsn := os.Getenv("TEST_DATABASE_URL")
+	if dsn == "" {
+		t.Skip("TEST_DATABASE_URL is not set")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	const (
+		ownerA = "00000000-0000-4000-8000-000000000080"
+		ownerB = "00000000-0000-4000-8000-000000000081"
+		taskA  = "00000000-0000-4000-8000-000000000082"
+		taskB  = "00000000-0000-4000-8000-000000000083"
+		date   = "2099-12-29"
+	)
+	db, err := store.New(ctx, dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	raw, err := pgxpool.New(ctx, dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer raw.Close()
+	cleanup := func(cleanupCtx context.Context) {
+		_, _ = raw.Exec(cleanupCtx, `DELETE FROM doing_entries WHERE id IN ($1::uuid, $2::uuid)`, taskA, taskB)
+		_, _ = raw.Exec(cleanupCtx, `DELETE FROM users WHERE id IN ($1::uuid, $2::uuid)`, ownerA, ownerB)
+	}
+	cleanup(ctx)
+	defer cleanup(context.Background())
+	now := time.Now().UTC()
+	for _, user := range []struct{ id, email string }{{ownerA, "doing-owner-a@example.test"}, {ownerB, "doing-owner-b@example.test"}} {
+		if _, err := raw.Exec(ctx, `INSERT INTO users (id, email, display_name, password_hash, role, email_verified_at, created_at, updated_at) VALUES ($1::uuid, $2, 'Doing Tenant Test', 'test-hash', 'user', $3, $3, $3)`, user.id, user.email, now); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, entry := range []model.DoingEntry{
+		{ID: taskA, OwnerUserID: ownerA, Date: date, Title: "Owner A task", Status: "todo", Priority: "medium", Category: "Work", EnergyFocus: "medium", Note: "Tenant A", CreatedAt: now},
+		{ID: taskB, OwnerUserID: ownerB, Date: date, Title: "Owner B task", Status: "todo", Priority: "medium", Category: "Work", EnergyFocus: "medium", Note: "Tenant B", CreatedAt: now.Add(time.Second)},
+	} {
+		if _, err := db.CreateDoing(ctx, entry); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	ownerEntries, err := db.ListDoing(ctx, date, ownerA, false)
+	if err != nil || len(ownerEntries) != 1 || ownerEntries[0].ID != taskA {
+		t.Fatalf("ordinary user read crossed tenant boundary: entries=%+v err=%v", ownerEntries, err)
+	}
+	foreign := model.DoingEntry{ID: taskB, OwnerUserID: ownerB, Date: date, Title: "Unauthorized mutation", Status: "todo", Priority: "medium", Category: "Work", EnergyFocus: "medium", Note: "must not persist", CreatedAt: now}
+	if updated, found, err := db.UpdateDoing(ctx, foreign, ownerA, false); err != nil || found {
+		t.Fatalf("ordinary user updated foreign row: updated=%+v found=%v err=%v", updated, found, err)
+	}
+	if deleted, err := db.DeleteDoing(ctx, taskB, date, ownerA, false); err != nil || deleted {
+		t.Fatalf("ordinary user deleted foreign row: deleted=%v err=%v", deleted, err)
+	}
+
+	adminEntries, err := db.ListDoing(ctx, date, ownerA, true)
+	if err != nil || len(adminEntries) != 2 {
+		t.Fatalf("admin list must use explicit cross-tenant path: entries=%+v err=%v", adminEntries, err)
+	}
+	var ownerBEntry model.DoingEntry
+	for _, entry := range adminEntries {
+		if entry.ID == taskB {
+			ownerBEntry = entry
+		}
+	}
+	if ownerBEntry.ID == "" || ownerBEntry.Title != "Owner B task" {
+		t.Fatalf("foreign mutation changed row or admin could not read it: %+v", ownerBEntry)
+	}
+	ownerBEntry.Title = "Admin updated owner B task"
+	if updated, found, err := db.UpdateDoing(ctx, ownerBEntry, ownerA, true); err != nil || !found || updated.Title != ownerBEntry.Title {
+		t.Fatalf("admin update path failed: updated=%+v found=%v err=%v", updated, found, err)
+	}
+	if deleted, err := db.DeleteDoing(ctx, taskB, date, ownerA, true); err != nil || !deleted {
+		t.Fatalf("admin delete path failed: deleted=%v err=%v", deleted, err)
 	}
 }
 

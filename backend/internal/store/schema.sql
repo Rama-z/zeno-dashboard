@@ -97,9 +97,23 @@ CREATE TABLE IF NOT EXISTS doing_entries (
     owner_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
     doing_date DATE NOT NULL,
     title VARCHAR(160) NOT NULL,
+    status VARCHAR(16) NOT NULL DEFAULT 'todo' CHECK (status IN ('todo', 'doing', 'blocked', 'done')),
+    priority VARCHAR(16) NOT NULL DEFAULT 'medium' CHECK (priority IN ('high', 'medium', 'low')),
+    time_block_start VARCHAR(5) NOT NULL DEFAULT '' CHECK (time_block_start = '' OR time_block_start ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'),
+    time_block_end VARCHAR(5) NOT NULL DEFAULT '' CHECK (time_block_end = '' OR time_block_end ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'),
+    estimated_minutes INTEGER NOT NULL DEFAULT 0 CHECK (estimated_minutes >= 0),
+    actual_minutes INTEGER NOT NULL DEFAULT 0 CHECK (actual_minutes >= 0),
     note VARCHAR(2000) NOT NULL,
     category VARCHAR(60) NOT NULL,
+    project VARCHAR(160) NOT NULL DEFAULT '',
+    goal_outcome VARCHAR(500) NOT NULL DEFAULT '',
+    progress INTEGER NOT NULL DEFAULT 0 CHECK (progress BETWEEN 0 AND 100),
+    energy_focus VARCHAR(16) NOT NULL DEFAULT 'medium' CHECK (energy_focus IN ('deep', 'medium', 'light')),
+    dependency VARCHAR(500) NOT NULL DEFAULT '',
+    blocked_by VARCHAR(500) NOT NULL DEFAULT '',
+    carry_over BOOLEAN NOT NULL DEFAULT FALSE,
     completed BOOLEAN NOT NULL DEFAULT FALSE,
+    completed_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -107,6 +121,43 @@ CREATE INDEX IF NOT EXISTS doing_entries_date_created_idx
 ON doing_entries (doing_date, created_at DESC);
 
 ALTER TABLE doing_entries ADD COLUMN IF NOT EXISTS owner_user_id UUID REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE doing_entries ADD COLUMN IF NOT EXISTS status VARCHAR(16) NOT NULL DEFAULT 'todo' CHECK (status IN ('todo', 'doing', 'blocked', 'done'));
+ALTER TABLE doing_entries ADD COLUMN IF NOT EXISTS priority VARCHAR(16) NOT NULL DEFAULT 'medium' CHECK (priority IN ('high', 'medium', 'low'));
+ALTER TABLE doing_entries ADD COLUMN IF NOT EXISTS time_block_start VARCHAR(5) NOT NULL DEFAULT '' CHECK (time_block_start = '' OR time_block_start ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$');
+ALTER TABLE doing_entries ADD COLUMN IF NOT EXISTS time_block_end VARCHAR(5) NOT NULL DEFAULT '' CHECK (time_block_end = '' OR time_block_end ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$');
+ALTER TABLE doing_entries ADD COLUMN IF NOT EXISTS estimated_minutes INTEGER NOT NULL DEFAULT 0 CHECK (estimated_minutes >= 0);
+ALTER TABLE doing_entries ADD COLUMN IF NOT EXISTS actual_minutes INTEGER NOT NULL DEFAULT 0 CHECK (actual_minutes >= 0);
+ALTER TABLE doing_entries ADD COLUMN IF NOT EXISTS project VARCHAR(160) NOT NULL DEFAULT '';
+ALTER TABLE doing_entries ADD COLUMN IF NOT EXISTS goal_outcome VARCHAR(500) NOT NULL DEFAULT '';
+ALTER TABLE doing_entries ADD COLUMN IF NOT EXISTS progress INTEGER NOT NULL DEFAULT 0 CHECK (progress BETWEEN 0 AND 100);
+ALTER TABLE doing_entries ADD COLUMN IF NOT EXISTS energy_focus VARCHAR(16) NOT NULL DEFAULT 'medium' CHECK (energy_focus IN ('deep', 'medium', 'light'));
+ALTER TABLE doing_entries ADD COLUMN IF NOT EXISTS dependency VARCHAR(500) NOT NULL DEFAULT '';
+ALTER TABLE doing_entries ADD COLUMN IF NOT EXISTS blocked_by VARCHAR(500) NOT NULL DEFAULT '';
+ALTER TABLE doing_entries ADD COLUMN IF NOT EXISTS carry_over BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE doing_entries ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ;
+UPDATE doing_entries SET status = 'done' WHERE completed AND status <> 'done';
+UPDATE doing_entries SET completed = (status = 'done');
+UPDATE doing_entries SET completed_at = COALESCE(completed_at, created_at) WHERE status = 'done';
+UPDATE doing_entries SET completed_at = NULL WHERE status <> 'done';
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'doing_entries_time_block_check'
+          AND conrelid = 'doing_entries'::regclass
+    ) THEN
+        ALTER TABLE doing_entries ADD CONSTRAINT doing_entries_time_block_check
+            CHECK ((time_block_start = '' AND time_block_end = '') OR (time_block_start <> '' AND time_block_end <> '' AND time_block_start < time_block_end));
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'doing_entries_completion_status_check'
+          AND conrelid = 'doing_entries'::regclass
+    ) THEN
+        ALTER TABLE doing_entries ADD CONSTRAINT doing_entries_completion_status_check
+            CHECK (completed = (status = 'done'));
+    END IF;
+END $$;
 CREATE INDEX IF NOT EXISTS doing_entries_owner_date_idx ON doing_entries (owner_user_id, doing_date DESC);
 
 CREATE TABLE IF NOT EXISTS workout_entries (

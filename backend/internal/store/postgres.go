@@ -559,23 +559,67 @@ func (p *Postgres) UpsertLearningMaterialProgress(ctx context.Context, ownerID s
 	return progress, true, nil
 }
 
-func (p *Postgres) CreateDoing(ctx context.Context, entry model.DoingEntry) (model.DoingEntry, error) {
-	err := p.pool.QueryRow(ctx, `
-		INSERT INTO doing_entries (id, owner_user_id, doing_date, title, note, category, completed, created_at)
-		VALUES ($1::uuid, NULLIF($2, '')::uuid, $3::date, $4, $5, $6, $7, $8)
-		RETURNING id::text, COALESCE(owner_user_id::text, ''), doing_date::text, title, note, category, completed, created_at`,
-		entry.ID, entry.OwnerUserID, entry.Date, entry.Title, entry.Note, entry.Category, entry.Completed, entry.CreatedAt,
-	).Scan(&entry.ID, &entry.OwnerUserID, &entry.Date, &entry.Title, &entry.Note, &entry.Category, &entry.Completed, &entry.CreatedAt)
+func scanDoingEntry(scan scanFunc) (model.DoingEntry, error) {
+	var entry model.DoingEntry
+	var completedAt sql.NullTime
+	err := scan(
+		&entry.ID, &entry.OwnerUserID, &entry.Date, &entry.Title, &entry.Status, &entry.Priority,
+		&entry.TimeBlockStart, &entry.TimeBlockEnd, &entry.EstimatedMinutes, &entry.ActualMinutes,
+		&entry.Category, &entry.Project, &entry.GoalOutcome, &entry.Progress, &entry.EnergyFocus,
+		&entry.Dependency, &entry.BlockedBy, &entry.Note, &entry.CarryOver, &entry.Completed,
+		&completedAt, &entry.CreatedAt,
+	)
+	if completedAt.Valid {
+		entry.CompletedAt = &completedAt.Time
+	}
 	return entry, err
 }
 
-func (p *Postgres) ListDoing(ctx context.Context, date string) ([]model.DoingEntry, error) {
-	query := `SELECT id::text, COALESCE(owner_user_id::text, ''), doing_date::text, title, note, category, completed, created_at FROM doing_entries`
+const doingColumns = `id::text, COALESCE(owner_user_id::text, ''), doing_date::text, title, status, priority,
+	time_block_start, time_block_end, estimated_minutes, actual_minutes, category, project, goal_outcome,
+	progress, energy_focus, dependency, blocked_by, note, carry_over, completed, completed_at, created_at`
+
+func (p *Postgres) CreateDoing(ctx context.Context, entry model.DoingEntry) (model.DoingEntry, error) {
+	return scanDoingEntry(p.pool.QueryRow(ctx, `
+		INSERT INTO doing_entries (
+			id, owner_user_id, doing_date, title, status, priority, time_block_start, time_block_end,
+			estimated_minutes, actual_minutes, category, project, goal_outcome, progress, energy_focus,
+			dependency, blocked_by, note, carry_over, completed, completed_at, created_at
+		)
+		VALUES ($1::uuid, NULLIF($2, '')::uuid, $3::date, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
+		RETURNING `+doingColumns,
+		entry.ID, entry.OwnerUserID, entry.Date, entry.Title, entry.Status, entry.Priority,
+		entry.TimeBlockStart, entry.TimeBlockEnd, entry.EstimatedMinutes, entry.ActualMinutes,
+		entry.Category, entry.Project, entry.GoalOutcome, entry.Progress, entry.EnergyFocus,
+		entry.Dependency, entry.BlockedBy, entry.Note, entry.CarryOver, entry.Completed,
+		entry.CompletedAt, entry.CreatedAt,
+	).Scan)
+}
+
+func (p *Postgres) ListDoing(ctx context.Context, date, actorUserID string, isAdmin bool) ([]model.DoingEntry, error) {
+	if isAdmin {
+		return p.listDoingAdmin(ctx, date)
+	}
+	query := `SELECT ` + doingColumns + ` FROM doing_entries WHERE owner_user_id = NULLIF($1, '')::uuid`
+	args := []any{actorUserID}
+	if date != "" {
+		query += ` AND doing_date = $2`
+		args = append(args, date)
+	}
+	return p.listDoing(ctx, query, args...)
+}
+
+func (p *Postgres) listDoingAdmin(ctx context.Context, date string) ([]model.DoingEntry, error) {
+	query := `SELECT ` + doingColumns + ` FROM doing_entries`
 	args := []any{}
 	if date != "" {
 		query += ` WHERE doing_date = $1`
 		args = append(args, date)
 	}
+	return p.listDoing(ctx, query, args...)
+}
+
+func (p *Postgres) listDoing(ctx context.Context, query string, args ...any) ([]model.DoingEntry, error) {
 	query += ` ORDER BY doing_date DESC, created_at DESC`
 	rows, err := p.pool.Query(ctx, query, args...)
 	if err != nil {
@@ -584,8 +628,8 @@ func (p *Postgres) ListDoing(ctx context.Context, date string) ([]model.DoingEnt
 	defer rows.Close()
 	entries := make([]model.DoingEntry, 0)
 	for rows.Next() {
-		var entry model.DoingEntry
-		if err := rows.Scan(&entry.ID, &entry.OwnerUserID, &entry.Date, &entry.Title, &entry.Note, &entry.Category, &entry.Completed, &entry.CreatedAt); err != nil {
+		entry, err := scanDoingEntry(rows.Scan)
+		if err != nil {
 			return nil, err
 		}
 		entries = append(entries, entry)
@@ -593,21 +637,53 @@ func (p *Postgres) ListDoing(ctx context.Context, date string) ([]model.DoingEnt
 	return entries, rows.Err()
 }
 
-func (p *Postgres) UpdateDoing(ctx context.Context, entry model.DoingEntry) (model.DoingEntry, bool, error) {
-	err := p.pool.QueryRow(ctx, `
+func (p *Postgres) UpdateDoing(ctx context.Context, entry model.DoingEntry, actorUserID string, isAdmin bool) (model.DoingEntry, bool, error) {
+	if isAdmin {
+		return p.updateDoingAdmin(ctx, entry)
+	}
+	return p.updateDoing(ctx, entry, ` AND owner_user_id = NULLIF($21, '')::uuid`, actorUserID)
+}
+
+func (p *Postgres) updateDoingAdmin(ctx context.Context, entry model.DoingEntry) (model.DoingEntry, bool, error) {
+	return p.updateDoing(ctx, entry, "")
+}
+
+func (p *Postgres) updateDoing(ctx context.Context, entry model.DoingEntry, ownerPredicate string, ownerArgs ...any) (model.DoingEntry, bool, error) {
+	args := []any{
+		entry.ID, entry.Date, entry.Title, entry.Status, entry.Priority, entry.TimeBlockStart,
+		entry.TimeBlockEnd, entry.EstimatedMinutes, entry.ActualMinutes, entry.Category, entry.Project,
+		entry.GoalOutcome, entry.Progress, entry.EnergyFocus, entry.Dependency, entry.BlockedBy,
+		entry.Note, entry.CarryOver, entry.Completed, entry.CompletedAt,
+	}
+	args = append(args, ownerArgs...)
+	updated, err := scanDoingEntry(p.pool.QueryRow(ctx, `
 		UPDATE doing_entries
-		SET title = $3, note = $4, category = $5, completed = $6
-		WHERE id = $1::uuid AND doing_date = $2::date
-		RETURNING id::text, COALESCE(owner_user_id::text, ''), doing_date::text, title, note, category, completed, created_at`,
-		entry.ID, entry.Date, entry.Title, entry.Note, entry.Category, entry.Completed,
-	).Scan(&entry.ID, &entry.OwnerUserID, &entry.Date, &entry.Title, &entry.Note, &entry.Category, &entry.Completed, &entry.CreatedAt)
+		SET title = $3, status = $4, priority = $5, time_block_start = $6, time_block_end = $7,
+			estimated_minutes = $8, actual_minutes = $9, category = $10, project = $11,
+			goal_outcome = $12, progress = $13, energy_focus = $14, dependency = $15,
+			blocked_by = $16, note = $17, carry_over = $18, completed = $19, completed_at = $20
+		WHERE id = $1::uuid AND doing_date = $2::date`+ownerPredicate+`
+		RETURNING `+doingColumns,
+		args...,
+	).Scan)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return model.DoingEntry{}, false, nil
 	}
-	return entry, err == nil, err
+	return updated, err == nil, err
 }
 
-func (p *Postgres) DeleteDoing(ctx context.Context, id, date string) (bool, error) {
+func (p *Postgres) DeleteDoing(ctx context.Context, id, date, actorUserID string, isAdmin bool) (bool, error) {
+	if isAdmin {
+		return p.deleteDoingAdmin(ctx, id, date)
+	}
+	result, err := p.pool.Exec(ctx, `DELETE FROM doing_entries WHERE id = $1::uuid AND doing_date = $2::date AND owner_user_id = NULLIF($3, '')::uuid`, id, date, actorUserID)
+	if err != nil {
+		return false, err
+	}
+	return result.RowsAffected() == 1, nil
+}
+
+func (p *Postgres) deleteDoingAdmin(ctx context.Context, id, date string) (bool, error) {
 	result, err := p.pool.Exec(ctx, `DELETE FROM doing_entries WHERE id = $1::uuid AND doing_date = $2::date`, id, date)
 	if err != nil {
 		return false, err

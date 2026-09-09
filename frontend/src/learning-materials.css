@@ -72,3 +72,115 @@
 .learning-progress-saving{color:var(--primary-hover);font:500 10px 'DM Mono'}.learning-progress-error{display:block;margin-top:6px;color:#d26b73}.mastery-panel.saved{border-color:color-mix(in srgb,#0a9b68 42%,var(--border))}.learning-material-breadcrumb button:focus-visible,.learning-material-back:focus-visible,.topic-open:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 @media(max-width:640px){.learning-mistakes-grid{grid-template-columns:1fr}.lesson-section-heading{align-items:flex-start;flex-direction:column}.topic-title-row{align-items:flex-start;flex-direction:column}.learning-material-error-state,.learning-material-not-found{padding:20px}}
 @media(prefers-reduced-motion:reduce){.learning-material-spinner{animation:none}}
+
+/* Nebula Glass catalogue surfaces: depth without nested blur. */
+.learning-material-card,
+.learning-topic-card,
+.lesson-hero,
+.lesson-section,
+.concept-card,
+.lesson-example,
+.review-card,
+.mastery-panel {
+  border-color: var(--glass-border);
+  border-radius: var(--radius-card);
+  background: var(--glass-surface-medium);
+  box-shadow: var(--shadow-card), inset 0 1px var(--glass-highlight);
+}
+.learning-material-card,
+.learning-topic-card,
+.topic-open,
+.learning-material-back,
+.learning-materials button {
+  transition: color .2s ease, background-color .2s ease, border-color .2s ease, transform .2s ease;
+}
+.learning-material-card:hover,
+.learning-topic-card:hover {
+  border-color: var(--glass-border-strong);
+  background: var(--glass-surface-interactive);
+  box-shadow: var(--shadow-accent), inset 0 1px var(--glass-highlight);
+}
+.learning-material-card:focus-visible,
+.learning-topic-card:focus-visible,
+.learning-materials :is(button,input,select,textarea):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.learning-material-card .material-arrow,
+.learning-material-card .material-kicker,
+.learning-material-breadcrumb a,
+.learning-material-breadcrumb button,
+.topic-status.awareness {
+  color: var(--accent);
+}
+.learning-material-card .material-chip,
+.learning-topic-card .topic-availability,
+.learning-topic-card .topic-prerequisites,
+.lesson-stat,
+.review-card {
+  border-color: var(--glass-border);
+  background: var(--glass-surface-low);
+}
+.learning-material-loading,
+.learning-material-error-state,
+.learning-material-empty.large,
+.learning-material-not-found {
+  border-color: var(--glass-border);
+  border-radius: var(--radius-card);
+  background: var(--glass-surface-high);
+  box-shadow: var(--shadow-raised), inset 0 1px var(--glass-highlight);
+}
+.learning-feedback.correct,
+.mastery-panel.saved {
+  border-color: color-mix(in srgb, var(--success) 48%, var(--glass-border));
+  background: color-mix(in srgb, var(--success) 10%, var(--glass-surface-medium));
+}
+.learning-feedback.incorrect,
+.learning-progress-error {
+  border-color: color-mix(in srgb, var(--danger) 44%, var(--glass-border));
+}
+.learning-mistake {
+  border-color: color-mix(in srgb, var(--danger) 34%, var(--glass-border));
+  background: color-mix(in srgb, var(--danger) 7%, var(--glass-surface-medium));
+}
+.learning-mistake del,
+.learning-progress-error {
+  color: var(--danger);
+}
+.topic-status.mastered,
+.material-chip.success,
+.learning-mistake strong {
+  color: var(--success);
+}
+.topic-status.due {
+  color: var(--warning);
+}
+.learning-topic-toolbar,
+.lesson-stats,
+.lesson-examples-grid,
+.review-grid {
+  border-color: var(--glass-border);
+}
+@media (max-width: 640px) {
+  .learning-material-card,
+  .learning-topic-card,
+  .lesson-hero,
+  .lesson-section,
+  .concept-card,
+  .mastery-panel {
+    box-shadow: var(--shadow-card), inset 0 1px var(--glass-highlight);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .learning-material-card,
+  .learning-topic-card,
+  .topic-open,
+  .learning-material-back,
+  .learning-materials button {
+    transition: none;
+  }
+  .learning-material-card:hover,
+  .learning-topic-card:hover {
+    transform: none;
+  }
+}

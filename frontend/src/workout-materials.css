@@ -8,3 +8,97 @@
 @media(max-width:700px){.workout-material-list{grid-template-columns:1fr}.workout-material-hero{padding:19px}.workout-material-hero-mark{font-size:28px}.workout-material-schedule-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.workout-material-note{grid-column:1/-1}.workout-heading-actions{align-items:stretch;justify-content:stretch;flex-direction:column}.workout-heading-actions .feature-button,.workout-heading-actions .connection{width:100%;box-sizing:border-box}.workout-heading-actions .connection{justify-content:flex-start}}
 @media(max-width:480px){.workout-material-breadcrumb{gap:6px;font-size:7px;overflow:auto;white-space:nowrap;padding-bottom:2px}.workout-material-category-card,.workout-material-card,.workout-material-section,.workout-material-action-card{padding:15px}.workout-material-reference-grid{grid-template-columns:1fr}.workout-material-schedule-grid{grid-template-columns:1fr}.workout-material-schedule-grid label,.workout-material-note{grid-column:auto}.workout-material-card-actions .feature-button,.workout-material-not-found .workout-material-back{width:100%;min-height:44px}.workout-material-card-actions{display:block}.workout-material-not-found>div{display:grid}.workout-material-breadcrumb button{min-height:44px}}
 @media(prefers-reduced-motion:reduce){.workout-material-category-card,.workout-material-card{transition:none}.workout-material-category-card:hover,.workout-material-card:hover{transform:none}}
+
+/* Nebula Glass workout catalogue: readable depth for reference content. */
+.workout-material-category-card,
+.workout-material-card,
+.workout-material-hero,
+.workout-material-section,
+.workout-material-action-card,
+.workout-material-summary-item {
+  border-color: var(--glass-border);
+  border-radius: var(--radius-card);
+  background: var(--glass-surface-medium);
+  box-shadow: var(--shadow-card), inset 0 1px var(--glass-highlight);
+}
+.workout-material-category-card,
+.workout-material-card,
+.workout-material-card-actions .feature-button,
+.workout-material-back,
+.workout-heading-actions .feature-button {
+  transition: color .2s ease, background-color .2s ease, border-color .2s ease, transform .2s ease;
+}
+.workout-material-category-card:hover,
+.workout-material-card:hover {
+  border-color: var(--glass-border-strong);
+  background: var(--glass-surface-interactive);
+  box-shadow: var(--shadow-accent), inset 0 1px var(--glass-highlight);
+  transform: translateY(-2px);
+}
+.workout-material-category-card:focus-visible,
+.workout-material-card:focus-visible,
+.workout-materials :is(button,input,select,textarea):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.workout-material-breadcrumb button:focus-visible,
+.workout-material-back:focus-visible {
+  color: var(--primary-hover);
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.workout-material-card-meta span,
+.workout-material-chips span,
+.workout-material-difficulty {
+  border-color: color-mix(in srgb, var(--accent-secondary) 34%, var(--glass-border));
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent-secondary) 14%, transparent);
+}
+.workout-material-hero {
+  background:
+    radial-gradient(circle at 90% 0%, color-mix(in srgb, var(--ambient-secondary) 88%, transparent), transparent 34%),
+    var(--glass-surface-medium);
+}
+.workout-material-hero-target {
+  border-left-color: var(--primary);
+}
+.workout-material-summary-item,
+.workout-material-schedule-summary {
+  border-color: var(--glass-border);
+  background: var(--glass-surface-low);
+}
+.workout-material-schedule,
+.workout-material-action-card {
+  border-color: var(--glass-border-strong);
+}
+.workout-material-schedule-grid :is(input,textarea):focus-visible {
+  border-color: var(--glass-border-strong);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+.workout-material-error {
+  border-color: color-mix(in srgb, var(--danger) 44%, var(--glass-border));
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 8%, var(--glass-surface-high));
+}
+@media (max-width: 640px) {
+  .workout-material-category-card,
+  .workout-material-card,
+  .workout-material-hero,
+  .workout-material-section,
+  .workout-material-action-card {
+    box-shadow: var(--shadow-card), inset 0 1px var(--glass-highlight);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .workout-material-category-card,
+  .workout-material-card,
+  .workout-material-card-actions .feature-button,
+  .workout-material-back,
+  .workout-heading-actions .feature-button {
+    transition: none;
+  }
+  .workout-material-category-card:hover,
+  .workout-material-card:hover {
+    transform: none;
+  }
+}

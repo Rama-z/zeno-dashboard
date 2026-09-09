@@ -289,13 +289,19 @@ paths:
     get:
       tags: [Doing]
       summary: Baca task Doing berdasarkan tanggal opsional
+      security: [{CookieAuth: []}]
       parameters:
         - {in: query, name: date, schema: {type: string, format: date}}
       responses:
         '200': {description: Doing entries}
+        '400': {description: Format tanggal tidak valid}
+        '401': {description: Login diperlukan}
     post:
       tags: [Doing]
       summary: Tambah task Doing
+      security: [{CookieAuth: [], CSRFToken: []}]
+      parameters:
+        - {in: header, name: X-CSRF-Token, required: true, schema: {type: string}}
       requestBody:
         required: true
         content:
@@ -304,12 +310,16 @@ paths:
       responses:
         '201': {description: Task dibuat}
         '400': {description: Input tidak valid}
+        '401': {description: Login diperlukan}
+        '403': {description: CSRF token atau origin tidak valid}
   /api/doing/{id}:
     put:
       tags: [Doing]
       summary: Edit task atau ubah status checklist
+      security: [{CookieAuth: [], CSRFToken: []}]
       parameters:
         - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+        - {in: header, name: X-CSRF-Token, required: true, schema: {type: string}}
       requestBody:
         required: true
         content:
@@ -317,15 +327,23 @@ paths:
             schema: {$ref: '#/components/schemas/DoingInput'}
       responses:
         '200': {description: Task diperbarui}
+        '400': {description: Input atau data task tidak valid}
+        '401': {description: Login diperlukan}
+        '403': {description: CSRF token atau origin tidak valid}
         '404': {description: Task tidak ditemukan}
     delete:
       tags: [Doing]
       summary: Hapus task Doing
+      security: [{CookieAuth: [], CSRFToken: []}]
       parameters:
         - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
         - {in: query, name: date, required: true, schema: {type: string, format: date}}
+        - {in: header, name: X-CSRF-Token, required: true, schema: {type: string}}
       responses:
         '200': {description: Task dihapus}
+        '400': {description: ID atau format tanggal tidak valid}
+        '401': {description: Login diperlukan}
+        '403': {description: CSRF token atau origin tidak valid}
         '404': {description: Task tidak ditemukan}
   /api/workouts:
     get:
@@ -610,15 +628,29 @@ components:
       properties:
         date: {type: string, format: date}
         title: {type: string, maxLength: 160}
+        status: {type: string, enum: [todo, doing, blocked, done], default: todo}
+        priority: {type: string, enum: [high, medium, low], default: medium}
+        timeBlockStart: {type: string, pattern: '^$|^([01][0-9]|2[0-3]):[0-5][0-9]$', description: Optional HH:MM start paired with timeBlockEnd}
+        timeBlockEnd: {type: string, pattern: '^$|^([01][0-9]|2[0-3]):[0-5][0-9]$', description: Optional HH:MM end after timeBlockStart}
+        estimatedMinutes: {type: integer, minimum: 0, maximum: 2147483647, default: 0}
+        actualMinutes: {type: integer, minimum: 0, maximum: 2147483647, default: 0}
         note: {type: string, maxLength: 2000}
         category: {type: string, maxLength: 60, default: General}
-        completed: {type: boolean, default: false}
+        project: {type: string, maxLength: 160}
+        goalOutcome: {type: string, maxLength: 500}
+        progress: {type: integer, minimum: 0, maximum: 100, default: 0}
+        energyFocus: {type: string, enum: [deep, medium, light], default: medium}
+        dependency: {type: string, maxLength: 500}
+        blockedBy: {type: string, maxLength: 500}
+        carryOver: {type: boolean, default: false}
+        completed: {type: boolean, default: false, description: Backward-compatible mirror of status done}
     DoingEntry:
       allOf:
         - {$ref: '#/components/schemas/DoingInput'}
         - type: object
           properties:
             id: {type: string, format: uuid}
+            completedAt: {type: string, format: date-time, nullable: true, description: Set by the server while status is done}
             createdAt: {type: string, format: date-time}
     WorkoutInput:
       type: object

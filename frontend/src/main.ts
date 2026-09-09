@@ -12,6 +12,7 @@ import { bindLandingEvents, renderLandingPage } from './landing';
 import { bindLearningMaterialsEvents, ensureLearningMaterialData, renderLearningMaterials as learningMaterials } from './learning-materials';
 import { bindWorkoutMaterialEvents, renderWorkoutMaterials } from './workout-materials';
 import { isLearningMaterialRoute, isLearningRoute, isWorkoutMaterialsRoute, pageForRoute, pagePaths, resolveAppRoute, type AppRoute, type Page } from './app-route';
+import { activeOrbitLocation, chooseOrbitTriggerDock, orbitSegmentGeometry, paginateOrbitItems, visibleOrbitNavigation, type OrbitDestination, type OrbitNavigationItem, type OrbitRole } from './orbit-navigation';
 
 type Filter = 'all' | 'success' | 'info';
 type ChangeLogPeriod = 'all' | 'today' | 'yesterday' | 'week' | 'older';
@@ -63,7 +64,12 @@ function fontProfileOptions(): FontProfileOption[] {
   }));
 }
 let fontProfile: FontProfile = isFontProfile(localStorage.getItem(fontProfileStorageKey)) ? localStorage.getItem(fontProfileStorageKey) as FontProfile : 'compact';
-let sidebarCollapsed = localStorage.getItem('hermes-monitor-sidebar') === 'collapsed';
+let orbitOpen = false;
+let orbitGroupId: string | null = null;
+let orbitPage = 0;
+let orbitClosing = false;
+let orbitCloseTimer: number | null = null;
+let orbitTransitionToken = 0;
 const learningStorageKey = 'hermes-monitor-learning-v1';
 const today = new Date();
 const dateKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -91,11 +97,11 @@ let learningEntries: Record<string, LearningEntry[]> = (() => {
 function applyTheme() {
   document.documentElement.dataset.theme = theme;
   document.documentElement.dataset.fontProfile = fontProfile;
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'light' ? '#f5f7fb' : '#08090a');
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'light' ? '#F6F9FC' : '#07091A');
 }
 
 const iconNames: Record<string, string> = {
-  grid: 'squares-four', activity: 'pulse', settings: 'sliders-horizontal', profile: 'user-circle', search: 'magnifying-glass', arrow: 'arrow-up-right', check: 'check', info: 'info', chevron: 'caret-down', file: 'notebook', doing: 'check-square', calendar: 'calendar-dots', workout: 'barbell', journal: 'note-pencil', spending: 'wallet', sun: 'sun', moon: 'moon', collapse: 'caret-left', expand: 'caret-right', edit: 'pencil-simple', trash: 'trash',
+  grid: 'squares-four', activity: 'pulse', settings: 'sliders-horizontal', profile: 'user-circle', search: 'magnifying-glass', arrow: 'arrow-up-right', check: 'check', info: 'info', chevron: 'caret-down', file: 'notebook', doing: 'check-square', calendar: 'calendar-dots', workout: 'barbell', journal: 'note-pencil', spending: 'wallet', sun: 'sun', moon: 'moon', collapse: 'caret-left', expand: 'caret-right', edit: 'pencil-simple', trash: 'trash', compass: 'compass-rose', close: 'x', back: 'arrow-left', next: 'arrow-right',
 };
 const icon = (name: string) => `<span class="ph ph-${iconNames[name] ?? 'circle'}" aria-hidden="true"></span>`;
 
@@ -422,6 +428,180 @@ function renderPublicLanding() {
   });
 }
 
+function orbitRole(): OrbitRole {
+  return currentUser?.role === 'admin' ? 'admin' : 'user';
+}
+
+function closeOrbitCommand(restoreFocus = true) {
+  if (!orbitOpen || orbitClosing) return;
+  orbitTransitionToken++;
+  const finish = () => {
+    if (orbitCloseTimer !== null) window.clearTimeout(orbitCloseTimer);
+    orbitCloseTimer = null;
+    orbitClosing = false;
+    orbitOpen = false;
+    orbitGroupId = null;
+    orbitPage = 0;
+    render();
+    if (restoreFocus) requestAnimationFrame(() => document.querySelector<HTMLButtonElement>('.orbit-trigger')?.focus());
+  };
+  const overlay = document.querySelector<HTMLElement>('.orbit-overlay');
+  if (!overlay || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    finish();
+    return;
+  }
+  orbitClosing = true;
+  overlay.classList.add('is-closing');
+  document.querySelector<HTMLButtonElement>('.orbit-trigger')?.focus();
+  overlay.querySelectorAll<HTMLButtonElement>('button').forEach((button) => { button.disabled = true; });
+  document.querySelector<HTMLButtonElement>('.orbit-trigger')?.setAttribute('aria-expanded', 'false');
+  orbitCloseTimer = window.setTimeout(finish, 200);
+}
+
+async function changeOrbitLayer(group: string | null, page = 0, preferredId?: string) {
+  if (!orbitOpen || orbitClosing) return;
+  const token = ++orbitTransitionToken;
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const disc = document.querySelector<HTMLElement>('.orbit-disc');
+  if (!reduce && disc) {
+    await disc.animate([{opacity:1},{opacity:0}], {duration:100,easing:'cubic-bezier(.22,.7,.2,1)'}).finished.catch(() => {});
+  }
+  if (token !== orbitTransitionToken || !orbitOpen || orbitClosing) return;
+  orbitGroupId = group;
+  orbitPage = page;
+  render();
+  const dialog = document.querySelector<HTMLElement>('.orbit-dialog');
+  if (dialog) dialog.style.animation = 'none';
+  if (!reduce) document.querySelector<HTMLElement>('.orbit-disc')?.animate([{opacity:0},{opacity:1}], {duration:100,easing:'cubic-bezier(.22,.7,.2,1)'});
+  focusOrbitLayer(preferredId);
+}
+
+function focusOrbitLayer(preferredId?: string) {
+  requestAnimationFrame(() => {
+    if (!orbitOpen || orbitClosing) return;
+    const preferred = preferredId ? document.querySelector<HTMLButtonElement>(`[data-orbit-segment="${CSS.escape(preferredId)}"]`) : null;
+    const active = document.querySelector<HTMLButtonElement>('.orbit-segment.active');
+    (preferred ?? active ?? document.querySelector<HTMLButtonElement>('.orbit-segment'))?.focus();
+  });
+}
+
+function renderOrbitSegment(destination: OrbitNavigationItem | OrbitDestination, index: number, count: number, active: boolean) {
+  const geometry = orbitSegmentGeometry(index, count);
+  const hasChildren = 'children' in destination && Boolean(destination.children?.length);
+  const action = hasChildren ? `data-orbit-group="${escapeHtml(destination.id)}"` : `data-orbit-route="${escapeHtml(destination.route)}"`;
+  return `<button type="button" class="orbit-segment ${active ? 'active' : ''}" data-orbit-segment="${escapeHtml(destination.id)}" ${action} aria-label="${escapeHtml(hasChildren ? `Explore ${destination.label}` : `Open ${destination.label}`)}" aria-current="${active ? 'page' : 'false'}" ${hasChildren ? 'aria-haspopup="true"' : ''} style="--orbit-label-x:${geometry.labelX.toFixed(3)}%;--orbit-label-y:${geometry.labelY.toFixed(3)}%;clip-path:${geometry.clip}"><svg class="orbit-shape" viewBox="0 0 100 100" aria-hidden="true"><path d="${geometry.path}" /></svg><span class="orbit-segment-label"><span class="ph ph-${escapeHtml(destination.icon)}" aria-hidden="true"></span><strong>${escapeHtml(destination.label)}</strong>${hasChildren ? '<span class="orbit-child-indicator ph ph-caret-right" aria-hidden="true"></span>' : ''}</span></button>`;
+}
+
+function renderOrbitCommand() {
+  const role = orbitRole();
+  const navigation = visibleOrbitNavigation(role);
+  const active = activeOrbitLocation(window.location.pathname, role);
+  const group = orbitGroupId ? navigation.find((item) => item.id === orbitGroupId && item.children?.length) ?? null : null;
+  const layerItems: Array<OrbitNavigationItem | OrbitDestination> = group?.children ?? navigation;
+  const pagination = paginateOrbitItems(layerItems, orbitPage, 8);
+  if (pagination.currentPage !== orbitPage) orbitPage = pagination.currentPage;
+  const segments = pagination.items.map((item, index) => renderOrbitSegment(item, index, pagination.items.length, group ? item.id === active.destination.id : item.id === active.item.id)).join('');
+  const paginationControls = pagination.pageCount > 1 ? `<div class="orbit-pagination" aria-label="Orbit pages"><button type="button" data-orbit-page="prev" aria-label="Previous Orbit page" ${pagination.currentPage === 0 ? 'disabled' : ''}>${icon('back')}</button><span>${pagination.currentPage + 1}/${pagination.pageCount}</span><button type="button" data-orbit-page="next" aria-label="Next Orbit page" ${pagination.currentPage === pagination.pageCount - 1 ? 'disabled' : ''}>${icon('next')}</button></div>` : '';
+  const center = group ? `<button type="button" class="orbit-center-action" data-orbit-back aria-label="Back to main menu">${icon('back')}<span>Back</span></button>` : `<strong class="orbit-wordmark">ZENO</strong>`;
+  return `<button type="button" class="orbit-trigger" data-orbit-close aria-label="${escapeHtml(orbitOpen ? 'Close Zeno navigation' : `Open Zeno navigation: ${active.label}`)}" aria-expanded="${orbitOpen}" aria-controls="orbit-command-dialog"><span class="orbit-trigger-icon">${icon(orbitOpen ? 'close' : 'compass')}</span><span class="orbit-trigger-label">${escapeHtml(active.label)}</span><span class="orbit-trigger-key">${orbitOpen ? 'Close' : 'Menu'}</span></button>${orbitOpen ? `<div class="orbit-overlay ${orbitClosing ? 'is-closing' : ''}"><button type="button" class="orbit-backdrop" data-orbit-backdrop tabindex="-1" aria-label="Close Zeno navigation"></button><section class="orbit-dialog" id="orbit-command-dialog" role="dialog" aria-modal="true" aria-label="${escapeHtml(group ? `${group.label} destinations` : 'Zeno navigation')}"><div class="orbit-disc" data-layer="${group ? 'children' : 'root'}">${segments}<div class="orbit-center">${center}</div>${paginationControls}</div></section></div>` : ''}`;
+}
+
+function bindOrbitCommand() {
+  document.querySelector<HTMLElement>('.zeno-dashboard')?.toggleAttribute('inert', orbitOpen);
+  document.querySelector<HTMLElement>('.skip-link')?.toggleAttribute('inert', orbitOpen);
+  if (orbitClosing) document.querySelector<HTMLElement>('.orbit-disc')?.setAttribute('inert', '');
+  if (orbitOpen && !orbitClosing) focusOrbitLayer();
+  document.querySelector<HTMLButtonElement>('.orbit-trigger')?.addEventListener('click', () => {
+    if (orbitClosing) {
+      if (orbitCloseTimer !== null) window.clearTimeout(orbitCloseTimer);
+      orbitCloseTimer = null;
+      orbitClosing = false;
+      orbitOpen = false;
+      orbitTransitionToken++;
+    }
+    if (orbitOpen) {
+      closeOrbitCommand();
+      return;
+    }
+    orbitOpen = true;
+    orbitGroupId = null;
+    orbitPage = 0;
+    render();
+    focusOrbitLayer();
+  });
+  document.querySelectorAll<HTMLElement>('[data-orbit-backdrop]').forEach((control) => control.addEventListener('click', () => closeOrbitCommand()));
+  document.querySelector<HTMLButtonElement>('[data-orbit-back]')?.addEventListener('click', () => {
+    const previousGroup = orbitGroupId;
+    void changeOrbitLayer(null, 0, previousGroup ?? undefined);
+  });
+  document.querySelectorAll<HTMLButtonElement>('[data-orbit-group]').forEach((button) => button.addEventListener('click', () => {
+    void changeOrbitLayer(button.dataset.orbitGroup ?? null);
+  }));
+  document.querySelectorAll<HTMLButtonElement>('[data-orbit-route]').forEach((button) => button.addEventListener('click', () => {
+    const destination = button.dataset.orbitRoute;
+    if (!destination || orbitClosing) return;
+    orbitTransitionToken++;
+    orbitOpen = false;
+    orbitGroupId = null;
+    orbitPage = 0;
+    if (window.location.pathname !== destination) navigateTo(destination);
+    else render();
+    requestAnimationFrame(() => document.querySelector<HTMLButtonElement>('.orbit-trigger')?.focus());
+  }));
+  document.querySelectorAll<HTMLButtonElement>('[data-orbit-page]').forEach((button) => button.addEventListener('click', () => {
+    void changeOrbitLayer(orbitGroupId, orbitPage + (button.dataset.orbitPage === 'next' ? 1 : -1));
+  }));
+  const onOrbitKey = (event: KeyboardEvent) => {
+    if (!orbitOpen) return;
+    const focusable = [...document.querySelectorAll<HTMLButtonElement>('.orbit-dialog button:not([disabled]):not([tabindex="-1"])')];
+    const trigger = document.querySelector<HTMLButtonElement>('.orbit-trigger');
+    if (trigger) focusable.push(trigger);
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeOrbitCommand();
+      return;
+    }
+    if (event.key === 'Tab' && focusable.length) {
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+      return;
+    }
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown' || event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+      const segments = [...document.querySelectorAll<HTMLButtonElement>('.orbit-segment')];
+      const index = segments.indexOf(document.activeElement as HTMLButtonElement);
+      if (index < 0 || !segments.length) return;
+      event.preventDefault();
+      const direction = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : -1;
+      segments[(index + direction + segments.length) % segments.length].focus();
+    }
+  };
+  document.querySelector<HTMLElement>('.orbit-dialog')?.addEventListener('keydown', onOrbitKey);
+  document.querySelector<HTMLElement>('.orbit-trigger')?.addEventListener('keydown', onOrbitKey);
+}
+
+let orbitDockFrame: number | null = null;
+function updateOrbitTriggerDock() {
+  orbitDockFrame = null;
+  const trigger = document.querySelector<HTMLButtonElement>('.orbit-trigger');
+  if (!trigger) return;
+  const controls = [...document.querySelectorAll<HTMLElement>('.doing-editor :is(button[type="submit"],[data-doing-editor-cancel])')];
+  const triggerRect = trigger.getBoundingClientRect();
+  const avoidRects = controls.map((control) => control.getBoundingClientRect()).filter((rect) => rect.width > 0 && rect.height > 0);
+  trigger.dataset.orbitDock = chooseOrbitTriggerDock(
+    { width: window.innerWidth, height: window.innerHeight },
+    { width: triggerRect.width, height: triggerRect.height },
+    avoidRects,
+  );
+}
+function scheduleOrbitTriggerDock() {
+  if (orbitDockFrame !== null) cancelAnimationFrame(orbitDockFrame);
+  orbitDockFrame = requestAnimationFrame(updateOrbitTriggerDock);
+}
+window.addEventListener('scroll', scheduleOrbitTriggerDock, true);
+window.addEventListener('resize', scheduleOrbitTriggerDock);
+
 function render() {
   if (!authChecked) {
     if (isPublicLandingPath(window.location.pathname)) {
@@ -462,26 +642,20 @@ function render() {
           ${renderLifestylePage(page)}` : page === 'profile' ? `
           ${renderProfilePage(currentUser, profileBusy, profileMessage, profileError, fontProfileOptions())}` : `
           <div class="page-heading"><div><p class="eyebrow">WORKSPACE CONFIGURATION</p><h1>Settings</h1><p class="subheading">Kelola preferensi yang tersimpan di backend PostgreSQL.</p></div><div class="connection"><span class="status-dot"></span><span>${backendOnline ? 'Backend connected' : 'Backend unavailable'}</span></div></div>
-          <div class="settings-grid"><form class="settings-card" id="settings-form"><div class="settings-card-heading"><span class="settings-icon">${icon('settings')}</span><div><h2>Workspace</h2><p>Identitas dan sumber data dari API.</p></div></div><label class="setting-row"><span><strong>Workspace name</strong><small>Disimpan melalui PUT /api/settings</small></span><input name="workspaceName" value="${escapeHtml(backendSettings.workspaceName)}" aria-label="Workspace name" required /></label><label class="setting-row"><span><strong>Source file</strong><small>File Markdown yang dipantau backend</small></span><input value="${escapeHtml(backendSettings.sourceFile)}" aria-label="Source file" readonly /></label><button class="settings-save" type="submit">Save to backend</button></form><div class="settings-card"><div class="settings-card-heading"><span class="settings-icon">${icon('moon')}</span><div><h2>Appearance</h2><p>Preferensi tampilan dashboard.</p></div></div><div class="setting-row"><span><strong>Color mode</strong><small>Gunakan tombol di topbar untuk mengganti tema.</small></span><span class="setting-badge">${theme === 'dark' ? 'Dark mode' : 'Light mode'}</span></div><div class="setting-row"><span><strong>Sidebar state</strong><small>State disimpan di browser ini.</small></span><span class="setting-badge">${sidebarCollapsed ? 'Collapsed' : 'Expanded'}</span></div><div class="setting-row font-profile-row"><span><strong>Font profile</strong><small>Atur ukuran dan jarak teks dashboard.</small></span><fieldset class="font-profile-options" role="radiogroup" aria-label="Font profile"><legend class="sr-only">Font profile</legend>${(Object.keys(fontProfileLabels) as FontProfile[]).map((profile) => `<label class="font-profile-option"><input type="radio" name="fontProfile" value="${profile}" data-font-profile aria-label="${fontProfileLabels[profile]}" ${fontProfile === profile ? 'checked' : ''} /><span>${fontProfileLabels[profile]}</span><small>${fontProfileDescriptions[profile]}</small></label>`).join('')}</fieldset></div></div></div>`;
+          <div class="settings-grid"><form class="settings-card" id="settings-form"><div class="settings-card-heading"><span class="settings-icon">${icon('settings')}</span><div><h2>Workspace</h2><p>Identitas dan sumber data dari API.</p></div></div><label class="setting-row"><span><strong>Workspace name</strong><small>Disimpan melalui PUT /api/settings</small></span><input name="workspaceName" value="${escapeHtml(backendSettings.workspaceName)}" aria-label="Workspace name" required /></label><label class="setting-row"><span><strong>Source file</strong><small>File Markdown yang dipantau backend</small></span><input value="${escapeHtml(backendSettings.sourceFile)}" aria-label="Source file" readonly /></label><button class="settings-save" type="submit">Save to backend</button></form><div class="settings-card"><div class="settings-card-heading"><span class="settings-icon">${icon('moon')}</span><div><h2>Appearance</h2><p>Preferensi tampilan dashboard.</p></div></div><div class="setting-row"><span><strong>Color mode</strong><small>Gunakan tombol di topbar untuk mengganti tema.</small></span><span class="setting-badge">${theme === 'dark' ? 'Dark mode' : 'Light mode'}</span></div><div class="setting-row"><span><strong>Navigation mode</strong><small>Navigasi overlay tidak mengurangi lebar konten.</small></span><span class="setting-badge">Orbit Command</span></div><div class="setting-row font-profile-row"><span><strong>Font profile</strong><small>Atur ukuran dan jarak teks dashboard.</small></span><fieldset class="font-profile-options" role="radiogroup" aria-label="Font profile"><legend class="sr-only">Font profile</legend>${(Object.keys(fontProfileLabels) as FontProfile[]).map((profile) => `<label class="font-profile-option"><input type="radio" name="fontProfile" value="${profile}" data-font-profile aria-label="${fontProfileLabels[profile]}" ${fontProfile === profile ? 'checked' : ''} /><span>${fontProfileLabels[profile]}</span><small>${fontProfileDescriptions[profile]}</small></label>`).join('')}</fieldset></div></div></div>`;
   app.innerHTML = `
     <a class="skip-link" href="#dashboard-content">Skip to dashboard content</a>
-    <div class="shell zeno-dashboard ${sidebarCollapsed ? 'sidebar-collapsed' : ''}">
-      <aside class="sidebar" aria-label="Primary navigation">
-        <div class="brand"><div class="brand-mark zeno-brand-mark"><img src="/zeno-logo-96.webp" alt="Zeno" /></div><div class="brand-copy"><b>Zeno</b><span>PERSONAL OS</span></div></div>
-        <nav aria-label="Workspace sections">
-          <div class="nav-section"><p class="nav-label">OBSERVE</p><button class="nav-item ${page === 'overview' ? 'active' : ''}" data-page="overview" aria-label="Overview" aria-current="${page === 'overview' ? 'page' : 'false'}"><span class="nav-icon">${icon('grid')}</span><span class="nav-text">Overview</span></button><button class="nav-item ${page === 'activity' ? 'active' : ''}" data-page="activity" aria-label="Activity" aria-current="${page === 'activity' ? 'page' : 'false'}"><span class="nav-icon">${icon('activity')}</span><span class="nav-text">Activity</span><span class="nav-count">${activityEvents.length}</span></button><button class="nav-item ${page === 'changelog' ? 'active' : ''}" data-page="changelog" aria-label="Change Log" aria-current="${page === 'changelog' ? 'page' : 'false'}"><span class="nav-icon">${icon('file')}</span><span class="nav-text">Change Log</span></button></div>
-          <div class="nav-section"><p class="nav-label">PERSONAL</p><button class="nav-item ${page === 'doing' ? 'active' : ''}" data-page="doing" aria-label="Doing" aria-current="${page === 'doing' ? 'page' : 'false'}"><span class="nav-icon">${icon('doing')}</span><span class="nav-text">Doing</span></button><button class="nav-item ${page === 'learning' ? 'active' : ''}" data-page="learning" aria-label="Learning" aria-current="${page === 'learning' ? 'page' : 'false'}"><span class="nav-icon">${icon('calendar')}</span><span class="nav-text">Learning</span></button><button class="nav-item ${page === 'workout' ? 'active' : ''}" data-page="workout" aria-label="Workout" aria-current="${page === 'workout' ? 'page' : 'false'}"><span class="nav-icon">${icon('workout')}</span><span class="nav-text">Workout</span></button><button class="nav-item ${page === 'journaling' ? 'active' : ''}" data-page="journaling" aria-label="Journaling" aria-current="${page === 'journaling' ? 'page' : 'false'}"><span class="nav-icon">${icon('journal')}</span><span class="nav-text">Journaling</span></button><button class="nav-item ${page === 'spending' ? 'active' : ''}" data-page="spending" aria-label="Spending" aria-current="${page === 'spending' ? 'page' : 'false'}"><span class="nav-icon">${icon('spending')}</span><span class="nav-text">Spending</span></button></div>
-          <div class="nav-section"><p class="nav-label">ACCOUNT</p><button class="nav-item ${page === 'profile' ? 'active' : ''}" data-page="profile" aria-label="Profile" aria-current="${page === 'profile' ? 'page' : 'false'}"><span class="nav-icon">${icon('profile')}</span><span class="nav-text">Profile</span></button>${currentUser.role === 'admin' ? `<button class="nav-item ${page === 'settings' ? 'active' : ''}" data-page="settings" aria-label="Settings" aria-current="${page === 'settings' ? 'page' : 'false'}"><span class="nav-icon">${icon('settings')}</span><span class="nav-text">Settings</span></button>` : ''}</div>
-        </nav>
-        <button class="sidebar-toggle" id="sidebar-toggle" title="${sidebarCollapsed ? 'Expand' : 'Collapse'} sidebar" aria-label="${sidebarCollapsed ? 'Expand' : 'Collapse'} sidebar"><span class="sidebar-toggle-icon">${sidebarCollapsed ? icon('expand') : icon('collapse')}</span><span class="sidebar-toggle-text">${sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}</span></button>
-      </aside>
+    <div class="shell zeno-dashboard">
       <main class="main">
         <header class="topbar"><div class="crumb"><span>Workspace</span><b>/</b><strong>${pageLabel}</strong></div><div class="top-actions"><span class="api-status ${backendOnline ? 'connected' : 'offline'}" title="${escapeHtml(backendError || 'Zeno API connected')}"><i></i>${backendOnline ? 'API' : 'Offline'}</span><button class="icon-button" type="button" data-global-search title="Search session log" aria-label="Search session log">${icon('search')}</button><button class="theme-toggle" type="button" id="theme-toggle" title="Switch to ${theme === 'dark' ? 'light' : 'dark'} mode" aria-label="Switch to ${theme === 'dark' ? 'light' : 'dark'} mode"><span class="theme-icon">${theme === 'dark' ? icon('sun') : icon('moon')}</span><span>${theme === 'dark' ? 'Light' : 'Dark'}</span></button><button class="avatar" type="button" data-page="profile" title="${escapeHtml(currentUser.displayName)}" aria-label="Open profile">${escapeHtml(currentUser.displayName.slice(0, 1).toUpperCase())}</button></div></header>
         <section class="content" id="dashboard-content" tabindex="-1">
           ${pageContent}
         </section>
       </main>
-    </div>${pendingDeleteEntry ? `<button class="delete-popover-backdrop" data-learning-delete-cancel aria-label="Cancel delete"></button><div class="delete-popover" role="dialog" aria-label="Confirm delete" style="top:${deletePopoverPosition.top}px;left:${deletePopoverPosition.left}px"><strong>Delete lesson?</strong><span>${escapeHtml(pendingDeleteEntry.title)}</span><div><button class="delete-confirm" data-learning-delete-confirm>Delete</button><button data-learning-delete-cancel>Cancel</button></div></div>` : ''}`;
+    </div>${pendingDeleteEntry ? `<button class="delete-popover-backdrop" data-learning-delete-cancel aria-label="Cancel delete"></button><div class="delete-popover" role="dialog" aria-label="Confirm delete" style="top:${deletePopoverPosition.top}px;left:${deletePopoverPosition.left}px"><strong>Delete lesson?</strong><span>${escapeHtml(pendingDeleteEntry.title)}</span><div><button class="delete-confirm" data-learning-delete-confirm>Delete</button><button data-learning-delete-cancel>Cancel</button></div></div>` : ''}${renderOrbitCommand()}`;
+  bindOrbitCommand();
+  updateOrbitTriggerDock();
+  scheduleOrbitTriggerDock();
   restoreLearningListScroll();
   if (isLearningRoute(route)) bindLearningMaterialsEvents({ onNavigate: navigateTo, rerender: render });
   if (isWorkoutMaterialsRoute(route)) bindWorkoutMaterialEvents({
@@ -546,7 +720,6 @@ function render() {
     render();
     requestAnimationFrame(() => [...document.querySelectorAll<HTMLInputElement>('input[data-font-profile]')].find((option) => option.value === fontProfile)?.focus());
   }));
-  document.querySelector<HTMLButtonElement>('#sidebar-toggle')?.addEventListener('click', () => { sidebarCollapsed = !sidebarCollapsed; localStorage.setItem('hermes-monitor-sidebar', sidebarCollapsed ? 'collapsed' : 'expanded'); render(); });
 }
 window.addEventListener('popstate', () => {
   if (!currentUser) {
@@ -572,6 +745,13 @@ window.addEventListener('popstate', () => {
     page = 'profile';
     history.replaceState({ page }, '', pagePaths.profile);
   }
+  orbitOpen = false;
+  orbitClosing = false;
+  orbitTransitionToken++;
+  if (orbitCloseTimer !== null) window.clearTimeout(orbitCloseTimer);
+  orbitCloseTimer = null;
+  orbitGroupId = null;
+  orbitPage = 0;
   editingLearningId = null;
   render();
 });

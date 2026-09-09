@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -29,6 +30,54 @@ type fakeStore struct{}
 type ownershipStore struct {
 	fakeStore
 	admin bool
+}
+
+type doingOwnershipStore struct {
+	fakeStore
+	admin          bool
+	listActorIDs   []string
+	listAdminFlags []bool
+	updateCalls    int
+	updateActorID  string
+	updateIsAdmin  bool
+	deleteCalls    int
+	deleteActorID  string
+	deleteIsAdmin  bool
+}
+
+func (s *doingOwnershipStore) GetSessionUser(_ context.Context, _ string, now time.Time) (model.User, bool, error) {
+	role := "user"
+	if s.admin {
+		role = "admin"
+	}
+	return model.User{ID: revisionTestUserID, Email: "rama@example.com", DisplayName: "Rama", Role: role, EmailVerifiedAt: &now}, true, nil
+}
+
+func (s *doingOwnershipStore) ListDoing(_ context.Context, date, actorUserID string, isAdmin bool) ([]model.DoingEntry, error) {
+	s.listActorIDs = append(s.listActorIDs, actorUserID)
+	s.listAdminFlags = append(s.listAdminFlags, isAdmin)
+	entries := []model.DoingEntry{
+		{ID: "55555555-5555-4555-8555-555555555555", OwnerUserID: revisionTestUserID, Date: date, Title: "Own Doing task", Status: "todo", Priority: "medium", Category: "Work", EnergyFocus: "medium", Note: "Own"},
+		{ID: "66666666-6666-4666-8666-666666666666", OwnerUserID: "cccccccc-cccc-4ccc-8ccc-cccccccccccc", Date: date, Title: "Foreign Doing task", Status: "todo", Priority: "medium", Category: "Work", EnergyFocus: "medium", Note: "Foreign"},
+	}
+	if isAdmin {
+		return entries, nil
+	}
+	return entries[:1], nil
+}
+
+func (s *doingOwnershipStore) UpdateDoing(_ context.Context, entry model.DoingEntry, actorUserID string, isAdmin bool) (model.DoingEntry, bool, error) {
+	s.updateCalls++
+	s.updateActorID = actorUserID
+	s.updateIsAdmin = isAdmin
+	return entry, true, nil
+}
+
+func (s *doingOwnershipStore) DeleteDoing(_ context.Context, _, _, actorUserID string, isAdmin bool) (bool, error) {
+	s.deleteCalls++
+	s.deleteActorID = actorUserID
+	s.deleteIsAdmin = isAdmin
+	return true, nil
 }
 
 const revisionTestUserID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
@@ -155,13 +204,15 @@ func (fakeStore) UpsertLearningMaterialProgress(context.Context, string, model.L
 func (fakeStore) CreateDoing(_ context.Context, entry model.DoingEntry) (model.DoingEntry, error) {
 	return entry, nil
 }
-func (fakeStore) ListDoing(context.Context, string) ([]model.DoingEntry, error) {
+func (fakeStore) ListDoing(context.Context, string, string, bool) ([]model.DoingEntry, error) {
 	return []model.DoingEntry{{ID: "55555555-5555-4555-8555-555555555555", Date: "2026-08-23", Title: "Ship Doing page", Note: "Match Learning behavior", Category: "Product"}}, nil
 }
-func (fakeStore) UpdateDoing(_ context.Context, entry model.DoingEntry) (model.DoingEntry, bool, error) {
+func (fakeStore) UpdateDoing(_ context.Context, entry model.DoingEntry, _ string, _ bool) (model.DoingEntry, bool, error) {
 	return entry, true, nil
 }
-func (fakeStore) DeleteDoing(context.Context, string, string) (bool, error) { return true, nil }
+func (fakeStore) DeleteDoing(context.Context, string, string, string, bool) (bool, error) {
+	return true, nil
+}
 func (fakeStore) CreateWorkout(_ context.Context, entry model.WorkoutEntry) (model.WorkoutEntry, error) {
 	return entry, nil
 }
@@ -283,6 +334,128 @@ func TestSwaggerUIAndOpenAPISpecAreServed(t *testing.T) {
 		if response.Code != http.StatusOK || response.Body.Len() == 0 {
 			t.Fatalf("expected %s to be served, got %d", path, response.Code)
 		}
+	}
+}
+
+func TestDoingOpenAPIContractMatchesRuntimeAuthAndErrors(t *testing.T) {
+	handler := api.New(fakeStore{}, fakeSource{}, "test", api.WithAuth(api.AuthOptions{Enabled: true}))
+	specResponse := httptest.NewRecorder()
+	handler.ServeHTTP(specResponse, httptest.NewRequest(http.MethodGet, "/openapi.yaml", nil))
+	if specResponse.Code != http.StatusOK {
+		t.Fatalf("expected OpenAPI spec 200, got %d", specResponse.Code)
+	}
+	spec := specResponse.Body.String()
+
+	operationBlock := func(path, method string) string {
+		lines := strings.Split(spec, "\n")
+		pathLine := "  " + path + ":"
+		methodLine := "    " + strings.ToLower(method) + ":"
+		inPath := false
+		start := -1
+		for index, line := range lines {
+			if line == pathLine {
+				inPath = true
+				continue
+			}
+			if inPath && strings.HasPrefix(line, "  /") {
+				if start >= 0 {
+					return strings.Join(lines[start:index], "\n")
+				}
+				break
+			}
+			if !inPath {
+				continue
+			}
+			if line == methodLine {
+				start = index
+				continue
+			}
+			if start >= 0 && strings.HasPrefix(line, "    ") && !strings.HasPrefix(line, "      ") {
+				return strings.Join(lines[start:index], "\n")
+			}
+		}
+		if start >= 0 {
+			return strings.Join(lines[start:], "\n")
+		}
+		t.Fatalf("OpenAPI operation %s %s not found", method, path)
+		return ""
+	}
+
+	type probe struct {
+		status int
+		path   string
+		body   string
+		auth   bool
+		csrf   bool
+	}
+	cases := []struct {
+		method       string
+		path         string
+		csrfRequired bool
+		statuses     []int
+		probes       []probe
+	}{
+		{http.MethodGet, "/api/doing", false, []int{400, 401}, []probe{
+			{401, "/api/doing", "", false, false},
+			{400, "/api/doing?date=not-a-date", "", true, false},
+		}},
+		{http.MethodPost, "/api/doing", true, []int{400, 401, 403}, []probe{
+			{401, "/api/doing", `{}`, false, false},
+			{403, "/api/doing", `{}`, true, false},
+			{400, "/api/doing", `{`, true, true},
+		}},
+		{http.MethodPut, "/api/doing/{id}", true, []int{400, 401, 403, 404}, []probe{
+			{401, "/api/doing/99999999-9999-4999-8999-999999999999", `{}`, false, false},
+			{403, "/api/doing/99999999-9999-4999-8999-999999999999", `{}`, true, false},
+			{400, "/api/doing/99999999-9999-4999-8999-999999999999", `{`, true, true},
+			{404, "/api/doing/99999999-9999-4999-8999-999999999999", `{"date":"2026-08-23","title":"Missing task"}`, true, true},
+		}},
+		{http.MethodDelete, "/api/doing/{id}", true, []int{400, 401, 403, 404}, []probe{
+			{401, "/api/doing/99999999-9999-4999-8999-999999999999?date=2026-08-23", "", false, false},
+			{403, "/api/doing/99999999-9999-4999-8999-999999999999?date=2026-08-23", "", true, false},
+			{400, "/api/doing/99999999-9999-4999-8999-999999999999", "", true, true},
+			{404, "/api/doing/99999999-9999-4999-8999-999999999999?date=2026-08-23", "", true, true},
+		}},
+	}
+
+	for _, test := range cases {
+		t.Run(test.method, func(t *testing.T) {
+			operation := operationBlock(test.path, test.method)
+			security := "security: [{CookieAuth: []}]"
+			if test.csrfRequired {
+				security = "security: [{CookieAuth: [], CSRFToken: []}]"
+				if !strings.Contains(operation, "in: header, name: X-CSRF-Token, required: true") {
+					t.Fatalf("%s %s must document the required X-CSRF-Token header:\n%s", test.method, test.path, operation)
+				}
+			}
+			if !strings.Contains(operation, security) {
+				t.Fatalf("%s %s must document runtime security %q:\n%s", test.method, test.path, security, operation)
+			}
+			for _, status := range test.statuses {
+				if !strings.Contains(operation, "'"+strconv.Itoa(status)+"':") {
+					t.Fatalf("%s %s must document runtime status %d:\n%s", test.method, test.path, status, operation)
+				}
+			}
+
+			for _, runtimeProbe := range test.probes {
+				request := httptest.NewRequest(test.method, runtimeProbe.path, strings.NewReader(runtimeProbe.body))
+				if runtimeProbe.body != "" {
+					request.Header.Set("Content-Type", "application/json")
+				}
+				if runtimeProbe.auth {
+					request.AddCookie(&http.Cookie{Name: "zeno_session", Value: "doing-contract-session"})
+				}
+				if runtimeProbe.csrf {
+					request.AddCookie(&http.Cookie{Name: "zeno_csrf", Value: "doing-contract-csrf"})
+					request.Header.Set("X-CSRF-Token", "doing-contract-csrf")
+				}
+				response := httptest.NewRecorder()
+				handler.ServeHTTP(response, request)
+				if response.Code != runtimeProbe.status {
+					t.Fatalf("runtime probe %s %s: expected %d, got %d: %s", test.method, runtimeProbe.path, runtimeProbe.status, response.Code, response.Body.String())
+				}
+			}
+		})
 	}
 }
 
@@ -853,6 +1026,109 @@ func TestCreateDoingPersistsTask(t *testing.T) {
 	}
 }
 
+func TestCreateDoingPersistsPlanningAttributes(t *testing.T) {
+	handler := api.New(fakeStore{}, fakeSource{}, "test")
+	body := `{"date":"2026-08-23","title":"Implement login with Google","status":"doing","priority":"high","timeBlockStart":"09:00","timeBlockEnd":"11:00","estimatedMinutes":120,"actualMinutes":45,"category":"Work","project":"Zeno Dashboard","goalOutcome":"OAuth reaches dashboard","progress":60,"energyFocus":"deep","dependency":"Google OAuth credentials","blockedBy":"","note":"Handle refresh token","carryOver":true}`
+	request := httptest.NewRequest(http.MethodPost, "/api/doing", strings.NewReader(body))
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+
+	if response.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d: %s", response.Code, response.Body.String())
+	}
+	var entry model.DoingEntry
+	if err := json.NewDecoder(response.Body).Decode(&entry); err != nil {
+		t.Fatal(err)
+	}
+	if entry.Status != "doing" || entry.Priority != "high" || entry.TimeBlockStart != "09:00" || entry.TimeBlockEnd != "11:00" {
+		t.Fatalf("planning attributes were not preserved: %+v", entry)
+	}
+	if entry.EstimatedMinutes != 120 || entry.ActualMinutes != 45 || entry.Progress != 60 || entry.EnergyFocus != "deep" {
+		t.Fatalf("execution attributes were not preserved: %+v", entry)
+	}
+	if entry.Project != "Zeno Dashboard" || entry.GoalOutcome != "OAuth reaches dashboard" || entry.Dependency != "Google OAuth credentials" || !entry.CarryOver {
+		t.Fatalf("context attributes were not preserved: %+v", entry)
+	}
+	if entry.Completed || entry.CompletedAt != nil {
+		t.Fatalf("doing task must remain incomplete: %+v", entry)
+	}
+}
+
+func TestCreateDoingRejectsInvalidPlanningAttributes(t *testing.T) {
+	tests := []struct {
+		name string
+		body string
+	}{
+		{name: "status", body: `{"date":"2026-08-23","title":"Invalid","status":"paused"}`},
+		{name: "priority", body: `{"date":"2026-08-23","title":"Invalid","priority":"critical"}`},
+		{name: "energy", body: `{"date":"2026-08-23","title":"Invalid","energyFocus":"extreme"}`},
+		{name: "progress", body: `{"date":"2026-08-23","title":"Invalid","progress":101}`},
+		{name: "estimated time exceeds postgres integer", body: `{"date":"2026-08-23","title":"Invalid","estimatedMinutes":2147483648}`},
+		{name: "actual time exceeds postgres integer", body: `{"date":"2026-08-23","title":"Invalid","actualMinutes":2147483648}`},
+		{name: "time block pair", body: `{"date":"2026-08-23","title":"Invalid","timeBlockStart":"09:00"}`},
+		{name: "time block order", body: `{"date":"2026-08-23","title":"Invalid","timeBlockStart":"11:00","timeBlockEnd":"09:00"}`},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			handler := api.New(fakeStore{}, fakeSource{}, "test")
+			request := httptest.NewRequest(http.MethodPost, "/api/doing", strings.NewReader(test.body))
+			response := httptest.NewRecorder()
+			handler.ServeHTTP(response, request)
+			if response.Code != http.StatusBadRequest {
+				t.Fatalf("expected 400, got %d: %s", response.Code, response.Body.String())
+			}
+		})
+	}
+}
+
+func TestCreateDoingUsesUnicodeCodePointLimits(t *testing.T) {
+	tests := []struct {
+		name       string
+		character  string
+		count      int
+		wantStatus int
+	}{
+		{name: "BMP at limit", character: "界", count: 160, wantStatus: http.StatusCreated},
+		{name: "astral at limit", character: "😀", count: 160, wantStatus: http.StatusCreated},
+		{name: "astral above limit", character: "😀", count: 161, wantStatus: http.StatusBadRequest},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			handler := api.New(fakeStore{}, fakeSource{}, "test")
+			title := strings.Repeat(test.character, test.count)
+			body, err := json.Marshal(map[string]any{"date": "2026-08-23", "title": title, "project": title})
+			if err != nil {
+				t.Fatal(err)
+			}
+			request := httptest.NewRequest(http.MethodPost, "/api/doing", strings.NewReader(string(body)))
+			response := httptest.NewRecorder()
+			handler.ServeHTTP(response, request)
+			if response.Code != test.wantStatus {
+				t.Fatalf("expected %d for %d %s characters, got %d: %s", test.wantStatus, test.count, test.name, response.Code, response.Body.String())
+			}
+		})
+	}
+}
+
+func TestCreateDoingDerivesCompletionState(t *testing.T) {
+	handler := api.New(fakeStore{}, fakeSource{}, "test")
+	body := `{"date":"2026-08-23","title":"Ship task","status":"done","priority":"medium","energyFocus":"medium","progress":35}`
+	request := httptest.NewRequest(http.MethodPost, "/api/doing", strings.NewReader(body))
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+
+	if response.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d: %s", response.Code, response.Body.String())
+	}
+	var entry model.DoingEntry
+	if err := json.NewDecoder(response.Body).Decode(&entry); err != nil {
+		t.Fatal(err)
+	}
+	if !entry.Completed || entry.Progress != 100 || entry.CompletedAt == nil {
+		t.Fatalf("done status must derive completion metadata: %+v", entry)
+	}
+}
+
 func TestListDoingReturnsDatedTasks(t *testing.T) {
 	handler := api.New(fakeStore{}, fakeSource{}, "test")
 	request := httptest.NewRequest(http.MethodGet, "/api/doing?date=2026-08-23", nil)
@@ -910,6 +1186,103 @@ func TestDeleteDoingRequiresDatedTask(t *testing.T) {
 	}
 	if body.Deleted != "55555555-5555-4555-8555-555555555555" || body.Date != "2026-08-23" {
 		t.Fatalf("unexpected doing delete: %+v", body)
+	}
+}
+
+func TestDoingAPIHidesForeignRowsAndForwardsUserScope(t *testing.T) {
+	store := &doingOwnershipStore{}
+	handler := api.New(store, fakeSource{}, "test", api.WithAuth(api.AuthOptions{Enabled: true}))
+	cookie := &http.Cookie{Name: "zeno_session", Value: "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG"}
+
+	listRequest := httptest.NewRequest(http.MethodGet, "/api/doing?date=2026-08-23", nil)
+	listRequest.AddCookie(cookie)
+	listResponse := httptest.NewRecorder()
+	handler.ServeHTTP(listResponse, listRequest)
+	var listBody struct {
+		Entries []model.DoingEntry `json:"entries"`
+	}
+	if listResponse.Code != http.StatusOK {
+		t.Fatalf("expected list 200, got %d: %s", listResponse.Code, listResponse.Body.String())
+	}
+	if err := json.NewDecoder(listResponse.Body).Decode(&listBody); err != nil {
+		t.Fatal(err)
+	}
+	if len(listBody.Entries) != 1 || listBody.Entries[0].OwnerUserID != revisionTestUserID {
+		t.Fatalf("ordinary user saw foreign Doing rows: %+v", listBody.Entries)
+	}
+
+	body := `{"date":"2026-08-23","title":"Unauthorized update","status":"todo","priority":"medium","category":"Work","energyFocus":"medium","note":"must not persist"}`
+	updateRequest := httptest.NewRequest(http.MethodPut, "/api/doing/66666666-6666-4666-8666-666666666666", strings.NewReader(body))
+	updateRequest.AddCookie(cookie)
+	updateRequest.AddCookie(&http.Cookie{Name: "zeno_csrf", Value: "csrf-value"})
+	updateRequest.Header.Set("Content-Type", "application/json")
+	updateRequest.Header.Set("X-CSRF-Token", "csrf-value")
+	updateResponse := httptest.NewRecorder()
+	handler.ServeHTTP(updateResponse, updateRequest)
+	if updateResponse.Code != http.StatusNotFound || store.updateCalls != 0 {
+		t.Fatalf("foreign update was not hidden before mutation: status=%d calls=%d body=%s", updateResponse.Code, store.updateCalls, updateResponse.Body.String())
+	}
+
+	deleteRequest := httptest.NewRequest(http.MethodDelete, "/api/doing/66666666-6666-4666-8666-666666666666?date=2026-08-23", nil)
+	deleteRequest.AddCookie(cookie)
+	deleteRequest.AddCookie(&http.Cookie{Name: "zeno_csrf", Value: "csrf-value"})
+	deleteRequest.Header.Set("X-CSRF-Token", "csrf-value")
+	deleteResponse := httptest.NewRecorder()
+	handler.ServeHTTP(deleteResponse, deleteRequest)
+	if deleteResponse.Code != http.StatusNotFound || store.deleteCalls != 0 {
+		t.Fatalf("foreign delete was not hidden before mutation: status=%d calls=%d body=%s", deleteResponse.Code, store.deleteCalls, deleteResponse.Body.String())
+	}
+	for index, actorUserID := range store.listActorIDs {
+		if actorUserID != revisionTestUserID || store.listAdminFlags[index] {
+			t.Fatalf("user scope was not forwarded to list call %d: actor=%q admin=%v", index, actorUserID, store.listAdminFlags[index])
+		}
+	}
+}
+
+func TestDoingAPIForwardsExplicitAdminScope(t *testing.T) {
+	store := &doingOwnershipStore{admin: true}
+	handler := api.New(store, fakeSource{}, "test", api.WithAuth(api.AuthOptions{Enabled: true}))
+	cookie := &http.Cookie{Name: "zeno_session", Value: "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG"}
+
+	listRequest := httptest.NewRequest(http.MethodGet, "/api/doing?date=2026-08-23", nil)
+	listRequest.AddCookie(cookie)
+	listResponse := httptest.NewRecorder()
+	handler.ServeHTTP(listResponse, listRequest)
+	var listBody struct {
+		Entries []model.DoingEntry `json:"entries"`
+	}
+	if err := json.NewDecoder(listResponse.Body).Decode(&listBody); err != nil {
+		t.Fatal(err)
+	}
+	if listResponse.Code != http.StatusOK || len(listBody.Entries) != 2 {
+		t.Fatalf("admin list did not expose both tenants: status=%d entries=%+v", listResponse.Code, listBody.Entries)
+	}
+
+	body := `{"date":"2026-08-23","title":"Admin update","status":"todo","priority":"medium","category":"Work","energyFocus":"medium","note":"admin path"}`
+	updateRequest := httptest.NewRequest(http.MethodPut, "/api/doing/66666666-6666-4666-8666-666666666666", strings.NewReader(body))
+	updateRequest.AddCookie(cookie)
+	updateRequest.AddCookie(&http.Cookie{Name: "zeno_csrf", Value: "csrf-value"})
+	updateRequest.Header.Set("Content-Type", "application/json")
+	updateRequest.Header.Set("X-CSRF-Token", "csrf-value")
+	updateResponse := httptest.NewRecorder()
+	handler.ServeHTTP(updateResponse, updateRequest)
+	if updateResponse.Code != http.StatusOK || store.updateCalls != 1 || store.updateActorID != revisionTestUserID || !store.updateIsAdmin {
+		t.Fatalf("admin update scope mismatch: status=%d calls=%d actor=%q admin=%v", updateResponse.Code, store.updateCalls, store.updateActorID, store.updateIsAdmin)
+	}
+
+	deleteRequest := httptest.NewRequest(http.MethodDelete, "/api/doing/66666666-6666-4666-8666-666666666666?date=2026-08-23", nil)
+	deleteRequest.AddCookie(cookie)
+	deleteRequest.AddCookie(&http.Cookie{Name: "zeno_csrf", Value: "csrf-value"})
+	deleteRequest.Header.Set("X-CSRF-Token", "csrf-value")
+	deleteResponse := httptest.NewRecorder()
+	handler.ServeHTTP(deleteResponse, deleteRequest)
+	if deleteResponse.Code != http.StatusOK || store.deleteCalls != 1 || store.deleteActorID != revisionTestUserID || !store.deleteIsAdmin {
+		t.Fatalf("admin delete scope mismatch: status=%d calls=%d actor=%q admin=%v", deleteResponse.Code, store.deleteCalls, store.deleteActorID, store.deleteIsAdmin)
+	}
+	for index, admin := range store.listAdminFlags {
+		if store.listActorIDs[index] != revisionTestUserID || !admin {
+			t.Fatalf("admin scope was not forwarded to list call %d: actor=%q admin=%v", index, store.listActorIDs[index], admin)
+		}
 	}
 }
 

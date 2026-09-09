@@ -114,3 +114,207 @@
   font-size: var(--zeno-type-card-title-size);
   line-height: var(--zeno-type-card-title-line-height);
 }
+
+/* Nebula Glass feature surfaces: reuse the shared token hierarchy. */
+.lifestyle-panel,
+.journal-card,
+.journal-writing,
+.spending-summary-card,
+.workout-detail,
+.lifestyle-calendar {
+  border-color: var(--glass-border);
+  border-radius: var(--radius-card);
+  background: var(--glass-surface-medium);
+  box-shadow: var(--shadow-card), inset 0 1px var(--glass-highlight);
+}
+.feature-button,
+.feature-icon-button,
+.feature-search,
+.lifestyle-tabs,
+.journal-archive-toolbar,
+.spending-anchor,
+.spending-summary-card,
+.mini-stat {
+  border-color: var(--glass-border);
+  background: var(--glass-surface-low);
+}
+.feature-button,
+.feature-icon-button,
+.feature-search,
+.date-filter input,
+.spending-anchor input,
+.lifestyle-tabs,
+.journal-archive-toolbar,
+.spending-summary-card,
+.mini-stat {
+  border-radius: var(--radius-control);
+}
+.feature-button,
+.feature-icon-button,
+.workout-action,
+.journal-history-controls button,
+.markdown-toolbar button,
+.spending-action,
+.lifestyle-tabs > button,
+.today-button {
+  transition: color .2s ease, background-color .2s ease, border-color .2s ease, transform .2s ease;
+}
+.feature-button:hover,
+.feature-button.active,
+.feature-icon-button:hover,
+.lifestyle-tabs > button:hover,
+.lifestyle-tabs > button.active,
+.spending-summary-card:hover,
+.spending-summary-card.active,
+.mini-stat:hover {
+  color: var(--text-primary);
+  border-color: var(--glass-border-strong);
+  background: var(--glass-surface-interactive);
+}
+.feature-button.primary {
+  color: #fff;
+  border-color: var(--primary);
+  background: var(--primary);
+  box-shadow: var(--shadow-accent);
+}
+.feature-button.primary:hover {
+  color: #fff;
+  border-color: var(--primary-hover);
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+.feature-icon-button.danger:hover,
+.inline-confirm button.danger,
+.spending-action.danger:hover {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 48%, var(--glass-border));
+  background: var(--danger-bg);
+}
+.feature-search:focus-within,
+.date-filter input:focus-visible,
+.spending-anchor input:focus-visible,
+.workout-form-grid input:focus-visible,
+.workout-form-grid select:focus-visible,
+.workout-edit-form input:focus-visible,
+.workout-edit-form select:focus-visible,
+.writer-metadata input:focus-visible,
+.writer-metadata select:focus-visible,
+.spending-form input:focus-visible,
+.spending-form select:focus-visible,
+.spending-form textarea:focus-visible {
+  border-color: var(--glass-border-strong);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+.feature-button:focus-visible,
+.feature-icon-button:focus-visible,
+.lifestyle-tabs > button:focus-visible,
+.markdown-toolbar button:focus-visible,
+.journal-history-controls button:focus-visible,
+.workout-action:focus-visible,
+.spending-action:focus-visible,
+.today-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.feature-meta span,
+.journal-tags span,
+.spending-category-icon,
+.form-section-title > span {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--glass-border));
+  background: color-mix(in srgb, var(--accent-secondary) 16%, transparent);
+}
+.inline-confirm {
+  border-color: color-mix(in srgb, var(--danger) 42%, var(--glass-border));
+  border-radius: var(--radius-overlay);
+  background: var(--glass-surface-high);
+  box-shadow: var(--shadow-overlay), inset 0 1px var(--glass-highlight);
+}
+.journal-writing {
+  overflow: hidden;
+}
+.writer-topbar,
+.markdown-toolbar,
+.journal-live-preview,
+.journal-history-track,
+.journal-reason-panel,
+.spending-ledger,
+.spending-form {
+  border-color: var(--glass-border);
+}
+.writer-topbar,
+.markdown-toolbar {
+  background: color-mix(in srgb, var(--glass-surface-high) 58%, transparent);
+}
+.markdown-toolbar button:hover,
+.journal-history-controls button:hover {
+  color: var(--text-primary);
+  border-color: var(--glass-border-strong);
+  background: var(--glass-surface-interactive);
+}
+.journal-live-preview {
+  background: color-mix(in srgb, var(--glass-surface-high) 76%, transparent);
+}
+.journal-card.expanded,
+.journal-card.edited,
+.spending-summary-card.active {
+  border-color: var(--glass-border-strong);
+  box-shadow: var(--shadow-accent), inset 0 1px var(--glass-highlight);
+}
+.workout-entry:hover,
+.spending-entry:hover,
+.journal-card:hover {
+  border-color: color-mix(in srgb, var(--accent-secondary) 42%, var(--glass-border));
+}
+.journal-edited-badge,
+.journal-history-status,
+.journal-history-controls button {
+  border-color: color-mix(in srgb, var(--accent-secondary) 38%, var(--glass-border));
+  background: color-mix(in srgb, var(--accent-secondary) 13%, transparent);
+}
+.journal-history-controls button:disabled,
+.feature-button:disabled,
+.feature-icon-button:disabled {
+  opacity: .52;
+  cursor: not-allowed;
+  transform: none;
+}
+
+:root[data-theme='light'] .lifestyle-panel,
+:root[data-theme='light'] .journal-card,
+:root[data-theme='light'] .journal-writing,
+:root[data-theme='light'] .spending-summary-card,
+:root[data-theme='light'] .workout-detail,
+:root[data-theme='light'] .lifestyle-calendar {
+  background: var(--glass-surface-medium);
+  box-shadow: var(--shadow-card), inset 0 1px var(--glass-highlight);
+}
+
+@media (max-width: 640px) {
+  .lifestyle-panel,
+  .journal-card,
+  .journal-writing,
+  .spending-summary-card,
+  .workout-detail,
+  .lifestyle-calendar {
+    box-shadow: var(--shadow-card), inset 0 1px var(--glass-highlight);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .feature-button,
+  .feature-icon-button,
+  .workout-action,
+  .journal-history-controls button,
+  .markdown-toolbar button,
+  .spending-action,
+  .lifestyle-tabs > button,
+  .today-button {
+    transition: none;
+  }
+  .feature-button.primary:hover,
+  .feature-button:hover,
+  .feature-icon-button:hover,
+  .journal-card:hover {
+    transform: none;
+  }
+}

@@ -154,14 +154,28 @@ type LearningMaterial struct {
 }
 
 type DoingEntry struct {
-	ID          string    `json:"id"`
-	OwnerUserID string    `json:"ownerUserId,omitempty"`
-	Date        string    `json:"date,omitempty"`
-	Title       string    `json:"title"`
-	Note        string    `json:"note"`
-	Category    string    `json:"category"`
-	Completed   bool      `json:"completed"`
-	CreatedAt   time.Time `json:"createdAt"`
+	ID               string     `json:"id"`
+	OwnerUserID      string     `json:"ownerUserId,omitempty"`
+	Date             string     `json:"date,omitempty"`
+	Title            string     `json:"title"`
+	Status           string     `json:"status"`
+	Priority         string     `json:"priority"`
+	TimeBlockStart   string     `json:"timeBlockStart"`
+	TimeBlockEnd     string     `json:"timeBlockEnd"`
+	EstimatedMinutes int        `json:"estimatedMinutes"`
+	ActualMinutes    int        `json:"actualMinutes"`
+	Category         string     `json:"category"`
+	Project          string     `json:"project"`
+	GoalOutcome      string     `json:"goalOutcome"`
+	Progress         int        `json:"progress"`
+	EnergyFocus      string     `json:"energyFocus"`
+	Dependency       string     `json:"dependency"`
+	BlockedBy        string     `json:"blockedBy"`
+	Note             string     `json:"note"`
+	CarryOver        bool       `json:"carryOver"`
+	Completed        bool       `json:"completed"`
+	CompletedAt      *time.Time `json:"completedAt,omitempty"`
+	CreatedAt        time.Time  `json:"createdAt"`
 }
 
 type WorkoutEntry struct {

@@ -134,14 +134,35 @@ export type LearningMaterialProgressInput = {
   nextReviewAt?: string;
 };
 
-export type DoingEntryResponse = {
-  id: string;
-  ownerUserId?: string;
+export type DoingStatus = 'todo' | 'doing' | 'blocked' | 'done';
+export type DoingPriority = 'high' | 'medium' | 'low';
+export type DoingEnergyFocus = 'deep' | 'medium' | 'light';
+
+export type DoingInput = {
   date: string;
   title: string;
-  note: string;
+  status: 'todo' | 'doing' | 'blocked' | 'done';
+  priority: 'high' | 'medium' | 'low';
+  timeBlockStart: string;
+  timeBlockEnd: string;
+  estimatedMinutes: number;
+  actualMinutes: number;
   category: string;
+  project: string;
+  goalOutcome: string;
+  progress: number;
+  energyFocus: 'deep' | 'medium' | 'light';
+  dependency: string;
+  blockedBy: string;
+  note: string;
+  carryOver: boolean;
   completed: boolean;
+};
+
+export type DoingEntryResponse = DoingInput & {
+  id: string;
+  ownerUserId?: string;
+  completedAt?: string;
   createdAt: string;
 };
 
@@ -298,10 +319,10 @@ export const api = {
     method: 'PUT', body: JSON.stringify(input),
   }),
   doing: (date = '') => request<{ date: string | null; entries: DoingEntryResponse[] }>(`/api/doing${date ? `?date=${encodeURIComponent(date)}` : ''}`),
-  createDoing: (entry: Omit<DoingEntryResponse, 'id' | 'createdAt'>) => request<DoingEntryResponse>('/api/doing', {
+  createDoing: (entry: DoingInput) => request<DoingEntryResponse>('/api/doing', {
     method: 'POST', body: JSON.stringify(entry),
   }),
-  updateDoing: (id: string, entry: Omit<DoingEntryResponse, 'id' | 'createdAt'>) => request<DoingEntryResponse>(`/api/doing/${encodeURIComponent(id)}`, {
+  updateDoing: (id: string, entry: DoingInput) => request<DoingEntryResponse>(`/api/doing/${encodeURIComponent(id)}`, {
     method: 'PUT', body: JSON.stringify(entry),
   }),
   deleteDoing: (id: string, date: string) => request<{ deleted: string; date: string }>(`/api/doing/${encodeURIComponent(id)}?date=${encodeURIComponent(date)}`, {

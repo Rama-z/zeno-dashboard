@@ -50,3 +50,91 @@
   line-height: var(--zeno-type-meta-line-height);
   letter-spacing: var(--zeno-type-meta-tracking);
 }
+
+/* Nebula Glass auth-adjacent surfaces: keep auth semantics intact. */
+.auth-shell {
+  background:
+    radial-gradient(circle at 12% 12%, var(--ambient-support), transparent 28rem),
+    radial-gradient(circle at 88% 82%, var(--ambient-primary), transparent 32rem),
+    var(--background);
+}
+.auth-brand-panel,
+.auth-form-panel {
+  background:
+    radial-gradient(circle at 18% 18%, var(--ambient-support), transparent 30rem),
+    radial-gradient(circle at 82% 74%, var(--ambient-secondary), transparent 32rem),
+    var(--background-secondary);
+}
+.auth-form-panel {
+  background-color: var(--background);
+}
+.auth-card,
+.profile-card,
+.session-card,
+.activity-audit-card {
+  border-color: var(--glass-border);
+  border-radius: var(--radius-card);
+  background: var(--glass-surface-medium);
+  box-shadow: var(--shadow-card), inset 0 1px var(--glass-highlight);
+}
+.auth-card input,
+.profile-field input {
+  font-size: var(--zeno-type-control-size);
+  line-height: var(--zeno-type-control-line-height);
+  letter-spacing: var(--zeno-type-control-tracking);
+  border-color: var(--glass-border);
+  border-radius: var(--radius-control);
+  background: var(--glass-surface-low);
+}
+.auth-card :is(input):focus-visible,
+.profile-field :is(input):focus-visible,
+.auth-submit:focus-visible,
+.auth-switch button:focus-visible,
+.logout-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.auth-submit {
+  border-color: var(--primary);
+  border-radius: var(--radius-control);
+  background: var(--primary);
+  box-shadow: var(--shadow-accent);
+}
+.auth-submit:hover {
+  border-color: var(--primary-hover);
+  background: var(--primary-hover);
+}
+.auth-submit.secondary {
+  color: var(--primary-hover);
+  border-color: var(--glass-border-strong);
+  background: var(--glass-surface-interactive);
+  box-shadow: none;
+}
+.auth-alert.error {
+  border-color: color-mix(in srgb, var(--danger) 42%, var(--glass-border));
+  background: var(--danger-bg);
+}
+.auth-alert.success {
+  border-color: color-mix(in srgb, var(--success) 42%, var(--glass-border));
+  background: var(--success-bg);
+}
+.activity-audit-card:hover,
+.profile-meta span:hover {
+  border-color: var(--glass-border-strong);
+  background: var(--glass-surface-interactive);
+}
+.activity-actor-avatar,
+.profile-avatar {
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--glass-border));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-spinner {
+    animation: none;
+  }
+  .auth-card,
+  .activity-audit-card,
+  .profile-meta span {
+    transition: none;
+  }
+}

@@ -22,6 +22,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"golang.org/x/crypto/bcrypt"
 
@@ -59,9 +60,9 @@ type Store interface {
 	GetLearningMaterial(context.Context, string, string, time.Time) (model.LearningMaterial, bool, error)
 	UpsertLearningMaterialProgress(context.Context, string, model.LearningMaterialProgressInput, time.Time) (model.LearningMaterialProgress, bool, error)
 	CreateDoing(context.Context, model.DoingEntry) (model.DoingEntry, error)
-	ListDoing(context.Context, string) ([]model.DoingEntry, error)
-	UpdateDoing(context.Context, model.DoingEntry) (model.DoingEntry, bool, error)
-	DeleteDoing(context.Context, string, string) (bool, error)
+	ListDoing(context.Context, string, string, bool) ([]model.DoingEntry, error)
+	UpdateDoing(context.Context, model.DoingEntry, string, bool) (model.DoingEntry, bool, error)
+	DeleteDoing(context.Context, string, string, string, bool) (bool, error)
 	CreateWorkout(context.Context, model.WorkoutEntry) (model.WorkoutEntry, error)
 	ListWorkouts(context.Context, string) ([]model.WorkoutEntry, error)
 	UpdateWorkout(context.Context, model.WorkoutEntry) (model.WorkoutEntry, bool, error)
@@ -1016,6 +1017,69 @@ func (h *handler) upsertLearningMaterialProgress(w http.ResponseWriter, r *http.
 	writeJSON(w, http.StatusOK, progress)
 }
 
+const maxDoingMinutes = 2147483647
+
+func normalizeDoingInput(input *model.DoingEntry, now time.Time, previousCompletedAt *time.Time) error {
+	input.Date = strings.TrimSpace(input.Date)
+	input.Title = strings.TrimSpace(input.Title)
+	input.Status = strings.ToLower(strings.TrimSpace(input.Status))
+	input.Priority = strings.ToLower(strings.TrimSpace(input.Priority))
+	input.TimeBlockStart = strings.TrimSpace(input.TimeBlockStart)
+	input.TimeBlockEnd = strings.TrimSpace(input.TimeBlockEnd)
+	input.Category = strings.TrimSpace(input.Category)
+	input.Project = strings.TrimSpace(input.Project)
+	input.GoalOutcome = strings.TrimSpace(input.GoalOutcome)
+	input.EnergyFocus = strings.ToLower(strings.TrimSpace(input.EnergyFocus))
+	input.Dependency = strings.TrimSpace(input.Dependency)
+	input.BlockedBy = strings.TrimSpace(input.BlockedBy)
+	input.Note = strings.TrimSpace(input.Note)
+	if input.Status == "" {
+		if input.Completed {
+			input.Status = "done"
+		} else {
+			input.Status = "todo"
+		}
+	}
+	if input.Priority == "" {
+		input.Priority = "medium"
+	}
+	if input.EnergyFocus == "" {
+		input.EnergyFocus = "medium"
+	}
+	validStatus := input.Status == "todo" || input.Status == "doing" || input.Status == "blocked" || input.Status == "done"
+	validPriority := input.Priority == "high" || input.Priority == "medium" || input.Priority == "low"
+	validEnergy := input.EnergyFocus == "deep" || input.EnergyFocus == "medium" || input.EnergyFocus == "light"
+	startTime, startErr := time.Parse("15:04", input.TimeBlockStart)
+	endTime, endErr := time.Parse("15:04", input.TimeBlockEnd)
+	validTimeBlock := input.TimeBlockStart == "" && input.TimeBlockEnd == ""
+	if input.TimeBlockStart != "" && input.TimeBlockEnd != "" && startErr == nil && endErr == nil && startTime.Before(endTime) {
+		validTimeBlock = true
+	}
+	if !validDate(input.Date) || input.Title == "" || !validStatus || !validPriority || !validEnergy || !validTimeBlock || input.EstimatedMinutes < 0 || input.EstimatedMinutes > maxDoingMinutes || input.ActualMinutes < 0 || input.ActualMinutes > maxDoingMinutes || input.Progress < 0 || input.Progress > 100 {
+		return errors.New("data doing tidak valid")
+	}
+	if utf8.RuneCountInString(input.Title) > 160 || utf8.RuneCountInString(input.Note) > 2000 || utf8.RuneCountInString(input.Category) > 60 || utf8.RuneCountInString(input.Project) > 160 || utf8.RuneCountInString(input.GoalOutcome) > 500 || utf8.RuneCountInString(input.Dependency) > 500 || utf8.RuneCountInString(input.BlockedBy) > 500 {
+		return errors.New("panjang data doing melebihi batas")
+	}
+	if input.Note == "" {
+		input.Note = "Task ditambahkan."
+	}
+	if input.Category == "" {
+		input.Category = "General"
+	}
+	input.Completed = input.Status == "done"
+	input.CompletedAt = nil
+	if input.Completed {
+		input.Progress = 100
+		completedAt := now.UTC()
+		if previousCompletedAt != nil {
+			completedAt = previousCompletedAt.UTC()
+		}
+		input.CompletedAt = &completedAt
+	}
+	return nil
+}
+
 func (h *handler) createDoing(w http.ResponseWriter, r *http.Request) {
 	actor, ok := h.requireActor(w, r)
 	if !ok {
@@ -1026,23 +1090,9 @@ func (h *handler) createDoing(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	input.Date = strings.TrimSpace(input.Date)
-	input.Title = strings.TrimSpace(input.Title)
-	input.Note = strings.TrimSpace(input.Note)
-	input.Category = strings.TrimSpace(input.Category)
-	if !validDate(input.Date) || input.Title == "" {
-		writeError(w, http.StatusBadRequest, "date YYYY-MM-DD dan title wajib diisi")
+	if err := normalizeDoingInput(&input, h.auth.Now(), nil); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
 		return
-	}
-	if len(input.Title) > 160 || len(input.Note) > 2000 || len(input.Category) > 60 {
-		writeError(w, http.StatusBadRequest, "panjang data melebihi batas")
-		return
-	}
-	if input.Note == "" {
-		input.Note = "Task ditambahkan."
-	}
-	if input.Category == "" {
-		input.Category = "General"
 	}
 	input.ID = newUUID()
 	input.OwnerUserID = actor.ID
@@ -1052,7 +1102,7 @@ func (h *handler) createDoing(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "doing entry tidak dapat disimpan")
 		return
 	}
-	h.audit(r.Context(), actor, "create", "doing", entry.ID, "Menambahkan task Doing: "+entry.Title, map[string]any{"date": entry.Date, "category": entry.Category})
+	h.audit(r.Context(), actor, "create", "doing", entry.ID, "Menambahkan task Doing: "+entry.Title, map[string]any{"date": entry.Date, "category": entry.Category, "status": entry.Status, "priority": entry.Priority})
 	writeJSON(w, http.StatusCreated, entry)
 }
 
@@ -1066,12 +1116,11 @@ func (h *handler) listDoing(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "date harus berformat YYYY-MM-DD")
 		return
 	}
-	entries, err := h.store.ListDoing(r.Context(), date)
+	entries, err := h.store.ListDoing(r.Context(), date, actor.ID, actor.Role == "admin")
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "doing entries tidak dapat dibaca")
 		return
 	}
-	entries = filterOwned(entries, actor, func(entry model.DoingEntry) string { return entry.OwnerUserID })
 	writeJSON(w, http.StatusOK, map[string]any{"date": nullableString(date), "entries": entries})
 }
 
@@ -1088,19 +1137,11 @@ func (h *handler) updateDoing(w http.ResponseWriter, r *http.Request) {
 	input.ID = r.PathValue("id")
 	input.Date = strings.TrimSpace(input.Date)
 	input.Title = strings.TrimSpace(input.Title)
-	input.Note = strings.TrimSpace(input.Note)
-	input.Category = strings.TrimSpace(input.Category)
-	if input.ID == "" || !validDate(input.Date) || input.Title == "" || len(input.Title) > 160 || len(input.Note) > 2000 || len(input.Category) > 60 {
+	if input.ID == "" || !validDate(input.Date) || input.Title == "" {
 		writeError(w, http.StatusBadRequest, "data doing tidak valid")
 		return
 	}
-	if input.Note == "" {
-		input.Note = "Task ditambahkan."
-	}
-	if input.Category == "" {
-		input.Category = "General"
-	}
-	existingEntries, err := h.store.ListDoing(r.Context(), input.Date)
+	existingEntries, err := h.store.ListDoing(r.Context(), input.Date, actor.ID, actor.Role == "admin")
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "doing entry tidak dapat diperiksa")
 		return
@@ -1110,8 +1151,12 @@ func (h *handler) updateDoing(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "doing entry tidak ditemukan")
 		return
 	}
+	if err := normalizeDoingInput(&input, h.auth.Now(), existing.CompletedAt); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 	input.OwnerUserID = existing.OwnerUserID
-	entry, found, err := h.store.UpdateDoing(r.Context(), input)
+	entry, found, err := h.store.UpdateDoing(r.Context(), input, actor.ID, actor.Role == "admin")
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "doing entry tidak dapat diperbarui")
 		return
@@ -1120,7 +1165,7 @@ func (h *handler) updateDoing(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "doing entry tidak ditemukan")
 		return
 	}
-	h.auditSubject(r.Context(), actor, entry.OwnerUserID, "update", "doing", entry.ID, "Memperbarui task Doing: "+entry.Title, map[string]any{"completed": entry.Completed})
+	h.auditSubject(r.Context(), actor, entry.OwnerUserID, "update", "doing", entry.ID, "Memperbarui task Doing: "+entry.Title, map[string]any{"completed": entry.Completed, "status": entry.Status, "priority": entry.Priority, "progress": entry.Progress})
 	writeJSON(w, http.StatusOK, entry)
 }
 
@@ -1135,7 +1180,7 @@ func (h *handler) deleteDoing(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "id dan date YYYY-MM-DD wajib diisi")
 		return
 	}
-	entries, err := h.store.ListDoing(r.Context(), date)
+	entries, err := h.store.ListDoing(r.Context(), date, actor.ID, actor.Role == "admin")
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "doing entry tidak dapat diperiksa")
 		return
@@ -1145,7 +1190,7 @@ func (h *handler) deleteDoing(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "doing entry tidak ditemukan")
 		return
 	}
-	deleted, err := h.store.DeleteDoing(r.Context(), id, date)
+	deleted, err := h.store.DeleteDoing(r.Context(), id, date, actor.ID, actor.Role == "admin")
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "doing entry tidak dapat dihapus")
 		return
