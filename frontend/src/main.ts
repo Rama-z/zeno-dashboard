@@ -17,6 +17,7 @@ import { activeOrbitLocation, chooseOrbitTriggerDock, clampOrbitTriggerPosition,
 type Filter = 'all' | 'success' | 'info';
 type ChangeLogPeriod = 'all' | 'today' | 'yesterday' | 'week' | 'older';
 type ChangeLogSort = 'newest' | 'oldest';
+type ActivityPeriod = 'all' | 'today' | 'week' | 'month';
 type LearningEntry = { id: string; title: string; note: string; category: string; completed: boolean };
 const app = document.querySelector<HTMLDivElement>('#app')!;
 let appStylesPromise: Promise<unknown> | null = null;
@@ -36,6 +37,12 @@ let logs: ApiLog[] = initialLogs.map((entry, index) => ({ id: index + 1, ...entr
 let runtimeSourceFile = sourceFile;
 let runtimeGeneratedAt = generatedAt;
 let activityEvents: ActivityEvent[] = [];
+let activityQuery = '';
+let activityActor = 'all';
+let activityPeriod: ActivityPeriod = 'all';
+let activityVisibleGroups = 6;
+let collapsedActivityGroups = new Set<string>();
+let expandedActivityEvents = new Set<string>();
 let backendSettings: SettingsResponse = { workspaceName: 'Default workspace', sourceFile };
 let backendOnline = false;
 let backendError = '';
@@ -105,7 +112,7 @@ function applyTheme() {
 }
 
 const iconNames: Record<string, string> = {
-  grid: 'squares-four', activity: 'pulse', settings: 'sliders-horizontal', profile: 'user-circle', search: 'magnifying-glass', arrow: 'arrow-up-right', check: 'check', info: 'info', chevron: 'caret-down', file: 'notebook', doing: 'check-square', calendar: 'calendar-dots', workout: 'barbell', journal: 'note-pencil', spending: 'wallet', sun: 'sun', moon: 'moon', collapse: 'caret-left', expand: 'caret-right', edit: 'pencil-simple', trash: 'trash', compass: 'compass-rose', close: 'x', back: 'arrow-left', next: 'arrow-right',
+  grid: 'squares-four', activity: 'pulse', settings: 'sliders-horizontal', profile: 'user-circle', users: 'users-three', search: 'magnifying-glass', arrow: 'arrow-up-right', check: 'check', info: 'info', chevron: 'caret-down', file: 'notebook', doing: 'check-square', calendar: 'calendar-dots', workout: 'barbell', journal: 'note-pencil', spending: 'wallet', sun: 'sun', moon: 'moon', collapse: 'caret-left', expand: 'caret-right', edit: 'pencil-simple', trash: 'trash', compass: 'compass-rose', close: 'x', back: 'arrow-left', next: 'arrow-right',
 };
 const icon = (name: string) => `<span class="ph ph-${iconNames[name] ?? 'circle'}" aria-hidden="true"></span>`;
 
@@ -199,6 +206,110 @@ function renderChangeLogUpdates() {
             const dateLabel = new Date(`${date}T12:00:00`).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
             return `<section class="update-day"><div class="update-date"><span>${escapeHtml(dateLabel)}</span><i>${periodLabels[period]}</i></div><div class="update-day-list">${entries.map((entry) => `<article class="update-card"><span class="update-marker"></span><div class="update-copy"><div class="update-meta"><span>${escapeHtml(entry.category)}</span><time datetime="${escapeHtml(entry.occurredAt)}">${new Date(entry.occurredAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</time></div><h3>${escapeHtml(entry.title)}</h3><p>${escapeHtml(entry.description)}</p></div></article>`).join('')}</div></section>`;
           }).join('') : '<div class="empty update-empty">Belum ada log update pada rentang waktu ini.</div>'}</div>`;
+}
+
+type ActivityActorGroup = {
+  key: string;
+  date: string;
+  actorName: string;
+  actorEmail: string;
+  events: ActivityEvent[];
+};
+
+function activityPeriodMatches(createdAt: string, period: ActivityPeriod, reference = new Date()) {
+  if (period === 'all') return true;
+  const created = new Date(createdAt);
+  const start = new Date(reference.getFullYear(), reference.getMonth(), reference.getDate());
+  if (period === 'week') start.setDate(start.getDate() - 6);
+  if (period === 'month') start.setDate(start.getDate() - 29);
+  return created >= start;
+}
+
+function activityActionLabel(event: ActivityEvent) {
+  const entity = ({
+    doing: 'Task', journal: 'Jurnal', learning: 'Catatan belajar', workout: 'Workout', spending: 'Pengeluaran',
+    profile: 'Profil', user: 'Pengguna', session: 'Sesi', settings: 'Pengaturan', change_log: 'Change log',
+  } as Record<string, string>)[event.entityType.toLowerCase()] ?? event.entityType.replace(/[_-]+/g, ' ');
+  const action = ({
+    create: 'dibuat', update: 'diperbarui', delete: 'dihapus', complete: 'diselesaikan', completed: 'diselesaikan',
+    login: 'dimulai', logout: 'diakhiri', verify: 'diverifikasi', register: 'didaftarkan', append_revision: 'direvisi',
+  } as Record<string, string>)[event.action.toLowerCase()] ?? event.action.replace(/[_-]+/g, ' ');
+  return `${entity.charAt(0).toUpperCase()}${entity.slice(1)} ${action}`;
+}
+
+function activityEventIcon(event: ActivityEvent) {
+  const entity = event.entityType.toLowerCase();
+  if (event.action.toLowerCase() === 'delete') return icon('trash');
+  if (entity.includes('journal')) return icon('journal');
+  if (entity.includes('doing') || entity.includes('task')) return icon('doing');
+  if (entity.includes('workout')) return icon('workout');
+  if (entity.includes('spending')) return icon('spending');
+  if (entity.includes('profile') || entity.includes('user') || entity.includes('session')) return icon('profile');
+  return icon('file');
+}
+
+function activityTime(value: string, includeSeconds = false) {
+  return new Date(value).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', ...(includeSeconds ? { second: '2-digit' } : {}), hour12: false }).replace(/\./g, ':');
+}
+
+function renderActivityTrail(user: AuthUser) {
+  const actors = [...new Map(activityEvents.map((event) => [event.actorEmail, event.actorName])).entries()]
+    .sort((a, b) => a[1].localeCompare(b[1], 'id-ID'));
+  const normalizedQuery = activityQuery.trim().toLocaleLowerCase('id-ID');
+  const filtered = [...activityEvents]
+    .filter((event) => activityActor === 'all' || event.actorEmail === activityActor)
+    .filter((event) => activityPeriodMatches(event.createdAt, activityPeriod))
+    .filter((event) => !normalizedQuery || `${event.actorName} ${event.actorEmail} ${event.action} ${event.entityType} ${event.description} ${event.entityId ?? ''}`.toLocaleLowerCase('id-ID').includes(normalizedQuery))
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const grouped = new Map<string, ActivityActorGroup>();
+  for (const event of filtered) {
+    const date = dateKey(new Date(event.createdAt));
+    const key = `${date}:${event.actorEmail}`;
+    const existing = grouped.get(key);
+    if (existing) existing.events.push(event);
+    else grouped.set(key, { key, date, actorName: event.actorName, actorEmail: event.actorEmail, events: [event] });
+  }
+  const visibleGroups = [...grouped.values()].slice(0, activityVisibleGroups);
+  const days = visibleGroups.reduce<Map<string, ActivityActorGroup[]>>((result, group) => {
+    result.set(group.date, [...(result.get(group.date) ?? []), group]);
+    return result;
+  }, new Map());
+  const roleLabel = user.role === 'admin' ? 'Admin' : 'User';
+  const periodLabels: Record<ActivityPeriod, string> = { all: 'Semua waktu', today: 'Hari ini', week: '7 hari terakhir', month: '30 hari terakhir' };
+  const actorOptions = actors.map(([email, name]) => `<option value="${escapeHtml(email)}" ${activityActor === email ? 'selected' : ''}>${escapeHtml(name)}</option>`).join('');
+  return `
+          <div class="activity-page-heading">
+            <div><p class="eyebrow">A / ACTIVITY TRAIL</p><div class="activity-title-line"><h1>Workspace activity</h1><span>${activityEvents.length} events&nbsp; · &nbsp;${actors.length} actors&nbsp; · &nbsp;${roleLabel}</span></div><p class="subheading">Aktivitas berurutan, dikelompokkan per pengguna.</p></div>
+            <div class="activity-heading-pill">${icon('activity')}<span>Activity (Audit trail)</span></div>
+          </div>
+          <div class="activity-trail-toolbar" aria-label="Filter aktivitas">
+            <label class="activity-search">${icon('search')}<input data-activity-query aria-label="Cari aktivitas" placeholder="Cari aktivitas..." value="${escapeHtml(activityQuery)}" /></label>
+            <label class="activity-select">${icon('users')}<select data-activity-actor aria-label="Filter pengguna"><option value="all">${user.role === 'admin' ? 'Semua pengguna' : 'Aktivitas saya'}</option>${actorOptions}</select>${icon('chevron')}</label>
+            <label class="activity-select">${icon('calendar')}<select data-activity-period aria-label="Filter waktu">${(Object.keys(periodLabels) as ActivityPeriod[]).map((period) => `<option value="${period}" ${activityPeriod === period ? 'selected' : ''}>${periodLabels[period]}</option>`).join('')}</select>${icon('chevron')}</label>
+          </div>
+          <div class="activity-timeline">${days.size ? [...days.entries()].map(([date, groups]) => {
+            const day = new Date(`${date}T12:00:00`);
+            const isToday = date === dateKey(new Date());
+            const dayLabel = day.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+            return `<section class="activity-day"><header class="activity-day-heading"><span class="activity-day-icon">${icon('calendar')}</span><h2>${isToday ? 'Hari ini' : day.toLocaleDateString('id-ID', { weekday: 'long' })}<b> · ${escapeHtml(dayLabel)}</b></h2><span></span></header><div class="activity-day-groups">${groups.map((group) => {
+              const groupCollapsed = collapsedActivityGroups.has(group.key);
+              const newest = group.events[0];
+              const oldest = group.events[group.events.length - 1];
+              const duration = Math.max(1, Math.round((new Date(newest.createdAt).getTime() - new Date(oldest.createdAt).getTime()) / 60000));
+              const timeRange = group.events.length > 1 ? `${activityTime(oldest.createdAt)} – ${activityTime(newest.createdAt)}` : activityTime(newest.createdAt);
+              return `<article class="activity-actor-group ${groupCollapsed ? 'is-collapsed' : ''}">
+                <div class="activity-group-time"><time>${timeRange}</time><i></i></div>
+                <div class="activity-rail-node"><span>${escapeHtml(group.actorName.slice(0, 1).toUpperCase())}</span></div>
+                <div class="activity-group-card"><button class="activity-group-header" data-activity-group-toggle="${escapeHtml(group.key)}" aria-expanded="${!groupCollapsed}"><span><strong>${escapeHtml(group.actorName)}</strong><small>${group.events.length} aktivitas${group.events.length > 1 ? ` · ${duration} menit` : ''}</small></span>${icon('chevron')}</button>
+                ${groupCollapsed ? '' : `<div class="activity-event-list">${group.events.map((event) => {
+                  const eventExpanded = expandedActivityEvents.has(event.id);
+                  const tone = event.entityType.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'general';
+                  return `<div class="activity-event activity-tone-${tone} ${eventExpanded ? 'is-expanded' : ''}"><button class="activity-event-summary" data-activity-event-toggle="${escapeHtml(event.id)}" aria-expanded="${eventExpanded}"><span class="activity-event-icon">${activityEventIcon(event)}</span><span class="activity-event-copy"><strong>${escapeHtml(activityActionLabel(event))}</strong><small>${escapeHtml(event.description)}</small></span><time datetime="${escapeHtml(event.createdAt)}">${activityTime(event.createdAt, true)}</time><span class="activity-event-toggle">${icon('chevron')}</span></button>${eventExpanded ? `<div class="activity-event-detail"><span><b>Aksi:</b> ${escapeHtml(event.action)}</span><span><b>Entitas:</b> ${escapeHtml(event.entityType)}</span><span><b>Event:</b> ${escapeHtml(event.id.slice(0, 8))}</span><span><b>Actor:</b> ${escapeHtml(event.actorEmail)} · ${escapeHtml(event.actorRole)}</span></div>` : ''}</div>`;
+                }).join('')}</div>`}</div>
+              </article>`;
+            }).join('')}</div></section>`;
+          }).join('') : '<div class="activity-empty"><span class="activity-day-icon">'+icon('activity')+'</span><strong>Tidak ada aktivitas</strong><p>Ubah pencarian atau filter untuk melihat event lain.</p></div>'}</div>
+          ${grouped.size > activityVisibleGroups ? `<button class="activity-load-more" data-activity-load-more><span></span>Lihat aktivitas sebelumnya${icon('chevron')}</button>` : ''}`;
 }
 
 function isAuthPath(pathname: string) {
@@ -716,7 +827,6 @@ function render() {
   }
   const visible = visibleLogs();
   const successCount = logs.filter((item) => item.status === 'success').length;
-  const activityActorCount = new Set(activityEvents.map((event) => event.actorEmail)).size;
   const pageLabel = ({ overview: 'Overview', activity: 'Activity', settings: 'Settings', profile: 'Profile', changelog: 'Change Log', doing: 'Doing', learning: 'Learning', workout: 'Workout', journaling: 'Journaling', spending: 'Spending' } as Record<Page, string>)[page];
   const pendingDeleteEntry = (learningEntries[selectedLearningDate] ?? []).find((entry) => entry.id === pendingDeleteLearningId);
   document.title = `${pageLabel} · Zeno`;
@@ -726,9 +836,7 @@ function render() {
           ${renderSessionEntriesContent(visible, successCount)}` : page === 'changelog' ? `
           <div class="page-heading"><div><p class="eyebrow">CHANGE HISTORY</p><h1>Change log</h1><p class="subheading">Lacak riwayat update berdasarkan hari, tanggal, dan permintaan.</p></div><div class="connection"><span class="pulse"></span><span>${changeLogEntries.length} updates · ${backendOnline ? 'PostgreSQL' : 'local fallback'}</span></div></div>
           ${renderChangeLogUpdates()}` : page === 'activity' ? `
-          <div class="page-heading"><div><p class="eyebrow">USER ACTIVITY</p><h1>Workspace activity</h1><p class="subheading">Audit trail setiap perubahan dashboard berdasarkan actor, action, dan entity.</p></div><div class="connection"><span class="pulse"></span><span>${currentUser.role === 'admin' ? 'All users' : 'My activity'}</span></div></div>
-          <div class="activity-summary"><div class="metric-card accent"><span>Audit events</span><strong>${activityEvents.length}</strong><small><span class="mini-dot"></span> PostgreSQL activity log</small></div><div class="metric-card"><span>Actors visible</span><strong>${activityActorCount}</strong><small>${currentUser.role === 'admin' ? 'Workspace-wide access' : 'Filtered to your user'}</small></div><div class="metric-card"><span>Your role</span><strong>${escapeHtml(currentUser.role)}</strong><small>${escapeHtml(currentUser.email)}</small></div></div>
-          <div class="activity-audit-list">${activityEvents.length ? activityEvents.map((event) => `<article class="activity-audit-card activity-action-${escapeHtml(event.action)}"><div class="activity-actor-avatar">${escapeHtml(event.actorName.slice(0, 1).toUpperCase())}</div><div class="activity-audit-copy"><h3>${escapeHtml(event.actorName)} · ${escapeHtml(event.action)} ${escapeHtml(event.entityType)}</h3><p>${escapeHtml(event.description)}</p><div class="activity-audit-meta"><span>${escapeHtml(event.actorEmail)}</span><span>${escapeHtml(event.actorRole)}</span>${event.entityId ? `<span>${escapeHtml(event.entityId.slice(0, 8))}</span>` : ''}</div></div><time datetime="${escapeHtml(event.createdAt)}">${new Date(event.createdAt).toLocaleString('id-ID')}</time></article>`).join('') : '<div class="feature-empty large"><strong>Belum ada aktivitas</strong><span>Perubahan dashboard dan event akun akan muncul di sini.</span></div>'}</div>` : page === 'doing' ? `
+          ${renderActivityTrail(currentUser)}` : page === 'doing' ? `
           ${renderDoingPage()}` : page === 'learning' ? `
           ${renderLearningPage()}` : isLifestylePage(page) ? `
           ${renderLifestylePage(page)}` : page === 'profile' ? `
@@ -783,6 +891,23 @@ function render() {
   document.querySelector<HTMLInputElement>('#search')?.addEventListener('input', (event) => { query = (event.target as HTMLInputElement).value; render(); document.querySelector<HTMLInputElement>('#search')?.focus(); });
   document.querySelectorAll<HTMLButtonElement>('[data-filter]').forEach((button) => button.addEventListener('click', () => { filter = button.dataset.filter as Filter; render(); }));
   document.querySelectorAll<HTMLButtonElement>('[data-expand]').forEach((button) => button.addEventListener('click', () => { const index = Number(button.dataset.expand); expanded.has(index) ? expanded.delete(index) : expanded.add(index); render(); }));
+  document.querySelector<HTMLInputElement>('[data-activity-query]')?.addEventListener('input', (event) => {
+    const input = event.target as HTMLInputElement;
+    const selection = input.selectionStart;
+    activityQuery = input.value;
+    activityVisibleGroups = 6;
+    render();
+    requestAnimationFrame(() => {
+      const next = document.querySelector<HTMLInputElement>('[data-activity-query]');
+      next?.focus();
+      if (selection !== null) next?.setSelectionRange(selection, selection);
+    });
+  });
+  document.querySelector<HTMLSelectElement>('[data-activity-actor]')?.addEventListener('change', (event) => { activityActor = (event.target as HTMLSelectElement).value; activityVisibleGroups = 6; render(); });
+  document.querySelector<HTMLSelectElement>('[data-activity-period]')?.addEventListener('change', (event) => { activityPeriod = (event.target as HTMLSelectElement).value as ActivityPeriod; activityVisibleGroups = 6; render(); });
+  document.querySelectorAll<HTMLButtonElement>('[data-activity-group-toggle]').forEach((button) => button.addEventListener('click', () => { const key = button.dataset.activityGroupToggle!; collapsedActivityGroups.has(key) ? collapsedActivityGroups.delete(key) : collapsedActivityGroups.add(key); render(); }));
+  document.querySelectorAll<HTMLButtonElement>('[data-activity-event-toggle]').forEach((button) => button.addEventListener('click', () => { const id = button.dataset.activityEventToggle!; expandedActivityEvents.has(id) ? expandedActivityEvents.delete(id) : expandedActivityEvents.add(id); render(); }));
+  document.querySelector<HTMLButtonElement>('[data-activity-load-more]')?.addEventListener('click', () => { activityVisibleGroups += 6; render(); });
   document.querySelectorAll<HTMLButtonElement>('[data-page]').forEach((button) => button.addEventListener('click', () => {
     const nextPage = button.dataset.page as Page;
     const destination = pagePaths[nextPage];

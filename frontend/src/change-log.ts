@@ -317,4 +317,11 @@ export const changeLogUpdates: ChangeLogUpdate[] = [
     description: 'Membuat trigger Orbit dapat digeser dengan pointer ke seluruh viewport dan dipindahkan lewat Alt plus tombol panah. Posisi selalu dijepit dengan inset aman agar tombol tidak keluar halaman, tetap dipertahankan saat dashboard render ulang, dan kembali menyesuaikan saat viewport berubah. Ketika dibuka, dialog radial memilih sisi dengan ruang terbesar di sekitar trigger lalu dijepit agar seluruh menu tetap terlihat. Verifikasi mencakup geometry dan interaction contract RED-GREEN, 61 test frontend, TypeScript, dan production build.',
     category: 'Frontend',
   },
+  {
+    id: '2026-09-09-activity-trail-redesign',
+    occurredAt: '2026-09-09T19:34:52+07:00',
+    title: 'Activity Log memakai timeline audit per pengguna',
+    description: 'Merombak Activity Log mengikuti referensi visual menjadi timeline kronologis per hari dan pengguna, dengan rail waktu, avatar actor, card event beraksen entity, pencarian, filter pengguna dan periode, collapse group, detail event yang dapat dibuka, progressive reveal, serta komposisi responsif dark/light tanpa mengubah kontrak API activity dan ownership.',
+    category: 'Frontend',
+  },
 ];
