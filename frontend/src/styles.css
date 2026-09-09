@@ -1502,6 +1502,9 @@ body {
 .orbit-pagination button { width:44px; height:44px; border:1px solid var(--orbit-line); border-radius:10px; color:var(--orbit-text); background:var(--orbit-charcoal); cursor:pointer; }
 .orbit-pagination button:disabled { opacity:.35; cursor:default; }
 .orbit-pagination span { color:var(--orbit-text); font:11px 'DM Mono',monospace; }
+.orbit-overlay.is-layer-swap:not(.is-closing) .orbit-backdrop { animation:none; }
+.orbit-overlay.is-layer-swap:not(.is-closing) .orbit-center { animation:none; }
+.orbit-overlay.is-layer-swap:not(.is-closing) .orbit-segment { animation-delay:calc(var(--orbit-order) * 18ms); }
 .orbit-overlay.is-closing .orbit-backdrop { animation:orbit-fade-out 240ms cubic-bezier(.4,0,.8,.2) both; }
 .orbit-overlay.is-closing .orbit-segment { animation:orbit-petal-out 90ms cubic-bezier(.4,0,.8,.2) calc(var(--orbit-exit-order) * 14ms) both; }
 .orbit-overlay.is-closing .orbit-center { animation:orbit-center-out 90ms cubic-bezier(.4,0,.8,.2) var(--orbit-close-center-delay) both; }

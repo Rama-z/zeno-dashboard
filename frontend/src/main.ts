@@ -68,6 +68,7 @@ let orbitOpen = false;
 let orbitGroupId: string | null = null;
 let orbitPage = 0;
 let orbitClosing = false;
+let orbitLayerTransitioning = false;
 let orbitCloseTimer: number | null = null;
 let orbitTransitionToken = 0;
 const learningStorageKey = 'hermes-monitor-learning-v1';
@@ -462,17 +463,19 @@ async function changeOrbitLayer(group: string | null, page = 0, preferredId?: st
   if (!orbitOpen || orbitClosing) return;
   const token = ++orbitTransitionToken;
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const disc = document.querySelector<HTMLElement>('.orbit-disc');
-  if (!reduce && disc) {
-    await disc.animate([{opacity:1},{opacity:0}], {duration:100,easing:'cubic-bezier(.22,.7,.2,1)'}).finished.catch(() => {});
+  const outgoingPetals = [...document.querySelectorAll<HTMLElement>('.orbit-segment')];
+  if (!reduce && outgoingPetals.length) {
+    await Promise.all(outgoingPetals.map((petal) => petal.animate(
+      [{opacity:1,transform:'scale(1)'},{opacity:0,transform:'scale(.82)'}],
+      {duration:70,easing:'cubic-bezier(.4,0,.8,.2)',fill:'both'},
+    ).finished.catch(() => {})));
   }
   if (token !== orbitTransitionToken || !orbitOpen || orbitClosing) return;
   orbitGroupId = group;
   orbitPage = page;
+  orbitLayerTransitioning = true;
   render();
-  const dialog = document.querySelector<HTMLElement>('.orbit-dialog');
-  if (dialog) dialog.style.animation = 'none';
-  if (!reduce) document.querySelector<HTMLElement>('.orbit-disc')?.animate([{opacity:0},{opacity:1}], {duration:100,easing:'cubic-bezier(.22,.7,.2,1)'});
+  orbitLayerTransitioning = false;
   focusOrbitLayer(preferredId);
 }
 
@@ -504,7 +507,7 @@ function renderOrbitCommand() {
   const paginationControls = pagination.pageCount > 1 ? `<div class="orbit-pagination" aria-label="Orbit pages"><button type="button" data-orbit-page="prev" aria-label="Previous Orbit page" ${pagination.currentPage === 0 ? 'disabled' : ''}>${icon('back')}</button><span>${pagination.currentPage + 1}/${pagination.pageCount}</span><button type="button" data-orbit-page="next" aria-label="Next Orbit page" ${pagination.currentPage === pagination.pageCount - 1 ? 'disabled' : ''}>${icon('next')}</button></div>` : '';
   const center = group ? `<button type="button" class="orbit-center-action" data-orbit-back aria-label="Back to main menu">${icon('back')}<span>Back</span></button>` : `<strong class="orbit-wordmark">ZENO</strong>`;
   const closeCenterDelay = 90 + Math.max(0, pagination.items.length - 1) * 14;
-  return `<button type="button" class="orbit-trigger" data-orbit-close aria-label="${escapeHtml(orbitOpen ? 'Close Zeno navigation' : `Open Zeno navigation: ${active.label}`)}" aria-expanded="${orbitOpen}" aria-controls="orbit-command-dialog"><span class="orbit-trigger-icon">${icon(orbitOpen ? 'close' : 'compass')}</span><span class="orbit-trigger-label">${escapeHtml(active.label)}</span><span class="orbit-trigger-key">${orbitOpen ? 'Close' : 'Menu'}</span></button>${orbitOpen ? `<div class="orbit-overlay ${orbitClosing ? 'is-closing' : ''}"><button type="button" class="orbit-backdrop" data-orbit-backdrop tabindex="-1" aria-label="Close Zeno navigation"></button><section class="orbit-dialog" id="orbit-command-dialog" role="dialog" aria-modal="true" aria-label="${escapeHtml(group ? `${group.label} destinations` : 'Zeno navigation')}"><div class="orbit-disc" data-layer="${group ? 'children' : 'root'}" style="--orbit-close-center-delay:${closeCenterDelay}ms">${segments}<div class="orbit-center">${center}</div>${paginationControls}</div></section></div>` : ''}`;
+  return `<button type="button" class="orbit-trigger" data-orbit-close aria-label="${escapeHtml(orbitOpen ? 'Close Zeno navigation' : `Open Zeno navigation: ${active.label}`)}" aria-expanded="${orbitOpen}" aria-controls="orbit-command-dialog"><span class="orbit-trigger-icon">${icon(orbitOpen ? 'close' : 'compass')}</span><span class="orbit-trigger-label">${escapeHtml(active.label)}</span><span class="orbit-trigger-key">${orbitOpen ? 'Close' : 'Menu'}</span></button>${orbitOpen ? `<div class="orbit-overlay ${orbitClosing ? 'is-closing' : ''} ${orbitLayerTransitioning ? 'is-layer-swap' : ''}"><button type="button" class="orbit-backdrop" data-orbit-backdrop tabindex="-1" aria-label="Close Zeno navigation"></button><section class="orbit-dialog" id="orbit-command-dialog" role="dialog" aria-modal="true" aria-label="${escapeHtml(group ? `${group.label} destinations` : 'Zeno navigation')}"><div class="orbit-disc" data-layer="${group ? 'children' : 'root'}" style="--orbit-close-center-delay:${closeCenterDelay}ms">${segments}<div class="orbit-center">${center}</div>${paginationControls}</div></section></div>` : ''}`;
 }
 
 function bindOrbitCommand() {

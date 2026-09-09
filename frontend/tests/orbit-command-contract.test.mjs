@@ -74,6 +74,18 @@ test('Orbit opening reveals the center first and closing reverses the petal orde
   assert.match(styles, /@keyframes\s+orbit-petal-out/, 'petal closing keyframes are missing');
 });
 
+test('submenu layer changes keep the Orbit shell visible instead of flashing the whole disc', async () => {
+  const [main, styles] = await Promise.all([read('src/main.ts'), read('src/styles.css')]);
+
+  assert.doesNotMatch(main, /disc\.animate\(\[\{opacity:1\},\{opacity:0\}\]/, 'layer changes must not fade the center and petals as one disc');
+  assert.match(main, /orbitLayerTransitioning/, 'layer changes need an explicit render state');
+  assert.match(main, /\.orbit-segment["']\)/, 'only the outgoing petals should animate away');
+  assert.match(main, /is-layer-swap/, 'the replacement layer must suppress shell replay animation');
+  assert.match(styles, /\.orbit-overlay\.is-layer-swap:not\(\.is-closing\)\s+\.orbit-backdrop[^}]*animation:\s*none/s, 'the backdrop must stay visually continuous during a layer swap');
+  assert.match(styles, /\.orbit-overlay\.is-layer-swap:not\(\.is-closing\)\s+\.orbit-center[^}]*animation:\s*none/s, 'the center hub must remain visible during a layer swap');
+  assert.match(styles, /\.orbit-overlay\.is-layer-swap:not\(\.is-closing\)\s+\.orbit-segment[^}]*var\(--orbit-order\)/s, 'replacement petals should still enter sequentially without the initial center delay');
+});
+
 test('Orbit route labels and permissions stay derived from the real navigation tree', async () => {
   const { activeOrbitLocation, visibleOrbitNavigation } = await loadOrbitModule();
   const userNavigation = visibleOrbitNavigation('user');

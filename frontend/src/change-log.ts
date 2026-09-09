@@ -303,4 +303,11 @@ export const changeLogUpdates: ChangeLogUpdate[] = [
     description: 'Menyempurnakan Radial Navigation agar hub tengah muncul lebih dulu, lalu delapan petal navigasi masuk satu per satu dengan motion cepat dan smooth. Saat ditutup, petal menghilang dalam urutan terbalik sebelum hub tengah, dengan fallback reduced motion tetap dipertahankan. Verifikasi mencakup focused RED-GREEN, 58 test frontend, TypeScript, dan production build.',
     category: 'Frontend',
   },
+  {
+    id: '2026-09-09-orbit-submenu-transition-continuity',
+    occurredAt: '2026-09-09T15:07:28+07:00',
+    title: 'Transisi submenu Orbit bebas kedip',
+    description: 'Memperbaiki blitz saat membuka Account, Lifestyle, Workout, dan menu lain yang memiliki submenu. Pergantian layer kini hanya melepas petal lama; backdrop dan hub tetap terlihat, lalu petal submenu masuk berurutan tanpa mengulang animasi pembukaan seluruh Orbit. Verifikasi mencakup regression test RED-GREEN, 59 test frontend, TypeScript, dan production build.',
+    category: 'Frontend',
+  },
 ];
