@@ -296,4 +296,11 @@ export const changeLogUpdates: ChangeLogUpdate[] = [
     description: 'Memperbaiki race condition pada create Doing ketika pengguna mengganti tanggal kalender sebelum respons API selesai. Task hasil create kini dimasukkan ke bucket tanggal canonical dari respons server, bukan tanggal global yang sedang dipilih. Regression test RED-GREEN menjaga assignment tetap mengikuti created.date setelah navigasi kalender.',
     category: 'Frontend',
   },
+  {
+    id: '2026-09-09-orbit-sequential-motion',
+    occurredAt: '2026-09-09T14:48:18+07:00',
+    title: 'Animasi Orbit tampil berurutan',
+    description: 'Menyempurnakan Radial Navigation agar hub tengah muncul lebih dulu, lalu delapan petal navigasi masuk satu per satu dengan motion cepat dan smooth. Saat ditutup, petal menghilang dalam urutan terbalik sebelum hub tengah, dengan fallback reduced motion tetap dipertahankan. Verifikasi mencakup focused RED-GREEN, 58 test frontend, TypeScript, dan production build.',
+    category: 'Frontend',
+  },
 ];

@@ -53,10 +53,25 @@ test('dashboard replaces sidebar with a modal radial command overlay', async () 
   assert.match(styles, /@media\s*\(max-width:\s*560px\)/, 'Orbit requires a compact mobile layout');
   assert.match(styles, /prefers-reduced-motion\s*:\s*reduce/, 'Orbit motion must respect reduced-motion preferences');
   assert.match(styles, /\.zeno-dashboard\s*>\s*\.main\s*\{[^}]*width:\s*100%/s, 'dashboard content must use the full shell width');
-  assert.match(styles, /\.orbit-overlay\.is-closing[^}]*\.orbit-dialog/, 'closing Orbit must animate instead of disappearing instantly');
+  assert.match(styles, /\.orbit-overlay\.is-closing[^}]*\.orbit-segment/, 'closing Orbit must animate its petals instead of disappearing instantly');
   assert.match(styles, /\.orbit-disc\s*\{[^}]*overflow:\s*visible[^}]*border:\s*0[^}]*background:\s*transparent/s, 'flower layout must remove the enclosing pie disc');
   assert.match(styles, /\.orbit-segment-label\s*\{[^}]*flex-direction:\s*column/s, 'petal icons and labels should use the compact vertical hierarchy');
   assert.match(styles, /\.orbit-segment\s*\{[^}]*opacity:\s*1/s, 'petals must remain visible even when animation frames are throttled');
+});
+
+test('Orbit opening reveals the center first and closing reverses the petal order', async () => {
+  const [main, styles] = await Promise.all([read('src/main.ts'), read('src/styles.css')]);
+
+  assert.match(main, /--orbit-order:\$\{index\}/, 'each petal needs a deterministic opening order');
+  assert.match(main, /--orbit-exit-order:\$\{count - index - 1\}/, 'each petal needs the reverse closing order');
+  assert.match(main, /--orbit-close-center-delay:\$\{[^}]+\}ms/, 'the center close must wait for the reverse petal sequence');
+  assert.match(styles, /\.orbit-center\s*\{[^}]*animation:\s*orbit-center-in/s, 'the center must own the first opening animation');
+  assert.match(styles, /\.orbit-segment\s*\{[^}]*animation:\s*orbit-petal-in[^}]*calc\(95ms\s*\+\s*var\(--orbit-order\)\s*\*\s*18ms\)/s, 'petals must open one by one after the center');
+  assert.match(styles, /\.orbit-overlay\.is-closing\s+\.orbit-segment\s*\{[^}]*orbit-petal-out[^}]*var\(--orbit-exit-order\)/s, 'closing must dismiss petals in reverse order');
+  assert.match(styles, /\.orbit-overlay\.is-closing\s+\.orbit-center\s*\{[^}]*var\(--orbit-close-center-delay\)/s, 'the center must close after the petals');
+  assert.match(styles, /@keyframes\s+orbit-center-in/, 'center opening keyframes are missing');
+  assert.match(styles, /@keyframes\s+orbit-petal-in/, 'petal opening keyframes are missing');
+  assert.match(styles, /@keyframes\s+orbit-petal-out/, 'petal closing keyframes are missing');
 });
 
 test('Orbit route labels and permissions stay derived from the real navigation tree', async () => {
