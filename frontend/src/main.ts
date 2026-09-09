@@ -13,6 +13,7 @@ import { bindLearningMaterialsEvents, ensureLearningMaterialData, renderLearning
 import { bindWorkoutMaterialEvents, renderWorkoutMaterials } from './workout-materials';
 import { isLearningMaterialRoute, isLearningRoute, isWorkoutMaterialsRoute, pageForRoute, pagePaths, resolveAppRoute, type AppRoute, type Page } from './app-route';
 import { activeOrbitLocation, chooseOrbitTriggerDock, clampOrbitTriggerPosition, orbitDialogSize, orbitSegmentGeometry, paginateOrbitItems, placeOrbitDialog, visibleOrbitNavigation, type OrbitDestination, type OrbitDialogPlacement, type OrbitNavigationItem, type OrbitPoint, type OrbitRole } from './orbit-navigation';
+import { splitActivityActorGroups } from './activity-grouping';
 
 type Filter = 'all' | 'success' | 'info';
 type ChangeLogPeriod = 'all' | 'today' | 'yesterday' | 'week' | 'older';
@@ -208,14 +209,6 @@ function renderChangeLogUpdates() {
           }).join('') : '<div class="empty update-empty">Belum ada log update pada rentang waktu ini.</div>'}</div>`;
 }
 
-type ActivityActorGroup = {
-  key: string;
-  date: string;
-  actorName: string;
-  actorEmail: string;
-  events: ActivityEvent[];
-};
-
 function activityPeriodMatches(createdAt: string, period: ActivityPeriod, reference = new Date()) {
   if (period === 'all') return true;
   const created = new Date(createdAt);
@@ -261,16 +254,9 @@ function renderActivityTrail(user: AuthUser) {
     .filter((event) => activityPeriodMatches(event.createdAt, activityPeriod))
     .filter((event) => !normalizedQuery || `${event.actorName} ${event.actorEmail} ${event.action} ${event.entityType} ${event.description} ${event.entityId ?? ''}`.toLocaleLowerCase('id-ID').includes(normalizedQuery))
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  const grouped = new Map<string, ActivityActorGroup>();
-  for (const event of filtered) {
-    const date = dateKey(new Date(event.createdAt));
-    const key = `${date}:${event.actorEmail}`;
-    const existing = grouped.get(key);
-    if (existing) existing.events.push(event);
-    else grouped.set(key, { key, date, actorName: event.actorName, actorEmail: event.actorEmail, events: [event] });
-  }
-  const visibleGroups = [...grouped.values()].slice(0, activityVisibleGroups);
-  const days = visibleGroups.reduce<Map<string, ActivityActorGroup[]>>((result, group) => {
+  const actorGroups = splitActivityActorGroups(filtered);
+  const visibleGroups = actorGroups.slice(0, activityVisibleGroups);
+  const days = visibleGroups.reduce<Map<string, typeof actorGroups>>((result, group) => {
     result.set(group.date, [...(result.get(group.date) ?? []), group]);
     return result;
   }, new Map());
@@ -309,7 +295,7 @@ function renderActivityTrail(user: AuthUser) {
               </article>`;
             }).join('')}</div></section>`;
           }).join('') : '<div class="activity-empty"><span class="activity-day-icon">'+icon('activity')+'</span><strong>Tidak ada aktivitas</strong><p>Ubah pencarian atau filter untuk melihat event lain.</p></div>'}</div>
-          ${grouped.size > activityVisibleGroups ? `<button class="activity-load-more" data-activity-load-more><span></span>Lihat aktivitas sebelumnya${icon('chevron')}</button>` : ''}`;
+          ${actorGroups.length > activityVisibleGroups ? `<button class="activity-load-more" data-activity-load-more><span></span>Lihat aktivitas sebelumnya${icon('chevron')}</button>` : ''}`;
 }
 
 function isAuthPath(pathname: string) {

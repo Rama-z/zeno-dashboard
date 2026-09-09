@@ -324,4 +324,11 @@ export const changeLogUpdates: ChangeLogUpdate[] = [
     description: 'Merombak Activity Log mengikuti referensi visual menjadi timeline kronologis per hari dan pengguna, dengan rail waktu, avatar actor, card event beraksen entity, pencarian, filter pengguna dan periode, collapse group, detail event yang dapat dibuka, progressive reveal, serta komposisi responsif dark/light tanpa mengubah kontrak API activity dan ownership.',
     category: 'Frontend',
   },
+  {
+    id: '2026-09-09-activity-session-gap-splitting',
+    occurredAt: '2026-09-09T19:47:46+07:00',
+    title: 'Activity pengguna dipisah setelah jeda satu jam',
+    description: 'Menyempurnakan pengelompokan Activity Log agar event dari pengguna yang sama tetap berada dalam satu card saat jedanya maksimal 60 menit, tetapi membentuk card sesi baru ketika jeda antar-event lebih dari 60 menit. Pemisahan tetap independen per pengguna dan hari, dengan urutan terbaru dipertahankan.',
+    category: 'Frontend',
+  },
 ];
