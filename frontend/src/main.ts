@@ -12,7 +12,7 @@ import { bindLandingEvents, renderLandingPage } from './landing';
 import { bindLearningMaterialsEvents, ensureLearningMaterialData, renderLearningMaterials as learningMaterials } from './learning-materials';
 import { bindWorkoutMaterialEvents, renderWorkoutMaterials } from './workout-materials';
 import { isLearningMaterialRoute, isLearningRoute, isWorkoutMaterialsRoute, pageForRoute, pagePaths, resolveAppRoute, type AppRoute, type Page } from './app-route';
-import { activeOrbitLocation, chooseOrbitTriggerDock, orbitSegmentGeometry, paginateOrbitItems, visibleOrbitNavigation, type OrbitDestination, type OrbitNavigationItem, type OrbitRole } from './orbit-navigation';
+import { activeOrbitLocation, chooseOrbitTriggerDock, clampOrbitTriggerPosition, orbitDialogSize, orbitSegmentGeometry, paginateOrbitItems, placeOrbitDialog, visibleOrbitNavigation, type OrbitDestination, type OrbitDialogPlacement, type OrbitNavigationItem, type OrbitPoint, type OrbitRole } from './orbit-navigation';
 
 type Filter = 'all' | 'success' | 'info';
 type ChangeLogPeriod = 'all' | 'today' | 'yesterday' | 'week' | 'older';
@@ -69,6 +69,9 @@ let orbitGroupId: string | null = null;
 let orbitPage = 0;
 let orbitClosing = false;
 let orbitLayerTransitioning = false;
+let orbitTriggerPosition: OrbitPoint | null = null;
+let orbitDialogPosition: OrbitDialogPlacement | null = null;
+let orbitSuppressNextClick = false;
 let orbitCloseTimer: number | null = null;
 let orbitTransitionToken = 0;
 const learningStorageKey = 'hermes-monitor-learning-v1';
@@ -433,6 +436,29 @@ function orbitRole(): OrbitRole {
   return currentUser?.role === 'admin' ? 'admin' : 'user';
 }
 
+function orbitViewport() {
+  return { width: window.innerWidth, height: window.innerHeight };
+}
+
+function applyManualOrbitTriggerPosition(trigger: HTMLButtonElement, requested: OrbitPoint) {
+  const bounds = trigger.getBoundingClientRect();
+  orbitTriggerPosition = clampOrbitTriggerPosition(requested, { width: bounds.width, height: bounds.height }, orbitViewport());
+  trigger.dataset.orbitManual = 'true';
+  trigger.style.setProperty('--orbit-trigger-left', `${orbitTriggerPosition.x}px`);
+  trigger.style.setProperty('--orbit-trigger-top', `${orbitTriggerPosition.y}px`);
+}
+
+function positionOrbitDialogFromTrigger(trigger: HTMLButtonElement) {
+  const bounds = trigger.getBoundingClientRect();
+  orbitDialogPosition = placeOrbitDialog(bounds, orbitDialogSize(orbitViewport()), orbitViewport());
+  const dialog = document.querySelector<HTMLElement>('.orbit-dialog');
+  if (!dialog) return;
+  dialog.dataset.orbitPositioned = 'true';
+  dialog.dataset.orbitSide = orbitDialogPosition.side;
+  dialog.style.setProperty('--orbit-dialog-left', `${orbitDialogPosition.left}px`);
+  dialog.style.setProperty('--orbit-dialog-top', `${orbitDialogPosition.top}px`);
+}
+
 function closeOrbitCommand(restoreFocus = true) {
   if (!orbitOpen || orbitClosing) return;
   orbitTransitionToken++;
@@ -443,6 +469,7 @@ function closeOrbitCommand(restoreFocus = true) {
     orbitOpen = false;
     orbitGroupId = null;
     orbitPage = 0;
+    orbitDialogPosition = null;
     render();
     if (restoreFocus) requestAnimationFrame(() => document.querySelector<HTMLButtonElement>('.orbit-trigger')?.focus());
   };
@@ -507,7 +534,54 @@ function renderOrbitCommand() {
   const paginationControls = pagination.pageCount > 1 ? `<div class="orbit-pagination" aria-label="Orbit pages"><button type="button" data-orbit-page="prev" aria-label="Previous Orbit page" ${pagination.currentPage === 0 ? 'disabled' : ''}>${icon('back')}</button><span>${pagination.currentPage + 1}/${pagination.pageCount}</span><button type="button" data-orbit-page="next" aria-label="Next Orbit page" ${pagination.currentPage === pagination.pageCount - 1 ? 'disabled' : ''}>${icon('next')}</button></div>` : '';
   const center = group ? `<button type="button" class="orbit-center-action" data-orbit-back aria-label="Back to main menu">${icon('back')}<span>Back</span></button>` : `<strong class="orbit-wordmark">ZENO</strong>`;
   const closeCenterDelay = 90 + Math.max(0, pagination.items.length - 1) * 14;
-  return `<button type="button" class="orbit-trigger" data-orbit-close aria-label="${escapeHtml(orbitOpen ? 'Close Zeno navigation' : `Open Zeno navigation: ${active.label}`)}" aria-expanded="${orbitOpen}" aria-controls="orbit-command-dialog"><span class="orbit-trigger-icon">${icon(orbitOpen ? 'close' : 'compass')}</span><span class="orbit-trigger-label">${escapeHtml(active.label)}</span><span class="orbit-trigger-key">${orbitOpen ? 'Close' : 'Menu'}</span></button>${orbitOpen ? `<div class="orbit-overlay ${orbitClosing ? 'is-closing' : ''} ${orbitLayerTransitioning ? 'is-layer-swap' : ''}"><button type="button" class="orbit-backdrop" data-orbit-backdrop tabindex="-1" aria-label="Close Zeno navigation"></button><section class="orbit-dialog" id="orbit-command-dialog" role="dialog" aria-modal="true" aria-label="${escapeHtml(group ? `${group.label} destinations` : 'Zeno navigation')}"><div class="orbit-disc" data-layer="${group ? 'children' : 'root'}" style="--orbit-close-center-delay:${closeCenterDelay}ms">${segments}<div class="orbit-center">${center}</div>${paginationControls}</div></section></div>` : ''}`;
+  const triggerPosition = orbitTriggerPosition ? `data-orbit-manual="true" style="--orbit-trigger-left:${orbitTriggerPosition.x}px;--orbit-trigger-top:${orbitTriggerPosition.y}px"` : 'data-orbit-manual="false"';
+  const dialogPosition = orbitDialogPosition ? `data-orbit-positioned="true" data-orbit-side="${orbitDialogPosition.side}" style="--orbit-dialog-left:${orbitDialogPosition.left}px;--orbit-dialog-top:${orbitDialogPosition.top}px"` : 'data-orbit-positioned="false"';
+  return `<button type="button" class="orbit-trigger" data-orbit-close ${triggerPosition} title="${orbitOpen ? 'Close Zeno navigation' : 'Drag to reposition · Click to open · Alt + Arrow to move'}" aria-label="${escapeHtml(orbitOpen ? 'Close Zeno navigation' : `Open Zeno navigation: ${active.label}`)}" aria-expanded="${orbitOpen}" aria-controls="orbit-command-dialog"><span class="orbit-trigger-icon">${icon(orbitOpen ? 'close' : 'compass')}</span><span class="orbit-trigger-label">${escapeHtml(active.label)}</span><span class="orbit-trigger-key">${orbitOpen ? 'Close' : 'Menu'}</span></button>${orbitOpen ? `<div class="orbit-overlay ${orbitClosing ? 'is-closing' : ''} ${orbitLayerTransitioning ? 'is-layer-swap' : ''}"><button type="button" class="orbit-backdrop" data-orbit-backdrop tabindex="-1" aria-label="Close Zeno navigation"></button><section class="orbit-dialog" ${dialogPosition} id="orbit-command-dialog" role="dialog" aria-modal="true" aria-label="${escapeHtml(group ? `${group.label} destinations` : 'Zeno navigation')}"><div class="orbit-disc" data-layer="${group ? 'children' : 'root'}" style="--orbit-close-center-delay:${closeCenterDelay}ms">${segments}<div class="orbit-center">${center}</div>${paginationControls}</div></section></div>` : ''}`;
+}
+
+function bindOrbitTriggerDrag(trigger: HTMLButtonElement) {
+  let drag: { pointerId: number; startX: number; startY: number; originX: number; originY: number; moved: boolean } | null = null;
+  trigger.addEventListener('pointerdown', (event) => {
+    if (orbitOpen || orbitClosing || !event.isPrimary || event.button !== 0) return;
+    const bounds = trigger.getBoundingClientRect();
+    drag = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, originX: bounds.left, originY: bounds.top, moved: false };
+    trigger.setPointerCapture(event.pointerId);
+  });
+  trigger.addEventListener('pointermove', (event) => {
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    const deltaX = event.clientX - drag.startX;
+    const deltaY = event.clientY - drag.startY;
+    if (!drag.moved && Math.hypot(deltaX, deltaY) < 4) return;
+    drag.moved = true;
+    event.preventDefault();
+    trigger.classList.add('is-dragging');
+    applyManualOrbitTriggerPosition(trigger, { x: drag.originX + deltaX, y: drag.originY + deltaY });
+  });
+  trigger.addEventListener('pointerup', (event) => {
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    if (drag.moved) {
+      orbitSuppressNextClick = true;
+      window.setTimeout(() => { orbitSuppressNextClick = false; }, 0);
+    }
+    trigger.classList.remove('is-dragging');
+    if (trigger.hasPointerCapture(event.pointerId)) trigger.releasePointerCapture(event.pointerId);
+    drag = null;
+  });
+  trigger.addEventListener('pointercancel', (event) => {
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    trigger.classList.remove('is-dragging');
+    drag = null;
+  });
+  trigger.addEventListener('keydown', (event) => {
+    if (orbitOpen || !event.altKey || !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
+    event.preventDefault();
+    const bounds = trigger.getBoundingClientRect();
+    const step = event.shiftKey ? 64 : 24;
+    applyManualOrbitTriggerPosition(trigger, {
+      x: bounds.left + (event.key === 'ArrowLeft' ? -step : event.key === 'ArrowRight' ? step : 0),
+      y: bounds.top + (event.key === 'ArrowUp' ? -step : event.key === 'ArrowDown' ? step : 0),
+    });
+  });
 }
 
 function bindOrbitCommand() {
@@ -515,7 +589,13 @@ function bindOrbitCommand() {
   document.querySelector<HTMLElement>('.skip-link')?.toggleAttribute('inert', orbitOpen);
   if (orbitClosing) document.querySelector<HTMLElement>('.orbit-disc')?.setAttribute('inert', '');
   if (orbitOpen && !orbitClosing) focusOrbitLayer();
-  document.querySelector<HTMLButtonElement>('.orbit-trigger')?.addEventListener('click', () => {
+  const orbitTrigger = document.querySelector<HTMLButtonElement>('.orbit-trigger');
+  if (orbitTrigger) bindOrbitTriggerDrag(orbitTrigger);
+  orbitTrigger?.addEventListener('click', () => {
+    if (orbitSuppressNextClick) {
+      orbitSuppressNextClick = false;
+      return;
+    }
     if (orbitClosing) {
       if (orbitCloseTimer !== null) window.clearTimeout(orbitCloseTimer);
       orbitCloseTimer = null;
@@ -527,6 +607,7 @@ function bindOrbitCommand() {
       closeOrbitCommand();
       return;
     }
+    if (orbitTrigger) positionOrbitDialogFromTrigger(orbitTrigger);
     orbitOpen = true;
     orbitGroupId = null;
     orbitPage = 0;
@@ -548,6 +629,7 @@ function bindOrbitCommand() {
     orbitOpen = false;
     orbitGroupId = null;
     orbitPage = 0;
+    orbitDialogPosition = null;
     if (window.location.pathname !== destination) navigateTo(destination);
     else render();
     requestAnimationFrame(() => document.querySelector<HTMLButtonElement>('.orbit-trigger')?.focus());
@@ -590,6 +672,11 @@ function updateOrbitTriggerDock() {
   orbitDockFrame = null;
   const trigger = document.querySelector<HTMLButtonElement>('.orbit-trigger');
   if (!trigger) return;
+  if (orbitTriggerPosition) {
+    applyManualOrbitTriggerPosition(trigger, orbitTriggerPosition);
+    if (orbitOpen) positionOrbitDialogFromTrigger(trigger);
+    return;
+  }
   const controls = [...document.querySelectorAll<HTMLElement>('.doing-editor :is(button[type="submit"],[data-doing-editor-cancel])')];
   const triggerRect = trigger.getBoundingClientRect();
   const avoidRects = controls.map((control) => control.getBoundingClientRect()).filter((rect) => rect.width > 0 && rect.height > 0);
@@ -598,6 +685,7 @@ function updateOrbitTriggerDock() {
     { width: triggerRect.width, height: triggerRect.height },
     avoidRects,
   );
+  if (orbitOpen) requestAnimationFrame(() => positionOrbitDialogFromTrigger(trigger));
 }
 function scheduleOrbitTriggerDock() {
   if (orbitDockFrame !== null) cancelAnimationFrame(orbitDockFrame);

@@ -33,6 +33,9 @@ export type OrbitSegmentGeometry = {
 };
 
 export type OrbitTriggerDock = 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
+export type OrbitPoint = { x: number; y: number };
+export type OrbitDialogSide = 'top' | 'right' | 'bottom' | 'left';
+export type OrbitDialogPlacement = { left: number; top: number; side: OrbitDialogSide };
 type Rect = { left: number; right: number; top: number; bottom: number };
 type Viewport = { width: number; height: number };
 type Size = { width: number; height: number };
@@ -52,6 +55,39 @@ export function chooseOrbitTriggerDock(viewport: Viewport, trigger: Size, avoidR
     && candidate.top < target.bottom + 8
     && candidate.bottom > target.top - 8;
   return docks.find(([, candidate]) => avoidRects.every((target) => !overlaps(candidate, target)))?.[0] ?? 'top-left';
+}
+
+function clamp(value: number, minimum: number, maximum: number) {
+  return Math.min(Math.max(value, minimum), Math.max(minimum, maximum));
+}
+
+export function clampOrbitTriggerPosition(position: OrbitPoint, trigger: Size, viewport: Viewport, inset = 8): OrbitPoint {
+  return {
+    x: clamp(position.x, inset, viewport.width - trigger.width - inset),
+    y: clamp(position.y, inset, viewport.height - trigger.height - inset),
+  };
+}
+
+export function orbitDialogSize(viewport: Viewport) {
+  const compact = viewport.width <= 560;
+  return Math.max(0, Math.min(compact ? 327 : 350, viewport.width - 48, viewport.height - (compact ? 128 : 150)));
+}
+
+export function placeOrbitDialog(trigger: Rect, size: number, viewport: Viewport, gap = 14, inset = 12): OrbitDialogPlacement {
+  const centerX = (trigger.left + trigger.right) / 2;
+  const centerY = (trigger.top + trigger.bottom) / 2;
+  const candidates: Array<OrbitDialogPlacement & { room: number }> = [
+    { side: 'top', left: centerX - size / 2, top: trigger.top - gap - size, room: trigger.top - inset },
+    { side: 'bottom', left: centerX - size / 2, top: trigger.bottom + gap, room: viewport.height - inset - trigger.bottom },
+    { side: 'left', left: trigger.left - gap - size, top: centerY - size / 2, room: trigger.left - inset },
+    { side: 'right', left: trigger.right + gap, top: centerY - size / 2, room: viewport.width - inset - trigger.right },
+  ];
+  const selected = candidates.sort((a, b) => b.room - a.room)[0];
+  return {
+    left: clamp(selected.left, inset, viewport.width - size - inset),
+    top: clamp(selected.top, inset, viewport.height - size - inset),
+    side: selected.side,
+  };
 }
 
 export const orbitNavigation: OrbitNavigationItem[] = [

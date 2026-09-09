@@ -1454,13 +1454,16 @@ body {
  position:fixed; z-index:74; right:max(24px,env(safe-area-inset-right,0px)); bottom:max(24px,env(safe-area-inset-bottom,0px));
  min-height:54px; max-width:calc(100vw - 48px); display:flex; align-items:center; gap:10px; padding:7px 14px 7px 10px;
  border:1px solid var(--orbit-line); border-radius:999px; color:var(--orbit-text); background:var(--orbit-charcoal);
- box-shadow:0 12px 32px rgba(2,7,19,.3); font-family:'Outfit Variable',sans-serif; cursor:pointer;
+ box-shadow:0 12px 32px rgba(2,7,19,.3); font-family:'Outfit Variable',sans-serif; touch-action:none; user-select:none; cursor:grab;
  transition:transform .2s cubic-bezier(.22,.7,.2,1),opacity .2s cubic-bezier(.22,.7,.2,1);
 }
 .orbit-trigger:hover { background:var(--orbit-navy); }
 .orbit-trigger[data-orbit-dock='bottom-left'] { right:auto; left:max(24px,env(safe-area-inset-left,0px)); }
 .orbit-trigger[data-orbit-dock='top-right'] { top:max(76px,calc(env(safe-area-inset-top,0px) + 68px)); bottom:auto; }
 .orbit-trigger[data-orbit-dock='top-left'] { top:max(76px,calc(env(safe-area-inset-top,0px) + 68px)); right:auto; bottom:auto; left:max(24px,env(safe-area-inset-left,0px)); }
+.orbit-trigger[data-orbit-manual='true'] { left:var(--orbit-trigger-left); top:var(--orbit-trigger-top); right:auto; bottom:auto; }
+.orbit-trigger.is-dragging { cursor:grabbing; transition:none; }
+.orbit-trigger[aria-expanded='true'] { cursor:pointer; }
 .orbit-trigger-icon { width:32px; height:32px; display:grid; place-items:center; color:var(--orbit-active); font-size:20px; }
 .orbit-trigger-label { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; font-weight:560; }
 .orbit-trigger-key { color:var(--orbit-muted); font:10px 'DM Mono',monospace; }
@@ -1471,6 +1474,7 @@ body {
  right:max(24px,env(safe-area-inset-right,0px)); bottom:max(96px,calc(env(safe-area-inset-bottom,0px) + 88px));
  width:var(--orbit-size); aspect-ratio:1; pointer-events:none;
 }
+.orbit-dialog[data-orbit-positioned='true'] { left:var(--orbit-dialog-left); top:var(--orbit-dialog-top); right:auto; bottom:auto; }
 .orbit-disc { position:relative; width:100%; height:100%; isolation:isolate; overflow:visible; border:0; background:transparent; pointer-events:none; }
 .orbit-segment {
  position:absolute; inset:0; width:100%; height:100%; padding:0; border:0; border-radius:0; background:transparent;

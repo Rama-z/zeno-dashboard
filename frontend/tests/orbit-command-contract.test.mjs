@@ -135,6 +135,31 @@ test('Orbit trigger chooses a viewport dock that does not cover Doing editor act
   assert.equal(chooseOrbitTriggerDock(viewport, trigger, [...bottomActions, topRightCancel]), 'top-left', 'the next non-overlapping dock must be selected deterministically');
 });
 
+test('Orbit floating geometry clamps the trigger and keeps its dialog inside the viewport', async () => {
+  const { clampOrbitTriggerPosition, orbitDialogSize, placeOrbitDialog } = await loadOrbitModule();
+
+  assert.deepEqual(clampOrbitTriggerPosition({ x: -80, y: 900 }, { width: 180, height: 54 }, { width: 327, height: 667 }), { x: 8, y: 605 });
+  assert.deepEqual(clampOrbitTriggerPosition({ x: 900, y: -40 }, { width: 216, height: 54 }, { width: 1440, height: 1200 }), { x: 900, y: 8 });
+  assert.equal(orbitDialogSize({ width: 1440, height: 1200 }), 350);
+  assert.equal(orbitDialogSize({ width: 327, height: 667 }), 279);
+
+  assert.deepEqual(
+    placeOrbitDialog({ left: 1200, right: 1416, top: 1122, bottom: 1176 }, 350, { width: 1440, height: 1200 }),
+    { left: 836, top: 838, side: 'left' },
+    'a bottom-right trigger should open inward without leaving the viewport',
+  );
+  assert.deepEqual(
+    placeOrbitDialog({ left: 123, right: 303, top: 597, bottom: 651 }, 279, { width: 327, height: 667 }),
+    { left: 36, top: 304, side: 'top' },
+    'a narrow-screen trigger should place Orbit above itself',
+  );
+  assert.deepEqual(
+    placeOrbitDialog({ left: 73, right: 253, top: 300, bottom: 354 }, 279, { width: 327, height: 667 }),
+    { left: 23.5, top: 368, side: 'bottom' },
+    'a centered trigger should choose the available vertical side',
+  );
+});
+
 test('dashboard continuously docks Orbit away from visible Doing submit and cancel controls', async () => {
   const [main, styles] = await Promise.all([read('src/main.ts'), read('src/styles.css')]);
 
@@ -147,4 +172,23 @@ test('dashboard continuously docks Orbit away from visible Doing submit and canc
   for (const dock of ['bottom-left', 'top-right', 'top-left']) {
     assert.match(styles, new RegExp(`\\.orbit-trigger\\[data-orbit-dock=['"]${dock}['"]\\]`), `missing ${dock} Orbit dock style`);
   }
+});
+
+test('closed Orbit trigger supports bounded drag and anchors the dialog to its current position', async () => {
+  const [main, styles] = await Promise.all([read('src/main.ts'), read('src/styles.css')]);
+
+  assert.match(main, /pointerdown/);
+  assert.match(main, /pointermove/);
+  assert.match(main, /pointerup/);
+  assert.match(main, /setPointerCapture/);
+  assert.match(main, /clampOrbitTriggerPosition/);
+  assert.match(main, /orbitSuppressNextClick/, 'a completed drag must not accidentally open Orbit');
+  assert.match(main, /event\.altKey/, 'keyboard users should be able to reposition with Alt + Arrow');
+  assert.match(main, /placeOrbitDialog/, 'open placement must derive from the current trigger rectangle');
+  assert.match(main, /data-orbit-manual/);
+  assert.match(main, /data-orbit-positioned/);
+  assert.match(styles, /\.orbit-trigger\[data-orbit-manual=['"]true['"]\][^}]*left:\s*var\(--orbit-trigger-left\)[^}]*top:\s*var\(--orbit-trigger-top\)/s);
+  assert.match(styles, /\.orbit-dialog\[data-orbit-positioned=['"]true['"]\][^}]*left:\s*var\(--orbit-dialog-left\)[^}]*top:\s*var\(--orbit-dialog-top\)/s);
+  assert.match(styles, /\.orbit-trigger\s*\{[^}]*touch-action:\s*none[^}]*cursor:\s*grab/s);
+  assert.match(styles, /\.orbit-trigger\.is-dragging[^}]*cursor:\s*grabbing/s);
 });

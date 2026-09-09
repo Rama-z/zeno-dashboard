@@ -310,4 +310,11 @@ export const changeLogUpdates: ChangeLogUpdate[] = [
     description: 'Memperbaiki blitz saat membuka Account, Lifestyle, Workout, dan menu lain yang memiliki submenu. Pergantian layer kini hanya melepas petal lama; backdrop dan hub tetap terlihat, lalu petal submenu masuk berurutan tanpa mengulang animasi pembukaan seluruh Orbit. Verifikasi mencakup regression test RED-GREEN, 59 test frontend, TypeScript, dan production build.',
     category: 'Frontend',
   },
+  {
+    id: '2026-09-09-orbit-draggable-trigger',
+    occurredAt: '2026-09-09T15:34:27+07:00',
+    title: 'Tombol Orbit dapat dipindahkan',
+    description: 'Membuat trigger Orbit dapat digeser dengan pointer ke seluruh viewport dan dipindahkan lewat Alt plus tombol panah. Posisi selalu dijepit dengan inset aman agar tombol tidak keluar halaman, tetap dipertahankan saat dashboard render ulang, dan kembali menyesuaikan saat viewport berubah. Ketika dibuka, dialog radial memilih sisi dengan ruang terbesar di sekitar trigger lalu dijepit agar seluruh menu tetap terlihat. Verifikasi mencakup geometry dan interaction contract RED-GREEN, 61 test frontend, TypeScript, dan production build.',
+    category: 'Frontend',
+  },
 ];
