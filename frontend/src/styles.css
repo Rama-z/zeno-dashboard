@@ -1461,6 +1461,8 @@ body {
 .orbit-trigger[data-orbit-dock='bottom-left'] { right:auto; left:max(24px,env(safe-area-inset-left,0px)); }
 .orbit-trigger[data-orbit-dock='top-right'] { top:max(76px,calc(env(safe-area-inset-top,0px) + 68px)); bottom:auto; }
 .orbit-trigger[data-orbit-dock='top-left'] { top:max(76px,calc(env(safe-area-inset-top,0px) + 68px)); right:auto; bottom:auto; left:max(24px,env(safe-area-inset-left,0px)); }
+.orbit-trigger[data-orbit-dock='middle-right'] { top:calc(50dvh - 27px); bottom:auto; }
+.orbit-trigger[data-orbit-dock='middle-left'] { top:calc(50dvh - 27px); right:auto; bottom:auto; left:max(24px,env(safe-area-inset-left,0px)); }
 .orbit-trigger[data-orbit-manual='true'] { left:var(--orbit-trigger-left); top:var(--orbit-trigger-top); right:auto; bottom:auto; }
 .orbit-trigger.is-dragging { cursor:grabbing; transition:none; }
 .orbit-trigger[aria-expanded='true'] { cursor:pointer; }

@@ -52,8 +52,11 @@ Saat startup, backend menguji koneksi PostgreSQL dan otomatis membuat tabel/inde
 - `PUT /api/learning-materials/{id}/progress`
 - `GET`, `POST /api/doing`
 - `PUT`, `DELETE /api/doing/{id}`
-- `GET`, `POST /api/workouts` (scheduled catalog entries may include optional stable `materialId`)
-- `PUT`, `DELETE /api/workouts/{id}` (updates preserve `materialId`)
+- `GET`, `POST /api/workouts` (kontrak legacy; scheduled catalog entries dapat memiliki `materialId` stabil)
+- `PUT`, `DELETE /api/workouts/{id}` (kontrak legacy yang mempertahankan `materialId`)
+- `GET`, `POST /api/workout-sessions`
+- `PUT`, `DELETE /api/workout-sessions/{id}`
+- `GET`, `POST /api/workout-templates`
 - `GET`, `POST /api/journals`
 - `GET`, `POST /api/journals/{id}/revisions`
 - `DELETE /api/journals/{id}`

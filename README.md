@@ -26,7 +26,7 @@ Repository ini menggunakan **monorepo** agar perubahan frontend, backend, kontra
 - Activity audit trail dengan actor dan subject
 - Doing, Learning, Workout, Journaling, dan Spending
 - Learning Material List dengan English Grammar catalogue PostgreSQL-backed, 20 topic families, A1–C1 seed batches, practice, quiz, review cycle, dan owner-scoped progress
-- Workout Material List dengan katalog Mobility JSON tervalidasi dan scheduling ke Workout berdasarkan tanggal
+- Workout Trail mingguan, Focus Mode, sesi → gerakan → set, timer tahan refresh, template, riwayat, dan Pustaka gerakan Mobility
 - Immutable journal revision history dengan deliberate edit reasons dan optimistic concurrency
 - Ringkasan pengeluaran harian, mingguan, bulanan, dan tahunan
 - Dark/light theme dengan branding Zeno
@@ -77,7 +77,7 @@ Runtime catalogue dibaca dari `GET /api/learning-materials` dan `GET /api/learni
 
 Workout Material List memakai route client-side yang tetap mempertahankan Workout sebagai halaman aktif:
 `/workout/materials` → `/workout/materials/mobility` → `/workout/materials/mobility/:movementId`.
-Tanggal terpilih dipertahankan lewat `?date=YYYY-MM-DD`; scheduling membuat Workout entry baru dengan optional `materialId` tanpa menggandakan definisi material ke PostgreSQL.
+Tanggal terpilih dipertahankan lewat `?date=YYYY-MM-DD`; scheduling membuat sesi Workout baru dengan gerakan yang menyimpan `materialId` tanpa menggandakan definisi pustaka ke PostgreSQL. Kontrak legacy `workout_entries` tetap tersedia; migrasi idempotent memetakan setiap record legacy menjadi satu sesi berisi satu gerakan. Ownership lama dipertahankan apa adanya, termasuk record tanpa owner yang tetap hanya terlihat admin. Target lama disimpan sebagai snapshot target, sedangkan hasil aktual set tetap kosong.
 
 ## Quality gates
 

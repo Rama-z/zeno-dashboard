@@ -32,7 +32,7 @@ export type OrbitSegmentGeometry = {
   outerWidth: number;
 };
 
-export type OrbitTriggerDock = 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
+export type OrbitTriggerDock = 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left' | 'middle-right' | 'middle-left';
 export type OrbitPoint = { x: number; y: number };
 export type OrbitDialogSide = 'top' | 'right' | 'bottom' | 'left';
 export type OrbitDialogPlacement = { left: number; top: number; side: OrbitDialogSide };
@@ -44,11 +44,14 @@ export function chooseOrbitTriggerDock(viewport: Viewport, trigger: Size, avoidR
   const sideInset = 24;
   const bottomInset = viewport.width <= 560 ? 16 : 24;
   const topInset = 76;
+  const middleTop = (viewport.height - trigger.height) / 2;
   const docks: Array<[OrbitTriggerDock, Rect]> = [
     ['bottom-right', { left: viewport.width - sideInset - trigger.width, right: viewport.width - sideInset, top: viewport.height - bottomInset - trigger.height, bottom: viewport.height - bottomInset }],
     ['bottom-left', { left: sideInset, right: sideInset + trigger.width, top: viewport.height - bottomInset - trigger.height, bottom: viewport.height - bottomInset }],
     ['top-right', { left: viewport.width - sideInset - trigger.width, right: viewport.width - sideInset, top: topInset, bottom: topInset + trigger.height }],
     ['top-left', { left: sideInset, right: sideInset + trigger.width, top: topInset, bottom: topInset + trigger.height }],
+    ['middle-right', { left: viewport.width - sideInset - trigger.width, right: viewport.width - sideInset, top: middleTop, bottom: middleTop + trigger.height }],
+    ['middle-left', { left: sideInset, right: sideInset + trigger.width, top: middleTop, bottom: middleTop + trigger.height }],
   ];
   const overlaps = (candidate: Rect, target: Rect) => candidate.left < target.right + 8
     && candidate.right > target.left - 8

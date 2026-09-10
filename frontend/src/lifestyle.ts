@@ -10,6 +10,7 @@ import {
   type WorkoutInput,
   type WorkoutUpdateInput,
 } from './api';
+import { bindWorkoutTrailEvents, currentWorkoutTrailDate, renderWorkoutTrail, scheduleWorkoutMaterial, syncWorkoutTrailData, syncWorkoutTrailRoute } from './workout-trail';
 
 export type LifestylePage = 'workout' | 'journaling' | 'spending';
 type JournalTab = 'archive' | 'write';
@@ -177,9 +178,7 @@ export function isLifestylePage(value: string): value is LifestylePage {
 
 export function syncLifestyleRoute(page: LifestylePage) {
   if (page === 'workout') {
-    setWorkoutDate(workoutDateFromLocation());
-    editingWorkoutId = null;
-    pendingWorkoutDeleteId = null;
+    syncWorkoutTrailRoute();
     return;
   }
   if (page !== 'journaling') return;
@@ -192,16 +191,15 @@ export function syncLifestyleRoute(page: LifestylePage) {
 }
 
 export function currentWorkoutDate() {
-  return selectedWorkoutDate;
+  return currentWorkoutTrailDate();
 }
 
 export async function syncLifestyleData() {
-  const [workoutResponse, journalResponse, spendingResponse] = await Promise.all([
-    api.workouts(),
+  const [, journalResponse, spendingResponse] = await Promise.all([
+    syncWorkoutTrailData(),
     api.journals(),
     api.spending(),
   ]);
-  workouts = workoutResponse.entries;
   journals = journalResponse.entries.map(normalizeJournalEntry);
   spending = spendingResponse.entries;
   journalHistoryRequestTokens.clear();
@@ -257,12 +255,8 @@ function saveWorkouts() {
   localStorage.setItem(workoutStorageKey, JSON.stringify(workouts));
 }
 
-export async function scheduleWorkout(input: WorkoutInput): Promise<WorkoutEntryResponse> {
-  const created = await api.createWorkout(input);
-  workouts = [created, ...workouts];
-  saveWorkouts();
-  setWorkoutDate(created.date);
-  return created;
+export async function scheduleWorkout(input: WorkoutInput): Promise<void> {
+  await scheduleWorkoutMaterial(input);
 }
 
 function saveJournals() {
@@ -528,7 +522,7 @@ function renderSpending() {
 }
 
 export function renderLifestylePage(page: LifestylePage) {
-  if (page === 'workout') return renderWorkout();
+  if (page === 'workout') return renderWorkoutTrail();
   if (page === 'journaling') return renderJournaling();
   return renderSpending();
 }
@@ -918,7 +912,7 @@ function bindSpending(options: BindOptions) {
 }
 
 export function bindLifestyleEvents(page: LifestylePage, options: BindOptions) {
-  if (page === 'workout') bindWorkout(options);
+  if (page === 'workout') bindWorkoutTrailEvents(options);
   else if (page === 'journaling') bindJournalRevisionAware(options);
   else bindSpending(options);
 }

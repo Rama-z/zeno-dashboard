@@ -223,6 +223,24 @@ func (fakeStore) UpdateWorkout(_ context.Context, entry model.WorkoutEntry) (mod
 	return entry, true, nil
 }
 func (fakeStore) DeleteWorkout(context.Context, string, string) (bool, error) { return true, nil }
+func (fakeStore) CreateWorkoutSession(_ context.Context, session model.WorkoutSession) (model.WorkoutSession, error) {
+	return session, nil
+}
+func (fakeStore) ListWorkoutSessions(context.Context, string, string, string, bool) ([]model.WorkoutSession, error) {
+	return []model.WorkoutSession{}, nil
+}
+func (fakeStore) UpdateWorkoutSession(_ context.Context, session model.WorkoutSession, _ string, _ bool, _ time.Time) (model.WorkoutSession, bool, bool, error) {
+	return session, true, false, nil
+}
+func (fakeStore) DeleteWorkoutSession(context.Context, string, string, bool) (bool, error) {
+	return true, nil
+}
+func (fakeStore) CreateWorkoutTemplate(_ context.Context, template model.WorkoutTemplate) (model.WorkoutTemplate, error) {
+	return template, nil
+}
+func (fakeStore) ListWorkoutTemplates(context.Context, string, bool) ([]model.WorkoutTemplate, error) {
+	return []model.WorkoutTemplate{}, nil
+}
 
 type materialWorkoutStore struct {
 	fakeStore
@@ -1471,4 +1489,155 @@ func TestProtectedMutationRejectsMissingCSRF(t *testing.T) {
 	if response.Code != http.StatusForbidden {
 		t.Fatalf("expected 403 without CSRF, got %d: %s", response.Code, response.Body.String())
 	}
+}
+
+type workoutSessionScopeStore struct {
+	fakeStore
+	date, exercise, actor string
+	admin                 bool
+}
+
+func (s *workoutSessionScopeStore) ListWorkoutSessions(_ context.Context, date, exercise, actor string, admin bool) ([]model.WorkoutSession, error) {
+	s.date, s.exercise, s.actor, s.admin = date, exercise, actor, admin
+	return []model.WorkoutSession{{ID: "77777777-7777-4777-8777-777777777777", OwnerUserID: actor, Name: "Lower body", Date: date, Timezone: "Asia/Jakarta", Status: "planned", Movements: []model.WorkoutMovement{}}}, nil
+}
+
+func workoutSessionRequest(method, path, body string) *http.Request {
+	request := httptest.NewRequest(method, path, strings.NewReader(body))
+	request.AddCookie(&http.Cookie{Name: "zeno_session", Value: "workout-session-token"})
+	if method != http.MethodGet {
+		request.Header.Set("Content-Type", "application/json")
+		request.AddCookie(&http.Cookie{Name: "zeno_csrf", Value: "workout-csrf"})
+		request.Header.Set("X-CSRF-Token", "workout-csrf")
+	}
+	return request
+}
+
+func TestWorkoutSessionCreateAcceptsEmptySkippedRestDay(t *testing.T) {
+	handler := api.New(fakeStore{}, fakeSource{}, "test", api.WithAuth(api.AuthOptions{Enabled: true}))
+	body := `{"name":"Hari istirahat","date":"2026-09-09","timezone":"Asia/Jakarta","status":"skipped","estimatedMinutes":0,"location":"","note":"Hari pemulihan terjadwal","movements":[]}`
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, workoutSessionRequest(http.MethodPost, "/api/workout-sessions", body))
+	if response.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d: %s", response.Code, response.Body.String())
+	}
+	var created model.WorkoutSession
+	if err := json.Unmarshal(response.Body.Bytes(), &created); err != nil {
+		t.Fatal(err)
+	}
+	if created.Status != "skipped" || len(created.Movements) != 0 {
+		t.Fatalf("rest day must persist atomically as skipped: %+v", created)
+	}
+}
+
+func TestWorkoutSessionCreateResetsResultsAndAcceptsTypeSpecificTargets(t *testing.T) {
+	handler := api.New(fakeStore{}, fakeSource{}, "test", api.WithAuth(api.AuthOptions{Enabled: true}))
+	body := `{
+		"name":"Lower body","date":"2026-09-09","timezone":"Asia/Jakarta","status":"completed","estimatedMinutes":35,
+		"startedAt":"2026-09-09T10:00:00Z","endedAt":"2026-09-09T10:30:00Z",
+		"movements":[
+			{"name":"Goblet squat","exerciseType":"strength","position":1,"custom":true,"target":{"setCount":1,"repsMin":8,"repsMax":10,"weight":12,"weightUnit":"kg","weightBasis":"total"},"status":"completed","equipment":["Dumbbell"],"muscleGroups":["Lower body"],"sets":[{"number":1,"target":{"repsMin":8,"repsMax":10,"weight":12,"weightUnit":"kg"},"actual":{"weight":12,"reps":9,"weightUnit":"kg"},"status":"completed","recordedAt":"2026-09-09T10:05:00Z"}]},
+			{"name":"Treadmill","exerciseType":"cardio","position":2,"custom":true,"target":{"durationMinutes":20,"distance":3.2,"distanceUnit":"km"},"status":"planned","equipment":[],"muscleGroups":[],"sets":[]}
+		]
+	}`
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, workoutSessionRequest(http.MethodPost, "/api/workout-sessions", body))
+	if response.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d: %s", response.Code, response.Body.String())
+	}
+	var created model.WorkoutSession
+	if err := json.Unmarshal(response.Body.Bytes(), &created); err != nil {
+		t.Fatal(err)
+	}
+	if created.OwnerUserID != revisionTestUserID || created.Status != "planned" || created.StartedAt != nil || created.EndedAt != nil {
+		t.Fatalf("create must produce a clean owned plan: %+v", created)
+	}
+	if len(created.Movements) != 2 || created.Movements[0].Status != "planned" || created.Movements[0].Sets[0].Actual != nil || created.Movements[0].Sets[0].Status != "unrecorded" {
+		t.Fatalf("actual result leaked into duplicated plan: %+v", created.Movements)
+	}
+	if !validUUIDForTest(created.ID) || !validUUIDForTest(created.Movements[0].ID) || !validUUIDForTest(created.Movements[0].Sets[0].ID) {
+		t.Fatalf("server must assign nested UUIDs: %+v", created)
+	}
+}
+
+func TestWorkoutSessionListForwardsOwnerScopeAndFilters(t *testing.T) {
+	store := &workoutSessionScopeStore{}
+	handler := api.New(store, fakeSource{}, "test", api.WithAuth(api.AuthOptions{Enabled: true}))
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, workoutSessionRequest(http.MethodGet, "/api/workout-sessions?date=2026-09-09&exercise=squat", ""))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", response.Code, response.Body.String())
+	}
+	if store.date != "2026-09-09" || store.exercise != "squat" || store.actor != revisionTestUserID || store.admin {
+		t.Fatalf("wrong workout scope forwarded: %+v", store)
+	}
+}
+
+type workoutSessionConflictStore struct {
+	fakeStore
+}
+
+func (s *workoutSessionConflictStore) UpdateWorkoutSession(_ context.Context, _ model.WorkoutSession, _ string, _ bool, _ time.Time) (model.WorkoutSession, bool, bool, error) {
+	return model.WorkoutSession{}, false, true, nil
+}
+
+func TestWorkoutSessionUpdateConflictReturns409(t *testing.T) {
+	store := &workoutSessionConflictStore{}
+	handler := api.New(store, fakeSource{}, "test", api.WithAuth(api.AuthOptions{Enabled: true}))
+	body := `{"name":"Lower body","date":"2026-09-09","timezone":"Asia/Jakarta","status":"in_progress","estimatedMinutes":35,"updatedAt":"2026-09-09T10:00:00Z","movements":[]}`
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, workoutSessionRequest(http.MethodPut, "/api/workout-sessions/77777777-7777-4777-8777-777777777777", body))
+	if response.Code != http.StatusConflict {
+		t.Fatalf("expected 409, got %d: %s", response.Code, response.Body.String())
+	}
+}
+
+func TestWorkoutSessionUpdateKeepsActualSeparateFromTarget(t *testing.T) {
+	handler := api.New(fakeStore{}, fakeSource{}, "test", api.WithAuth(api.AuthOptions{Enabled: true}))
+	body := `{"name":"Lower body","date":"2026-09-09","timezone":"Asia/Jakarta","status":"in_progress","estimatedMinutes":35,"movements":[{"id":"88888888-8888-4888-8888-888888888888","name":"Goblet squat","exerciseType":"strength","position":1,"custom":true,"target":{"weight":12,"reps":10},"status":"in_progress","equipment":[],"muscleGroups":[],"sets":[{"id":"99999999-9999-4999-8999-999999999999","number":1,"target":{"weight":12,"reps":10},"actual":{"weight":10,"reps":8},"status":"completed","recordedAt":"2026-09-09T10:05:00Z"}]}]}`
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, workoutSessionRequest(http.MethodPut, "/api/workout-sessions/77777777-7777-4777-8777-777777777777", body))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", response.Code, response.Body.String())
+	}
+	var updated model.WorkoutSession
+	if err := json.Unmarshal(response.Body.Bytes(), &updated); err != nil {
+		t.Fatal(err)
+	}
+	set := updated.Movements[0].Sets[0]
+	if set.Target["weight"] == set.Actual["weight"] || set.Target["reps"] == set.Actual["reps"] {
+		t.Fatalf("target was overwritten by actual: %+v", set)
+	}
+}
+
+func TestWorkoutSessionRejectsCompletedSetWithoutActual(t *testing.T) {
+	handler := api.New(fakeStore{}, fakeSource{}, "test", api.WithAuth(api.AuthOptions{Enabled: true}))
+	body := `{"name":"Bad result","date":"2026-09-09","status":"in_progress","movements":[{"id":"88888888-8888-4888-8888-888888888888","name":"Squat","exerciseType":"strength","position":1,"target":{"reps":10},"status":"in_progress","sets":[{"id":"99999999-9999-4999-8999-999999999999","number":1,"target":{"reps":10},"actual":null,"status":"completed"}]}]}`
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, workoutSessionRequest(http.MethodPut, "/api/workout-sessions/77777777-7777-4777-8777-777777777777", body))
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d: %s", response.Code, response.Body.String())
+	}
+}
+
+func TestWorkoutTemplateCreateDropsActualResults(t *testing.T) {
+	handler := api.New(fakeStore{}, fakeSource{}, "test", api.WithAuth(api.AuthOptions{Enabled: true}))
+	body := `{"name":"Lower body","movements":[{"id":"88888888-8888-4888-8888-888888888888","name":"Goblet squat","exerciseType":"strength","position":1,"target":{"weight":12,"reps":10},"status":"completed","sets":[{"id":"99999999-9999-4999-8999-999999999999","number":1,"target":{"weight":12,"reps":10},"actual":{"weight":14,"reps":9},"status":"completed","recordedAt":"2026-09-09T06:00:00Z","rpe":8}]}]}`
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, workoutSessionRequest(http.MethodPost, "/api/workout-templates", body))
+	if response.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d: %s", response.Code, response.Body.String())
+	}
+	var created model.WorkoutTemplate
+	if err := json.Unmarshal(response.Body.Bytes(), &created); err != nil {
+		t.Fatal(err)
+	}
+	set := created.Movements[0].Sets[0]
+	if created.Movements[0].Status != "planned" || set.Status != "unrecorded" || set.Actual != nil || set.RecordedAt != nil || set.RPE != nil {
+		t.Fatalf("template copied workout results: %+v", created.Movements[0])
+	}
+}
+
+func validUUIDForTest(value string) bool {
+	return len(value) == 36 && value[8] == '-' && value[13] == '-' && value[18] == '-' && value[23] == '-'
 }

@@ -133,6 +133,18 @@ test('Orbit trigger chooses a viewport dock that does not cover Doing editor act
   assert.equal(chooseOrbitTriggerDock(viewport, trigger, []), 'bottom-right', 'other pages keep the default Orbit position');
   assert.equal(chooseOrbitTriggerDock(viewport, trigger, bottomActions), 'top-right', 'a bottom action row must move Orbit away from submit and cancel');
   assert.equal(chooseOrbitTriggerDock(viewport, trigger, [...bottomActions, topRightCancel]), 'top-left', 'the next non-overlapping dock must be selected deterministically');
+  assert.equal(
+    chooseOrbitTriggerDock(
+      { width: 375, height: 667 },
+      { width: 174.5, height: 54 },
+      [
+        { left: 20, right: 355, top: -29, bottom: 165 },
+        { left: 40, right: 237, top: 644, bottom: 689 },
+      ],
+    ),
+    'middle-right',
+    'when top and bottom actions occupy every corner, Orbit must use a clear side-middle dock',
+  );
 });
 
 test('Orbit floating geometry clamps the trigger and keeps its dialog inside the viewport', async () => {
@@ -169,7 +181,7 @@ test('dashboard continuously docks Orbit away from visible Doing submit and canc
   assert.match(main, /window\.addEventListener\('scroll', scheduleOrbitTriggerDock, true\)/);
   assert.match(main, /window\.addEventListener\('resize', scheduleOrbitTriggerDock\)/);
   assert.match(main, /scheduleOrbitTriggerDock\(\)/);
-  for (const dock of ['bottom-left', 'top-right', 'top-left']) {
+  for (const dock of ['bottom-left', 'top-right', 'top-left', 'middle-right', 'middle-left']) {
     assert.match(styles, new RegExp(`\\.orbit-trigger\\[data-orbit-dock=['"]${dock}['"]\\]`), `missing ${dock} Orbit dock style`);
   }
 });

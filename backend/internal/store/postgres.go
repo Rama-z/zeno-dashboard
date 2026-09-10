@@ -747,6 +747,328 @@ func (p *Postgres) DeleteWorkout(ctx context.Context, id, date string) (bool, er
 	return result.RowsAffected() == 1, nil
 }
 
+func workoutJSON(value any, empty string) (string, error) {
+	if value == nil {
+		return empty, nil
+	}
+	encoded, err := json.Marshal(value)
+	return string(encoded), err
+}
+
+func scanWorkoutSession(scan scanFunc) (model.WorkoutSession, error) {
+	var session model.WorkoutSession
+	var localTime, templateID, legacyID sql.NullString
+	var startedAt, pausedAt, endedAt, restEndsAt sql.NullTime
+	var restPaused sql.NullInt64
+	err := scan(&session.ID, &session.OwnerUserID, &session.Name, &session.Date, &localTime, &session.Timezone,
+		&session.Status, &session.EstimatedMinutes, &startedAt, &pausedAt, &session.PausedSeconds, &endedAt,
+		&restEndsAt, &restPaused, &session.Location, &session.Note, &templateID, &legacyID, &session.CreatedAt, &session.UpdatedAt)
+	if err != nil {
+		return model.WorkoutSession{}, err
+	}
+	if localTime.Valid {
+		session.LocalTime = localTime.String
+	}
+	if templateID.Valid {
+		session.TemplateID = templateID.String
+	}
+	if legacyID.Valid {
+		session.LegacyWorkoutEntryID = legacyID.String
+	}
+	if startedAt.Valid {
+		session.StartedAt = &startedAt.Time
+	}
+	if pausedAt.Valid {
+		session.PausedAt = &pausedAt.Time
+	}
+	if endedAt.Valid {
+		session.EndedAt = &endedAt.Time
+	}
+	if restEndsAt.Valid {
+		session.RestTimerEndsAt = &restEndsAt.Time
+	}
+	if restPaused.Valid {
+		value := int(restPaused.Int64)
+		session.RestTimerPausedRemainingSeconds = &value
+	}
+	session.Movements = []model.WorkoutMovement{}
+	return session, nil
+}
+
+const workoutSessionColumns = `id::text, COALESCE(owner_user_id::text, ''), name, workout_date::text,
+	CASE WHEN local_time IS NULL THEN NULL ELSE to_char(local_time, 'HH24:MI') END, timezone, status, estimated_minutes,
+	started_at, paused_at, paused_seconds, ended_at, rest_timer_ends_at, rest_timer_paused_remaining_seconds,
+	location, note, template_id::text, legacy_workout_entry_id::text, created_at, updated_at`
+
+func (p *Postgres) loadWorkoutMovements(ctx context.Context, sessionID string) ([]model.WorkoutMovement, error) {
+	rows, err := p.pool.Query(ctx, `SELECT id::text, session_id::text, COALESCE(material_id, ''), custom, name, exercise_type,
+		position, equipment, muscle_groups, target, rest_seconds, status, note
+		FROM workout_movements WHERE session_id = $1::uuid ORDER BY position`, sessionID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	movements := []model.WorkoutMovement{}
+	for rows.Next() {
+		var movement model.WorkoutMovement
+		var equipmentJSON, musclesJSON, targetJSON []byte
+		var rest sql.NullInt64
+		if err := rows.Scan(&movement.ID, &movement.SessionID, &movement.MaterialID, &movement.Custom, &movement.Name,
+			&movement.ExerciseType, &movement.Position, &equipmentJSON, &musclesJSON, &targetJSON, &rest, &movement.Status, &movement.Note); err != nil {
+			return nil, err
+		}
+		if err := json.Unmarshal(equipmentJSON, &movement.Equipment); err != nil {
+			return nil, err
+		}
+		if err := json.Unmarshal(musclesJSON, &movement.MuscleGroups); err != nil {
+			return nil, err
+		}
+		if err := json.Unmarshal(targetJSON, &movement.Target); err != nil {
+			return nil, err
+		}
+		if rest.Valid {
+			value := int(rest.Int64)
+			movement.RestSeconds = &value
+		}
+		setRows, err := p.pool.Query(ctx, `SELECT id::text, movement_id::text, set_number, target, actual, status, recorded_at, rpe
+			FROM workout_sets WHERE movement_id = $1::uuid ORDER BY set_number`, movement.ID)
+		if err != nil {
+			return nil, err
+		}
+		movement.Sets = []model.WorkoutSet{}
+		for setRows.Next() {
+			var set model.WorkoutSet
+			var setTarget []byte
+			var actualJSON []byte
+			var recorded sql.NullTime
+			var rpe sql.NullFloat64
+			if err := setRows.Scan(&set.ID, &set.MovementID, &set.Number, &setTarget, &actualJSON, &set.Status, &recorded, &rpe); err != nil {
+				setRows.Close()
+				return nil, err
+			}
+			if err := json.Unmarshal(setTarget, &set.Target); err != nil {
+				setRows.Close()
+				return nil, err
+			}
+			if len(actualJSON) > 0 {
+				if err := json.Unmarshal(actualJSON, &set.Actual); err != nil {
+					setRows.Close()
+					return nil, err
+				}
+			}
+			if recorded.Valid {
+				set.RecordedAt = &recorded.Time
+			}
+			if rpe.Valid {
+				value := rpe.Float64
+				set.RPE = &value
+			}
+			movement.Sets = append(movement.Sets, set)
+		}
+		if err := setRows.Err(); err != nil {
+			setRows.Close()
+			return nil, err
+		}
+		setRows.Close()
+		movements = append(movements, movement)
+	}
+	return movements, rows.Err()
+}
+
+func insertWorkoutMovements(ctx context.Context, tx pgx.Tx, session model.WorkoutSession) error {
+	for _, movement := range session.Movements {
+		equipment, err := workoutJSON(movement.Equipment, `[]`)
+		if err != nil {
+			return err
+		}
+		muscles, err := workoutJSON(movement.MuscleGroups, `[]`)
+		if err != nil {
+			return err
+		}
+		target, err := workoutJSON(movement.Target, `{}`)
+		if err != nil {
+			return err
+		}
+		if _, err := tx.Exec(ctx, `INSERT INTO workout_movements
+			(id, session_id, material_id, custom, name, exercise_type, position, equipment, muscle_groups, target, rest_seconds, status, note, created_at)
+			VALUES ($1::uuid, $2::uuid, NULLIF($3, ''), $4, $5, $6, $7, $8::jsonb, $9::jsonb, $10::jsonb, $11, $12, $13, $14)`,
+			movement.ID, session.ID, movement.MaterialID, movement.Custom, movement.Name, movement.ExerciseType, movement.Position,
+			equipment, muscles, target, movement.RestSeconds, movement.Status, movement.Note, session.CreatedAt); err != nil {
+			return err
+		}
+		for _, set := range movement.Sets {
+			setTarget, err := workoutJSON(set.Target, `{}`)
+			if err != nil {
+				return err
+			}
+			var actual any
+			if set.Actual != nil {
+				encoded, err := json.Marshal(set.Actual)
+				if err != nil {
+					return err
+				}
+				actual = string(encoded)
+			}
+			if _, err := tx.Exec(ctx, `INSERT INTO workout_sets (id, movement_id, set_number, target, actual, status, recorded_at, rpe)
+				VALUES ($1::uuid, $2::uuid, $3, $4::jsonb, $5::jsonb, $6, $7, $8)`,
+				set.ID, movement.ID, set.Number, setTarget, actual, set.Status, set.RecordedAt, set.RPE); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (p *Postgres) CreateWorkoutSession(ctx context.Context, session model.WorkoutSession) (model.WorkoutSession, error) {
+	tx, err := p.pool.Begin(ctx)
+	if err != nil {
+		return model.WorkoutSession{}, err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	created, err := scanWorkoutSession(tx.QueryRow(ctx, `INSERT INTO workout_sessions
+		(id, owner_user_id, name, workout_date, local_time, timezone, status, estimated_minutes, started_at, paused_at, paused_seconds,
+		 ended_at, rest_timer_ends_at, rest_timer_paused_remaining_seconds, location, note, template_id, created_at, updated_at)
+		VALUES ($1::uuid, NULLIF($2, '')::uuid, $3, $4::date, NULLIF($5, '')::time, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NULLIF($17, '')::uuid, $18, $19)
+		RETURNING `+workoutSessionColumns,
+		session.ID, session.OwnerUserID, session.Name, session.Date, session.LocalTime, session.Timezone, session.Status,
+		session.EstimatedMinutes, session.StartedAt, session.PausedAt, session.PausedSeconds, session.EndedAt,
+		session.RestTimerEndsAt, session.RestTimerPausedRemainingSeconds, session.Location, session.Note, session.TemplateID,
+		session.CreatedAt, session.UpdatedAt).Scan)
+	if err != nil {
+		return model.WorkoutSession{}, err
+	}
+	created.Movements = session.Movements
+	if err := insertWorkoutMovements(ctx, tx, created); err != nil {
+		return model.WorkoutSession{}, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return model.WorkoutSession{}, err
+	}
+	return created, nil
+}
+
+func (p *Postgres) ListWorkoutSessions(ctx context.Context, date, exercise, actorUserID string, isAdmin bool) ([]model.WorkoutSession, error) {
+	rows, err := p.pool.Query(ctx, `SELECT `+workoutSessionColumns+` FROM workout_sessions s
+		WHERE ($1 = '' OR s.workout_date = NULLIF($1, '')::date)
+		AND ($2 = '' OR EXISTS (SELECT 1 FROM workout_movements m WHERE m.session_id = s.id AND LOWER(m.name) LIKE '%' || LOWER($2) || '%'))
+		AND ($4 OR s.owner_user_id = NULLIF($3, '')::uuid)
+		ORDER BY s.workout_date DESC, s.created_at DESC`, date, exercise, actorUserID, isAdmin)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	sessions := []model.WorkoutSession{}
+	for rows.Next() {
+		session, err := scanWorkoutSession(rows.Scan)
+		if err != nil {
+			return nil, err
+		}
+		session.Movements, err = p.loadWorkoutMovements(ctx, session.ID)
+		if err != nil {
+			return nil, err
+		}
+		sessions = append(sessions, session)
+	}
+	return sessions, rows.Err()
+}
+
+func (p *Postgres) UpdateWorkoutSession(ctx context.Context, session model.WorkoutSession, actorUserID string, isAdmin bool, expectedUpdatedAt time.Time) (model.WorkoutSession, bool, bool, error) {
+	tx, err := p.pool.Begin(ctx)
+	if err != nil {
+		return model.WorkoutSession{}, false, false, err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	var currentUpdatedAt time.Time
+	err = tx.QueryRow(ctx, `SELECT updated_at FROM workout_sessions WHERE id=$1::uuid AND ($3 OR owner_user_id=NULLIF($2, '')::uuid) FOR UPDATE`, session.ID, actorUserID, isAdmin).Scan(&currentUpdatedAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return model.WorkoutSession{}, false, false, nil
+	}
+	if err != nil {
+		return model.WorkoutSession{}, false, false, err
+	}
+	if !currentUpdatedAt.Equal(expectedUpdatedAt) {
+		return model.WorkoutSession{}, false, true, nil
+	}
+	writeTime := session.UpdatedAt
+	if !writeTime.After(currentUpdatedAt) {
+		writeTime = currentUpdatedAt.Add(time.Millisecond)
+	}
+	updated, err := scanWorkoutSession(tx.QueryRow(ctx, `UPDATE workout_sessions SET
+		name=$2, workout_date=$3::date, local_time=NULLIF($4, '')::time, timezone=$5, status=$6, estimated_minutes=$7,
+		started_at=$8, paused_at=$9, paused_seconds=$10, ended_at=$11, rest_timer_ends_at=$12,
+		rest_timer_paused_remaining_seconds=$13, location=$14, note=$15, template_id=NULLIF($16, '')::uuid, updated_at=$17
+		WHERE id=$1::uuid AND ($19 OR owner_user_id=NULLIF($18, '')::uuid) RETURNING `+workoutSessionColumns,
+		session.ID, session.Name, session.Date, session.LocalTime, session.Timezone, session.Status, session.EstimatedMinutes,
+		session.StartedAt, session.PausedAt, session.PausedSeconds, session.EndedAt, session.RestTimerEndsAt,
+		session.RestTimerPausedRemainingSeconds, session.Location, session.Note, session.TemplateID, writeTime, actorUserID, isAdmin).Scan)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return model.WorkoutSession{}, false, false, nil
+	}
+	if err != nil {
+		return model.WorkoutSession{}, false, false, err
+	}
+	if _, err := tx.Exec(ctx, `DELETE FROM workout_movements WHERE session_id=$1::uuid`, session.ID); err != nil {
+		return model.WorkoutSession{}, false, false, err
+	}
+	updated.Movements = session.Movements
+	if err := insertWorkoutMovements(ctx, tx, updated); err != nil {
+		return model.WorkoutSession{}, false, false, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return model.WorkoutSession{}, false, false, err
+	}
+	return updated, true, false, nil
+}
+
+func (p *Postgres) DeleteWorkoutSession(ctx context.Context, id, actorUserID string, isAdmin bool) (bool, error) {
+	result, err := p.pool.Exec(ctx, `DELETE FROM workout_sessions WHERE id=$1::uuid AND ($3 OR owner_user_id=NULLIF($2, '')::uuid)`, id, actorUserID, isAdmin)
+	if err != nil {
+		return false, err
+	}
+	return result.RowsAffected() == 1, nil
+}
+
+func (p *Postgres) CreateWorkoutTemplate(ctx context.Context, template model.WorkoutTemplate) (model.WorkoutTemplate, error) {
+	movements, err := workoutJSON(template.Movements, `[]`)
+	if err != nil {
+		return model.WorkoutTemplate{}, err
+	}
+	err = p.pool.QueryRow(ctx, `INSERT INTO workout_templates (id, owner_user_id, name, movements, created_at, updated_at)
+		VALUES ($1::uuid, NULLIF($2, '')::uuid, $3, $4::jsonb, $5, $6)
+		RETURNING id::text, COALESCE(owner_user_id::text, ''), name, movements, created_at, updated_at`,
+		template.ID, template.OwnerUserID, template.Name, movements, template.CreatedAt, template.UpdatedAt,
+	).Scan(&template.ID, &template.OwnerUserID, &template.Name, &movements, &template.CreatedAt, &template.UpdatedAt)
+	if err != nil {
+		return model.WorkoutTemplate{}, err
+	}
+	if err := json.Unmarshal([]byte(movements), &template.Movements); err != nil {
+		return model.WorkoutTemplate{}, err
+	}
+	return template, nil
+}
+
+func (p *Postgres) ListWorkoutTemplates(ctx context.Context, actorUserID string, isAdmin bool) ([]model.WorkoutTemplate, error) {
+	rows, err := p.pool.Query(ctx, `SELECT id::text, COALESCE(owner_user_id::text, ''), name, movements, created_at, updated_at
+		FROM workout_templates WHERE ($2 OR owner_user_id=NULLIF($1, '')::uuid) ORDER BY updated_at DESC`, actorUserID, isAdmin)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	templates := []model.WorkoutTemplate{}
+	for rows.Next() {
+		var template model.WorkoutTemplate
+		var movements []byte
+		if err := rows.Scan(&template.ID, &template.OwnerUserID, &template.Name, &movements, &template.CreatedAt, &template.UpdatedAt); err != nil {
+			return nil, err
+		}
+		if err := json.Unmarshal(movements, &template.Movements); err != nil {
+			return nil, err
+		}
+		templates = append(templates, template)
+	}
+	return templates, rows.Err()
+}
+
 type scanFunc func(...any) error
 
 func scanJournalEntry(scan scanFunc) (model.JournalEntry, error) {

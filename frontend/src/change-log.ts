@@ -331,4 +331,11 @@ export const changeLogUpdates: ChangeLogUpdate[] = [
     description: 'Menyempurnakan pengelompokan Activity Log agar event dari pengguna yang sama tetap berada dalam satu card saat jedanya maksimal 60 menit, tetapi membentuk card sesi baru ketika jeda antar-event lebih dari 60 menit. Pemisahan tetap independen per pengguna dan hari, dengan urutan terbaru dipertahankan.',
     category: 'Frontend',
   },
+  {
+    id: '2026-09-10-workout-trail-focus-mode',
+    occurredAt: '2026-09-10T16:10:10+07:00',
+    title: 'Workout Trail dan Focus Mode tersedia',
+    description: 'Menyelesaikan Workout Trail dan Focus Mode dengan planner mingguan multi-sesi, model sesi ke gerakan ke set, target dan hasil aktual terpisah, gerakan adaptif strength, bodyweight, cardio, mobility, dan interval, timer sesi serta istirahat yang pulih setelah refresh, pencatatan retry single-flight tanpa kehilangan draft, partial completion, duplikasi plan-only, template, filter riwayat, previous result yang sebanding, dan ringkasan jujur. Verifikasi lulus melalui 80 test frontend, production build, served UI desktop dan mobile, browser QA recovery, save-failure, klik cepat, responsive-accessibility geometry, real API dan PostgreSQL readback, serta cleanup fixture nol.',
+    category: 'General',
+  },
 ];

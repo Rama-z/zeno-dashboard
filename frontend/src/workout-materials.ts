@@ -1,4 +1,4 @@
-import type { WorkoutEntryResponse, WorkoutInput } from './api';
+import type { WorkoutInput } from './api';
 import type { AppRoute } from './app-route';
 import { isValidLocalDate } from './lifestyle';
 import { getWorkoutMaterial, getWorkoutMaterialCategory, workoutMaterialCategories, workoutMaterialManifest, type WorkoutMaterial } from './workout-content';
@@ -6,7 +6,7 @@ import { getWorkoutMaterial, getWorkoutMaterialCategory, workoutMaterialCategori
 type WorkoutMaterialRoute = Extract<AppRoute, { kind: 'workout-material-categories' | 'workout-material-list' | 'workout-material-detail' | 'not-found' }>;
 type RenderOptions = { onNavigate: (path: string) => void; rerender: () => void };
 type BindOptions = RenderOptions & {
-  scheduleWorkout: (input: WorkoutInput) => Promise<WorkoutEntryResponse>;
+  scheduleWorkout: (input: WorkoutInput) => Promise<void>;
   onStatus: (online: boolean, error: string) => void;
 };
 type ScheduleDraft = { date: string; sets: number; reps: number; durationMinutes: number; note: string };
@@ -66,7 +66,7 @@ function materialChips(material: WorkoutMaterial) {
 
 function renderCategoryList() {
   const category = workoutMaterialCategories[0];
-  return `<div class="workout-materials">${heading('WORKOUT MATERIALS', 'Workout Material List', 'Pilih katalog referensi yang bisa ditambahkan ke Workout pada tanggal pilihanmu.')}${breadcrumb([{ label: 'Workout', path: '/workout' }, { label: 'Materials' }])}<div class="workout-material-category-grid"><button type="button" class="workout-material-category-card" data-workout-material-path="${escapeHtml(withDate(`/workout/materials/${category.id}`))}"><div class="workout-material-card-top"><div><span class="material-kicker">CATEGORY 01</span><h2>${escapeHtml(category.title)}</h2><p>${escapeHtml(category.description)}</p></div><span class="material-arrow" aria-hidden="true">↗</span></div><div class="workout-material-card-meta"><span>${category.materials.length} movements</span><span>Reusable reference</span></div></button></div></div>`;
+  return `<div class="workout-materials">${heading('PUSTAKA GERAKAN', 'Pustaka gerakan', 'Workout Material List existing tetap menjadi sumber referensi yang bisa ditambahkan ke sesi pada tanggal pilihanmu.')}${breadcrumb([{ label: 'Workout', path: '/workout' }, { label: 'Materials' }])}<div class="workout-material-category-grid"><button type="button" class="workout-material-category-card" data-workout-material-path="${escapeHtml(withDate(`/workout/materials/${category.id}`))}"><div class="workout-material-card-top"><div><span class="material-kicker">CATEGORY 01</span><h2>${escapeHtml(category.title)}</h2><p>${escapeHtml(category.description)}</p></div><span class="material-arrow" aria-hidden="true">↗</span></div><div class="workout-material-card-meta"><span>${category.materials.length} movements</span><span>Reusable reference</span></div></button></div></div>`;
 }
 
 function renderMovementCard(material: WorkoutMaterial) {

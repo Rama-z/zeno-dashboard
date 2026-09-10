@@ -189,6 +189,83 @@ export type WorkoutEntryResponse = WorkoutInput & {
   createdAt: string;
 };
 
+export type WorkoutSessionStatus = 'planned' | 'in_progress' | 'completed' | 'partial' | 'skipped';
+export type WorkoutExerciseType = 'strength' | 'bodyweight' | 'cardio' | 'mobility' | 'interval';
+export type WorkoutMovementStatus = 'planned' | 'in_progress' | 'completed' | 'skipped';
+export type WorkoutSetStatus = 'unrecorded' | 'completed' | 'skipped';
+export type WorkoutSetTarget = Record<string, string | number | boolean>;
+export type WorkoutSetActual = Record<string, string | number | boolean>;
+
+export type WorkoutSetResponse = {
+  id: string;
+  movementId?: string;
+  number: number;
+  target: WorkoutSetTarget;
+  actual: WorkoutSetActual | null;
+  status: WorkoutSetStatus;
+  recordedAt?: string;
+  rpe?: number;
+};
+
+export type WorkoutMovementResponse = {
+  id: string;
+  sessionId?: string;
+  materialId?: string;
+  custom: boolean;
+  name: string;
+  exerciseType: WorkoutExerciseType;
+  position: number;
+  equipment: string[];
+  muscleGroups: string[];
+  target: WorkoutSetTarget;
+  restSeconds?: number;
+  status: WorkoutMovementStatus;
+  note: string;
+  sets: WorkoutSetResponse[];
+};
+
+export type WorkoutSessionResponse = {
+  id: string;
+  ownerUserId?: string;
+  name: string;
+  date: string;
+  localTime?: string;
+  timezone: string;
+  status: WorkoutSessionStatus;
+  estimatedMinutes: number;
+  startedAt?: string;
+  pausedAt?: string;
+  pausedSeconds: number;
+  endedAt?: string;
+  restTimerEndsAt?: string;
+  restTimerPausedRemainingSeconds?: number;
+  location: string;
+  note: string;
+  templateId?: string;
+  legacyWorkoutEntryId?: string;
+  movements: WorkoutMovementResponse[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type WorkoutSetInput = Omit<WorkoutSetResponse, 'id' | 'movementId'> & { id?: string };
+export type WorkoutMovementInput = Omit<WorkoutMovementResponse, 'id' | 'sessionId' | 'sets'> & {
+  id?: string;
+  sets: WorkoutSetInput[];
+};
+export type WorkoutSessionInput = Omit<WorkoutSessionResponse, 'id' | 'ownerUserId' | 'legacyWorkoutEntryId' | 'createdAt' | 'updatedAt' | 'movements'> & {
+  id?: string;
+  movements: WorkoutMovementInput[];
+};
+export type WorkoutTemplateResponse = {
+  id: string;
+  ownerUserId?: string;
+  name: string;
+  movements: WorkoutMovementResponse[];
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type JournalEditReason = 'typo' | 'clarify' | 'incorrect_information' | 'changed_my_mind';
 
 export type JournalInput = {
@@ -337,6 +414,26 @@ export const api = {
   }),
   deleteWorkout: (id: string, date: string) => request<{ deleted: string; date: string }>(`/api/workouts/${encodeURIComponent(id)}?date=${encodeURIComponent(date)}`, {
     method: 'DELETE',
+  }),
+  workoutSessions: (filters: { date?: string; exercise?: string } = {}) => {
+    const params = new URLSearchParams();
+    if (filters.date) params.set('date', filters.date);
+    if (filters.exercise) params.set('exercise', filters.exercise);
+    const query = params.toString();
+    return request<{ date: string | null; sessions: WorkoutSessionResponse[] }>(`/api/workout-sessions${query ? `?${query}` : ''}`);
+  },
+  createWorkoutSession: (entry: WorkoutSessionInput) => request<WorkoutSessionResponse>('/api/workout-sessions', {
+    method: 'POST', body: JSON.stringify(entry),
+  }),
+  updateWorkoutSession: (id: string, entry: WorkoutSessionResponse | WorkoutSessionInput) => request<WorkoutSessionResponse>(`/api/workout-sessions/${encodeURIComponent(id)}`, {
+    method: 'PUT', body: JSON.stringify(entry),
+  }),
+  deleteWorkoutSession: (id: string) => request<{ deleted: string }>(`/api/workout-sessions/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  }),
+  workoutTemplates: () => request<{ templates: WorkoutTemplateResponse[] }>('/api/workout-templates'),
+  createWorkoutTemplate: (entry: { name: string; movements: WorkoutMovementInput[] }) => request<WorkoutTemplateResponse>('/api/workout-templates', {
+    method: 'POST', body: JSON.stringify(entry),
   }),
   journals: (date = '') => request<{ date: string | null; entries: JournalEntryResponse[] }>(`/api/journals${date ? `?date=${encodeURIComponent(date)}` : ''}`),
   createJournal: (entry: JournalInput) => request<JournalEntryResponse>('/api/journals', {

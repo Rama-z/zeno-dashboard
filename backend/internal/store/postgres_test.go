@@ -462,6 +462,166 @@ func TestPostgresWorkoutMaterialRoundTripAndLegacyNull(t *testing.T) {
 	}
 }
 
+func TestPostgresWorkoutSessionSystemModeWithoutOwner(t *testing.T) {
+	dsn := os.Getenv("TEST_DATABASE_URL")
+	if dsn == "" {
+		t.Skip("TEST_DATABASE_URL is not set")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	const sessionID = "00000000-0000-4000-8000-000000000091"
+	const templateID = "00000000-0000-4000-8000-000000000092"
+	raw, err := pgxpool.New(ctx, dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer raw.Close()
+	defer func() {
+		_, _ = raw.Exec(context.Background(), `DELETE FROM workout_sessions WHERE id = $1::uuid`, sessionID)
+		_, _ = raw.Exec(context.Background(), `DELETE FROM workout_templates WHERE id = $1::uuid`, templateID)
+	}()
+	db, err := store.New(ctx, dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	now := time.Now().UTC()
+	created, err := db.CreateWorkoutSession(ctx, model.WorkoutSession{
+		ID: sessionID, Name: "System session", Date: "2099-12-28", Timezone: "Asia/Jakarta", Status: "planned", CreatedAt: now, UpdatedAt: now,
+	})
+	if err != nil || created.OwnerUserID != "" {
+		t.Fatalf("system session create must accept empty owner: %+v err=%v", created, err)
+	}
+	if _, err := db.ListWorkoutSessions(ctx, "", "", "", true); err != nil {
+		t.Fatalf("system session list failed: %v", err)
+	}
+	template, err := db.CreateWorkoutTemplate(ctx, model.WorkoutTemplate{
+		ID: templateID, Name: "System template", Movements: []model.WorkoutMovement{}, CreatedAt: now, UpdatedAt: now,
+	})
+	if err != nil || template.OwnerUserID != "" {
+		t.Fatalf("system template create must accept empty owner: %+v err=%v", template, err)
+	}
+	if _, err := db.ListWorkoutTemplates(ctx, "", true); err != nil {
+		t.Fatalf("system template list failed: %v", err)
+	}
+}
+
+func TestPostgresWorkoutSessionStaleUpdateReturnsConflict(t *testing.T) {
+	dsn := os.Getenv("TEST_DATABASE_URL")
+	if dsn == "" {
+		t.Skip("TEST_DATABASE_URL is not set")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	const ownerID = "00000000-0000-4000-8000-000000000093"
+	const sessionID = "00000000-0000-4000-8000-000000000094"
+	raw, err := pgxpool.New(ctx, dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer raw.Close()
+	_, _ = raw.Exec(ctx, `DELETE FROM users WHERE id = $1::uuid`, ownerID)
+	defer func() { _, _ = raw.Exec(context.Background(), `DELETE FROM users WHERE id = $1::uuid`, ownerID) }()
+	now := time.Now().UTC()
+	if _, err := raw.Exec(ctx, `INSERT INTO users (id, email, display_name, password_hash, role, email_verified_at, created_at, updated_at) VALUES ($1::uuid, 'workout-stale-owner@example.test', 'Workout Stale', 'test-hash', 'user', $2, $2, $2)`, ownerID, now); err != nil {
+		t.Fatal(err)
+	}
+	db, err := store.New(ctx, dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	created, err := db.CreateWorkoutSession(ctx, model.WorkoutSession{
+		ID: sessionID, OwnerUserID: ownerID, Name: "Stale guard", Date: "2099-12-29", Timezone: "Asia/Jakarta", Status: "planned", CreatedAt: now, UpdatedAt: now,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	fresh := created
+	fresh.Status = "in_progress"
+	refreshed, found, conflict, err := db.UpdateWorkoutSession(ctx, fresh, ownerID, false, created.UpdatedAt)
+	if err != nil || !found || conflict {
+		t.Fatalf("fresh update failed: found=%v conflict=%v err=%v", found, conflict, err)
+	}
+	_ = refreshed
+	stale := created
+	stale.Status = "completed"
+	_, found, conflict, err = db.UpdateWorkoutSession(ctx, stale, ownerID, false, created.UpdatedAt)
+	if err != nil || found || !conflict {
+		t.Fatalf("expected stale conflict without mutation: found=%v conflict=%v err=%v", found, conflict, err)
+	}
+	listed, err := db.ListWorkoutSessions(ctx, "2099-12-29", "", ownerID, false)
+	if err != nil || len(listed) != 1 || listed[0].Status != "in_progress" {
+		t.Fatalf("stale update mutated session: %+v err=%v", listed, err)
+	}
+	if _, err := db.DeleteWorkoutSession(ctx, sessionID, ownerID, false); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestPostgresWorkoutSessionRoundTripKeepsTargetsAndActualsSeparate(t *testing.T) {
+	dsn := os.Getenv("TEST_DATABASE_URL")
+	if dsn == "" {
+		t.Skip("TEST_DATABASE_URL is not set")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	const ownerID = "00000000-0000-4000-8000-000000000082"
+	const sessionID = "00000000-0000-4000-8000-000000000083"
+	const movementID = "00000000-0000-4000-8000-000000000084"
+	const setID = "00000000-0000-4000-8000-000000000085"
+	raw, err := pgxpool.New(ctx, dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer raw.Close()
+	_, _ = raw.Exec(ctx, `DELETE FROM users WHERE id = $1::uuid`, ownerID)
+	defer func() { _, _ = raw.Exec(context.Background(), `DELETE FROM users WHERE id = $1::uuid`, ownerID) }()
+	now := time.Now().UTC()
+	if _, err := raw.Exec(ctx, `INSERT INTO users (id, email, display_name, password_hash, role, email_verified_at, created_at, updated_at) VALUES ($1::uuid, 'workout-session-owner@example.test', 'Workout Test', 'test-hash', 'user', $2, $2, $2)`, ownerID, now); err != nil {
+		t.Fatal(err)
+	}
+	db, err := store.New(ctx, dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	rest := 60
+	session := model.WorkoutSession{
+		ID: sessionID, OwnerUserID: ownerID, Name: "Strength integration", Date: "2099-12-27", Timezone: "Asia/Jakarta", Status: "planned", EstimatedMinutes: 35,
+		Movements: []model.WorkoutMovement{{
+			ID: movementID, SessionID: sessionID, Name: "Goblet squat", ExerciseType: "strength", Position: 1, Equipment: []string{"dumbbell"}, MuscleGroups: []string{"lower body"}, Target: map[string]any{"setCount": float64(1), "reps": float64(10), "weight": float64(12), "weightUnit": "kg", "weightBasis": "total"}, RestSeconds: &rest, Status: "planned",
+			Sets: []model.WorkoutSet{{ID: setID, MovementID: movementID, Number: 1, Target: map[string]any{"reps": float64(10), "weight": float64(12), "weightUnit": "kg", "weightBasis": "total"}, Status: "unrecorded"}},
+		}}, CreatedAt: now, UpdatedAt: now,
+	}
+	created, err := db.CreateWorkoutSession(ctx, session)
+	if err != nil || len(created.Movements) != 1 || created.Movements[0].Sets[0].Actual != nil {
+		t.Fatalf("unexpected workout session create: %+v err=%v", created, err)
+	}
+	listed, err := db.ListWorkoutSessions(ctx, "2099-12-27", "Goblet", ownerID, false)
+	if err != nil || len(listed) != 1 || listed[0].OwnerUserID != ownerID {
+		t.Fatalf("owner-scoped workout list failed: %+v err=%v", listed, err)
+	}
+	created.Status = "in_progress"
+	created.Movements[0].Status = "completed"
+	created.Movements[0].Sets[0].Status = "completed"
+	created.Movements[0].Sets[0].Actual = map[string]any{"weight": float64(0), "reps": float64(10), "weightUnit": "kg", "weightBasis": "total"}
+	recordedAt := now.Add(time.Minute)
+	created.Movements[0].Sets[0].RecordedAt = &recordedAt
+	updated, found, conflict, err := db.UpdateWorkoutSession(ctx, created, ownerID, false, created.UpdatedAt)
+	if err != nil || !found || conflict {
+		t.Fatalf("workout session update failed: %+v found=%v conflict=%v err=%v", updated, found, conflict, err)
+	}
+	actual := updated.Movements[0].Sets[0].Actual
+	if actual == nil || actual["weight"] != float64(0) || updated.Movements[0].Sets[0].Target["weight"] != float64(12) {
+		t.Fatalf("zero actual, empty actual, and target were not kept distinct: %+v", updated.Movements[0].Sets[0])
+	}
+	deleted, err := db.DeleteWorkoutSession(ctx, sessionID, ownerID, false)
+	if err != nil || !deleted {
+		t.Fatalf("workout session cleanup failed: deleted=%v err=%v", deleted, err)
+	}
+}
+
 func TestPostgresLearningMaterialSeedAndProgressRoundTrip(t *testing.T) {
 	dsn := os.Getenv("TEST_DATABASE_URL")
 	if dsn == "" {

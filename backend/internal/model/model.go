@@ -193,6 +193,67 @@ type WorkoutEntry struct {
 	CreatedAt       time.Time `json:"createdAt"`
 }
 
+type WorkoutSet struct {
+	ID         string         `json:"id"`
+	MovementID string         `json:"movementId,omitempty"`
+	Number     int            `json:"number"`
+	Target     map[string]any `json:"target"`
+	Actual     map[string]any `json:"actual"`
+	Status     string         `json:"status"`
+	RecordedAt *time.Time     `json:"recordedAt,omitempty"`
+	RPE        *float64       `json:"rpe,omitempty"`
+}
+
+type WorkoutMovement struct {
+	ID           string         `json:"id"`
+	SessionID    string         `json:"sessionId,omitempty"`
+	MaterialID   string         `json:"materialId,omitempty"`
+	Custom       bool           `json:"custom"`
+	Name         string         `json:"name"`
+	ExerciseType string         `json:"exerciseType"`
+	Position     int            `json:"position"`
+	Equipment    []string       `json:"equipment"`
+	MuscleGroups []string       `json:"muscleGroups"`
+	Target       map[string]any `json:"target"`
+	RestSeconds  *int           `json:"restSeconds,omitempty"`
+	Status       string         `json:"status"`
+	Note         string         `json:"note"`
+	Sets         []WorkoutSet   `json:"sets"`
+}
+
+type WorkoutSession struct {
+	ID                              string            `json:"id"`
+	OwnerUserID                     string            `json:"ownerUserId,omitempty"`
+	Name                            string            `json:"name"`
+	Date                            string            `json:"date"`
+	LocalTime                       string            `json:"localTime,omitempty"`
+	Timezone                        string            `json:"timezone"`
+	Status                          string            `json:"status"`
+	EstimatedMinutes                int               `json:"estimatedMinutes"`
+	StartedAt                       *time.Time        `json:"startedAt,omitempty"`
+	PausedAt                        *time.Time        `json:"pausedAt,omitempty"`
+	PausedSeconds                   int               `json:"pausedSeconds"`
+	EndedAt                         *time.Time        `json:"endedAt,omitempty"`
+	RestTimerEndsAt                 *time.Time        `json:"restTimerEndsAt,omitempty"`
+	RestTimerPausedRemainingSeconds *int              `json:"restTimerPausedRemainingSeconds,omitempty"`
+	Location                        string            `json:"location"`
+	Note                            string            `json:"note"`
+	TemplateID                      string            `json:"templateId,omitempty"`
+	LegacyWorkoutEntryID            string            `json:"legacyWorkoutEntryId,omitempty"`
+	Movements                       []WorkoutMovement `json:"movements"`
+	CreatedAt                       time.Time         `json:"createdAt"`
+	UpdatedAt                       time.Time         `json:"updatedAt"`
+}
+
+type WorkoutTemplate struct {
+	ID          string            `json:"id"`
+	OwnerUserID string            `json:"ownerUserId,omitempty"`
+	Name        string            `json:"name"`
+	Movements   []WorkoutMovement `json:"movements"`
+	CreatedAt   time.Time         `json:"createdAt"`
+	UpdatedAt   time.Time         `json:"updatedAt"`
+}
+
 type JournalEditReason string
 
 const (

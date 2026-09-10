@@ -387,6 +387,83 @@ paths:
       responses:
         '200': {description: Workout dihapus}
         '404': {description: Workout tidak ditemukan}
+  /api/workout-sessions:
+    get:
+      tags: [Workout]
+      summary: Baca sesi workout milik user beserta gerakan dan set
+      security: [{CookieAuth: []}]
+      parameters:
+        - {in: query, name: date, schema: {type: string, format: date}}
+        - {in: query, name: exercise, schema: {type: string, maxLength: 160}}
+      responses:
+        '200': {description: Sesi workout yang terfilter dan owner-scoped}
+        '400': {description: Filter tidak valid}
+        '401': {description: Login diperlukan}
+    post:
+      tags: [Workout]
+      summary: Buat rencana sesi baru; hasil aktual dan timer selalu direset
+      security: [{CookieAuth: [], CSRFToken: []}]
+      parameters:
+        - {in: header, name: X-CSRF-Token, required: true, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/WorkoutSession'}
+      responses:
+        '201': {description: Rencana sesi dibuat}
+        '400': {description: Input tidak valid}
+        '401': {description: Login diperlukan}
+        '403': {description: CSRF token atau origin tidak valid}
+  /api/workout-sessions/{id}:
+    put:
+      tags: [Workout]
+      summary: Simpan atomik status sesi, urutan gerakan, timer, dan hasil set
+      security: [{CookieAuth: [], CSRFToken: []}]
+      parameters:
+        - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+        - {in: header, name: X-CSRF-Token, required: true, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/WorkoutSession'}
+      responses:
+        '200': {description: Sesi workout diperbarui}
+        '400': {description: Target, hasil aktual, atau status tidak valid}
+        '404': {description: Sesi tidak ditemukan atau bukan milik user}
+        '409': {description: Sesi sudah berubah; body updatedAt basi, muat ulang sebelum menyimpan}
+    delete:
+      tags: [Workout]
+      summary: Hapus sesi workout milik user
+      security: [{CookieAuth: [], CSRFToken: []}]
+      parameters:
+        - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+        - {in: header, name: X-CSRF-Token, required: true, schema: {type: string}}
+      responses:
+        '200': {description: Sesi dihapus}
+        '404': {description: Sesi tidak ditemukan atau bukan milik user}
+  /api/workout-templates:
+    get:
+      tags: [Workout]
+      summary: Baca template workout milik user
+      security: [{CookieAuth: []}]
+      responses:
+        '200': {description: Template workout owner-scoped}
+    post:
+      tags: [Workout]
+      summary: Simpan snapshot target sebagai template tanpa hasil aktual
+      security: [{CookieAuth: [], CSRFToken: []}]
+      parameters:
+        - {in: header, name: X-CSRF-Token, required: true, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/WorkoutTemplate'}
+      responses:
+        '201': {description: Template workout dibuat}
+        '400': {description: Template tidak valid}
   /api/journals:
     get:
       tags: [Journaling]
@@ -672,6 +749,71 @@ components:
           properties:
             id: {type: string, format: uuid}
             createdAt: {type: string, format: date-time}
+    WorkoutSet:
+      type: object
+      required: [number, target, actual, status]
+      properties:
+        id: {type: string, format: uuid, description: Required on update; assigned by server on create}
+        movementId: {type: string, format: uuid, readOnly: true}
+        number: {type: integer, minimum: 1}
+        target: {type: object, additionalProperties: true, description: Immutable target snapshot for this set}
+        actual: {type: object, nullable: true, additionalProperties: true, description: Null until explicitly saved}
+        status: {type: string, enum: [unrecorded, completed, skipped]}
+        recordedAt: {type: string, format: date-time, nullable: true}
+        rpe: {type: number, minimum: 1, maximum: 10, nullable: true}
+    WorkoutMovement:
+      type: object
+      required: [name, exerciseType, position, target, status, sets]
+      properties:
+        id: {type: string, format: uuid, description: Required on update; assigned by server on create}
+        sessionId: {type: string, format: uuid, readOnly: true}
+        materialId: {type: string, maxLength: 120, nullable: true}
+        custom: {type: boolean}
+        name: {type: string, maxLength: 160}
+        exerciseType: {type: string, enum: [strength, bodyweight, cardio, mobility, interval]}
+        position: {type: integer, minimum: 1}
+        equipment: {type: array, items: {type: string}}
+        muscleGroups: {type: array, items: {type: string}}
+        target: {type: object, additionalProperties: true, description: Type-specific planned target snapshot}
+        restSeconds: {type: integer, minimum: 0, nullable: true}
+        status: {type: string, enum: [planned, in_progress, completed, skipped]}
+        note: {type: string, maxLength: 2000}
+        sets: {type: array, items: {$ref: '#/components/schemas/WorkoutSet'}}
+    WorkoutSession:
+      type: object
+      required: [name, date]
+      properties:
+        id: {type: string, format: uuid, description: Required on update; assigned by server on create}
+        ownerUserId: {type: string, format: uuid, readOnly: true}
+        name: {type: string, maxLength: 160}
+        date: {type: string, format: date, description: Local calendar date}
+        localTime: {type: string, pattern: '^$|^([01][0-9]|2[0-3]):[0-5][0-9]$'}
+        timezone: {type: string, maxLength: 80, default: Asia/Jakarta}
+        status: {type: string, enum: [planned, in_progress, completed, partial, skipped], default: planned}
+        estimatedMinutes: {type: integer, minimum: 0}
+        startedAt: {type: string, format: date-time, nullable: true}
+        pausedAt: {type: string, format: date-time, nullable: true}
+        pausedSeconds: {type: integer, minimum: 0}
+        endedAt: {type: string, format: date-time, nullable: true}
+        restTimerEndsAt: {type: string, format: date-time, nullable: true}
+        restTimerPausedRemainingSeconds: {type: integer, minimum: 0, nullable: true}
+        location: {type: string, maxLength: 160}
+        note: {type: string, maxLength: 2000}
+        templateId: {type: string, format: uuid, nullable: true}
+        legacyWorkoutEntryId: {type: string, format: uuid, readOnly: true, nullable: true}
+        movements: {type: array, items: {$ref: '#/components/schemas/WorkoutMovement'}}
+        createdAt: {type: string, format: date-time, readOnly: true}
+        updatedAt: {type: string, format: date-time, readOnly: true}
+    WorkoutTemplate:
+      type: object
+      required: [name, movements]
+      properties:
+        id: {type: string, format: uuid, readOnly: true}
+        ownerUserId: {type: string, format: uuid, readOnly: true}
+        name: {type: string, maxLength: 160}
+        movements: {type: array, items: {$ref: '#/components/schemas/WorkoutMovement'}}
+        createdAt: {type: string, format: date-time, readOnly: true}
+        updatedAt: {type: string, format: date-time, readOnly: true}
     JournalInput:
       type: object
       required: [date, title, content]

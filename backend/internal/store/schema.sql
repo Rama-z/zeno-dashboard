@@ -182,6 +182,135 @@ ALTER TABLE workout_entries ADD COLUMN IF NOT EXISTS owner_user_id UUID REFERENC
 ALTER TABLE workout_entries ADD COLUMN IF NOT EXISTS material_id VARCHAR(120) NULL;
 CREATE INDEX IF NOT EXISTS workout_entries_owner_date_idx ON workout_entries (owner_user_id, workout_date DESC);
 
+CREATE TABLE IF NOT EXISTS workout_sessions (
+    id UUID PRIMARY KEY,
+    owner_user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    name VARCHAR(160) NOT NULL,
+    workout_date DATE NOT NULL,
+    local_time TIME,
+    timezone VARCHAR(80) NOT NULL DEFAULT 'Asia/Jakarta',
+    status VARCHAR(20) NOT NULL DEFAULT 'planned' CHECK (status IN ('planned', 'in_progress', 'completed', 'partial', 'skipped')),
+    estimated_minutes INTEGER NOT NULL DEFAULT 0 CHECK (estimated_minutes >= 0),
+    started_at TIMESTAMPTZ,
+    paused_at TIMESTAMPTZ,
+    paused_seconds INTEGER NOT NULL DEFAULT 0 CHECK (paused_seconds >= 0),
+    ended_at TIMESTAMPTZ,
+    rest_timer_ends_at TIMESTAMPTZ,
+    rest_timer_paused_remaining_seconds INTEGER CHECK (rest_timer_paused_remaining_seconds IS NULL OR rest_timer_paused_remaining_seconds >= 0),
+    location VARCHAR(160) NOT NULL DEFAULT '',
+    note VARCHAR(2000) NOT NULL DEFAULT '',
+    template_id UUID,
+    legacy_workout_entry_id UUID UNIQUE REFERENCES workout_entries(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE workout_sessions ALTER COLUMN owner_user_id DROP NOT NULL;
+ALTER TABLE workout_sessions DROP CONSTRAINT IF EXISTS workout_sessions_legacy_workout_entry_id_fkey;
+ALTER TABLE workout_sessions ADD CONSTRAINT workout_sessions_legacy_workout_entry_id_fkey
+FOREIGN KEY (legacy_workout_entry_id) REFERENCES workout_entries(id) ON DELETE CASCADE;
+
+CREATE INDEX IF NOT EXISTS workout_sessions_owner_date_idx
+ON workout_sessions (owner_user_id, workout_date DESC, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS workout_movements (
+    id UUID PRIMARY KEY,
+    session_id UUID NOT NULL REFERENCES workout_sessions(id) ON DELETE CASCADE,
+    material_id VARCHAR(120),
+    custom BOOLEAN NOT NULL DEFAULT TRUE,
+    name VARCHAR(160) NOT NULL,
+    exercise_type VARCHAR(20) NOT NULL CHECK (exercise_type IN ('strength', 'bodyweight', 'cardio', 'mobility', 'interval')),
+    position INTEGER NOT NULL CHECK (position >= 1),
+    equipment JSONB NOT NULL DEFAULT '[]'::jsonb CHECK (jsonb_typeof(equipment) = 'array'),
+    muscle_groups JSONB NOT NULL DEFAULT '[]'::jsonb CHECK (jsonb_typeof(muscle_groups) = 'array'),
+    target JSONB NOT NULL DEFAULT '{}'::jsonb CHECK (jsonb_typeof(target) = 'object'),
+    rest_seconds INTEGER CHECK (rest_seconds IS NULL OR rest_seconds >= 0),
+    status VARCHAR(20) NOT NULL DEFAULT 'planned' CHECK (status IN ('planned', 'in_progress', 'completed', 'skipped')),
+    note VARCHAR(2000) NOT NULL DEFAULT '',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (session_id, position)
+);
+
+CREATE INDEX IF NOT EXISTS workout_movements_session_position_idx
+ON workout_movements (session_id, position);
+CREATE INDEX IF NOT EXISTS workout_movements_material_idx
+ON workout_movements (material_id) WHERE material_id IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS workout_sets (
+    id UUID PRIMARY KEY,
+    movement_id UUID NOT NULL REFERENCES workout_movements(id) ON DELETE CASCADE,
+    set_number INTEGER NOT NULL CHECK (set_number >= 1),
+    target JSONB NOT NULL DEFAULT '{}'::jsonb CHECK (jsonb_typeof(target) = 'object'),
+    actual JSONB CHECK (actual IS NULL OR jsonb_typeof(actual) = 'object'),
+    status VARCHAR(20) NOT NULL DEFAULT 'unrecorded' CHECK (status IN ('unrecorded', 'completed', 'skipped')),
+    recorded_at TIMESTAMPTZ,
+    rpe NUMERIC(3,1) CHECK (rpe IS NULL OR (rpe >= 1 AND rpe <= 10)),
+    UNIQUE (movement_id, set_number)
+);
+
+CREATE INDEX IF NOT EXISTS workout_sets_movement_number_idx
+ON workout_sets (movement_id, set_number);
+
+CREATE TABLE IF NOT EXISTS workout_templates (
+    id UUID PRIMARY KEY,
+    owner_user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    name VARCHAR(160) NOT NULL,
+    movements JSONB NOT NULL DEFAULT '[]'::jsonb CHECK (jsonb_typeof(movements) = 'array'),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE workout_templates ALTER COLUMN owner_user_id DROP NOT NULL;
+
+CREATE INDEX IF NOT EXISTS workout_templates_owner_updated_idx
+ON workout_templates (owner_user_id, updated_at DESC);
+
+-- Legacy mapping: one old row represented one movement, so it becomes one
+-- session with one movement. Planned targets are snapshotted; actual stays NULL.
+INSERT INTO workout_sessions (
+    id, owner_user_id, name, workout_date, timezone, status, estimated_minutes,
+    location, note, legacy_workout_entry_id, created_at, updated_at
+)
+SELECT id, owner_user_id, exercise, workout_date, 'Asia/Jakarta',
+       CASE WHEN completed THEN 'completed' ELSE 'planned' END,
+       duration_minutes, '', note, id, created_at, created_at
+FROM workout_entries
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO workout_movements (
+    id, session_id, material_id, custom, name, exercise_type, position,
+    equipment, muscle_groups, target, rest_seconds, status, note, created_at
+)
+SELECT id, id, material_id, material_id IS NULL, exercise,
+       CASE LOWER(category)
+           WHEN 'strength' THEN 'strength'
+           WHEN 'cardio' THEN 'cardio'
+           WHEN 'mobility' THEN 'mobility'
+           WHEN 'recovery' THEN 'mobility'
+           ELSE 'bodyweight'
+       END,
+       1, '[]'::jsonb, '[]'::jsonb,
+       jsonb_strip_nulls(jsonb_build_object(
+           'setCount', NULLIF(sets, 0),
+           'reps', NULLIF(reps, 0),
+           'durationMinutes', NULLIF(duration_minutes, 0)
+       )),
+       NULL, CASE WHEN completed THEN 'completed' ELSE 'planned' END, note, created_at
+FROM workout_entries
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO workout_sets (id, movement_id, set_number, target, actual, status, recorded_at, rpe)
+SELECT md5(w.id::text || ':set:' || generated.set_number::text)::uuid,
+       w.id, generated.set_number,
+       jsonb_strip_nulls(jsonb_build_object('reps', NULLIF(w.reps, 0))),
+       NULL, 'unrecorded', NULL, NULL
+FROM workout_entries w
+CROSS JOIN LATERAL generate_series(1, w.sets) AS generated(set_number)
+ON CONFLICT (movement_id, set_number) DO NOTHING;
+
+INSERT INTO schema_migrations (version) VALUES (18)
+ON CONFLICT (version) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS journal_entries (
     id UUID PRIMARY KEY,
     owner_user_id UUID REFERENCES users(id) ON DELETE SET NULL,

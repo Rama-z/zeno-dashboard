@@ -67,6 +67,12 @@ type Store interface {
 	ListWorkouts(context.Context, string) ([]model.WorkoutEntry, error)
 	UpdateWorkout(context.Context, model.WorkoutEntry) (model.WorkoutEntry, bool, error)
 	DeleteWorkout(context.Context, string, string) (bool, error)
+	CreateWorkoutSession(context.Context, model.WorkoutSession) (model.WorkoutSession, error)
+	ListWorkoutSessions(context.Context, string, string, string, bool) ([]model.WorkoutSession, error)
+	UpdateWorkoutSession(context.Context, model.WorkoutSession, string, bool, time.Time) (model.WorkoutSession, bool, bool, error)
+	DeleteWorkoutSession(context.Context, string, string, bool) (bool, error)
+	CreateWorkoutTemplate(context.Context, model.WorkoutTemplate) (model.WorkoutTemplate, error)
+	ListWorkoutTemplates(context.Context, string, bool) ([]model.WorkoutTemplate, error)
 	CreateJournal(context.Context, model.JournalEntry) (model.JournalEntry, error)
 	ListJournals(context.Context, string) ([]model.JournalEntry, error)
 	GetJournal(context.Context, string) (model.JournalEntry, bool, error)
@@ -201,6 +207,12 @@ func New(store Store, source Source, version string, options ...Option) http.Han
 	mux.HandleFunc("GET /api/workouts", h.listWorkouts)
 	mux.HandleFunc("PUT /api/workouts/{id}", h.updateWorkout)
 	mux.HandleFunc("DELETE /api/workouts/{id}", h.deleteWorkout)
+	mux.HandleFunc("POST /api/workout-sessions", h.createWorkoutSession)
+	mux.HandleFunc("GET /api/workout-sessions", h.listWorkoutSessions)
+	mux.HandleFunc("PUT /api/workout-sessions/{id}", h.updateWorkoutSession)
+	mux.HandleFunc("DELETE /api/workout-sessions/{id}", h.deleteWorkoutSession)
+	mux.HandleFunc("POST /api/workout-templates", h.createWorkoutTemplate)
+	mux.HandleFunc("GET /api/workout-templates", h.listWorkoutTemplates)
 	mux.HandleFunc("POST /api/journals", h.createJournal)
 	mux.HandleFunc("GET /api/journals", h.listJournals)
 	mux.HandleFunc("GET /api/journals/{id}/revisions", h.listJournalRevisions)
@@ -1344,6 +1356,338 @@ func (h *handler) deleteWorkout(w http.ResponseWriter, r *http.Request) {
 	}
 	h.auditSubject(r.Context(), actor, entry.OwnerUserID, "delete", "workout", id, "Menghapus workout: "+entry.Exercise, map[string]any{"date": date})
 	writeJSON(w, http.StatusOK, map[string]string{"deleted": id, "date": date})
+}
+
+func validWorkoutSessionStatus(value string) bool {
+	switch value {
+	case "planned", "in_progress", "completed", "partial", "skipped":
+		return true
+	}
+	return false
+}
+
+func validWorkoutMovementStatus(value string) bool {
+	switch value {
+	case "planned", "in_progress", "completed", "skipped":
+		return true
+	}
+	return false
+}
+
+func validWorkoutSetStatus(value string) bool {
+	switch value {
+	case "unrecorded", "completed", "skipped":
+		return true
+	}
+	return false
+}
+
+func validWorkoutExerciseType(value string) bool {
+	switch value {
+	case "strength", "bodyweight", "cardio", "mobility", "interval":
+		return true
+	}
+	return false
+}
+
+func mapHasNil(value map[string]any) bool {
+	for _, item := range value {
+		if item == nil {
+			return true
+		}
+	}
+	return false
+}
+
+func normalizeWorkoutPlan(session *model.WorkoutSession, resetActual bool) bool {
+	session.Name = strings.TrimSpace(session.Name)
+	session.Date = strings.TrimSpace(session.Date)
+	session.LocalTime = strings.TrimSpace(session.LocalTime)
+	session.Timezone = strings.TrimSpace(session.Timezone)
+	session.Location = strings.TrimSpace(session.Location)
+	session.Note = strings.TrimSpace(session.Note)
+	session.TemplateID = strings.TrimSpace(session.TemplateID)
+	if session.Timezone == "" {
+		session.Timezone = "Asia/Jakarta"
+	}
+	if session.Status == "" {
+		session.Status = "planned"
+	}
+	if session.Name == "" || !validDate(session.Date) || !validWorkoutSessionStatus(session.Status) || session.EstimatedMinutes < 0 || session.PausedSeconds < 0 || len(session.Name) > 160 || len(session.Timezone) > 80 || len(session.Location) > 160 || len(session.Note) > 2000 {
+		return false
+	}
+	if session.LocalTime != "" {
+		if _, err := time.Parse("15:04", session.LocalTime); err != nil {
+			return false
+		}
+	}
+	if session.TemplateID != "" && !validUUID(session.TemplateID) {
+		return false
+	}
+	positions := map[int]bool{}
+	for movementIndex := range session.Movements {
+		movement := &session.Movements[movementIndex]
+		movement.Name = strings.TrimSpace(movement.Name)
+		movement.MaterialID = strings.TrimSpace(movement.MaterialID)
+		movement.Note = strings.TrimSpace(movement.Note)
+		if movement.Position == 0 {
+			movement.Position = movementIndex + 1
+		}
+		if movement.Status == "" {
+			movement.Status = "planned"
+		}
+		if movement.Name == "" || len(movement.Name) > 160 || len(movement.Note) > 2000 || !validWorkoutExerciseType(movement.ExerciseType) || !validWorkoutMovementStatus(movement.Status) || positions[movement.Position] || !validWorkoutMaterialID(movement.MaterialID) || mapHasNil(movement.Target) {
+			return false
+		}
+		positions[movement.Position] = true
+		if movement.RestSeconds != nil && *movement.RestSeconds < 0 {
+			return false
+		}
+		setNumbers := map[int]bool{}
+		for setIndex := range movement.Sets {
+			set := &movement.Sets[setIndex]
+			if set.Number == 0 {
+				set.Number = setIndex + 1
+			}
+			if set.Status == "" {
+				set.Status = "unrecorded"
+			}
+			if set.Number < 1 || setNumbers[set.Number] || !validWorkoutSetStatus(set.Status) || mapHasNil(set.Target) || mapHasNil(set.Actual) {
+				return false
+			}
+			setNumbers[set.Number] = true
+			if set.RPE != nil && (*set.RPE < 1 || *set.RPE > 10) {
+				return false
+			}
+			if set.Status == "completed" && len(set.Actual) == 0 {
+				return false
+			}
+			if set.Status != "completed" && len(set.Actual) > 0 {
+				return false
+			}
+			if resetActual {
+				set.Actual = nil
+				set.Status = "unrecorded"
+				set.RecordedAt = nil
+				set.RPE = nil
+			}
+		}
+		if resetActual {
+			movement.Status = "planned"
+		}
+	}
+	if resetActual {
+		if !(len(session.Movements) == 0 && session.Status == "skipped") {
+			session.Status = "planned"
+		}
+		session.StartedAt = nil
+		session.PausedAt = nil
+		session.PausedSeconds = 0
+		session.EndedAt = nil
+		session.RestTimerEndsAt = nil
+		session.RestTimerPausedRemainingSeconds = nil
+	}
+	return true
+}
+
+func assignWorkoutNestedIDs(session *model.WorkoutSession) {
+	for movementIndex := range session.Movements {
+		movement := &session.Movements[movementIndex]
+		movement.ID = newUUID()
+		movement.SessionID = session.ID
+		for setIndex := range movement.Sets {
+			movement.Sets[setIndex].ID = newUUID()
+			movement.Sets[setIndex].MovementID = movement.ID
+		}
+	}
+}
+
+func (h *handler) createWorkoutSession(w http.ResponseWriter, r *http.Request) {
+	actor, ok := h.requireActor(w, r)
+	if !ok {
+		return
+	}
+	var input model.WorkoutSession
+	if err := decodeJSON(r, &input); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if !normalizeWorkoutPlan(&input, true) {
+		writeError(w, http.StatusBadRequest, "data sesi workout tidak valid")
+		return
+	}
+	now := h.auth.Now()
+	input.ID = newUUID()
+	input.OwnerUserID = actor.ID
+	input.CreatedAt = now
+	input.UpdatedAt = now
+	assignWorkoutNestedIDs(&input)
+	created, err := h.store.CreateWorkoutSession(r.Context(), input)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "sesi workout tidak dapat disimpan")
+		return
+	}
+	h.audit(r.Context(), actor, "create", "workout_session", created.ID, "Membuat sesi workout: "+created.Name, map[string]any{"date": created.Date, "movements": len(created.Movements)})
+	writeJSON(w, http.StatusCreated, created)
+}
+
+func (h *handler) listWorkoutSessions(w http.ResponseWriter, r *http.Request) {
+	actor, ok := h.requireActor(w, r)
+	if !ok {
+		return
+	}
+	date := strings.TrimSpace(r.URL.Query().Get("date"))
+	exercise := strings.TrimSpace(r.URL.Query().Get("exercise"))
+	if date != "" && !validDate(date) {
+		writeError(w, http.StatusBadRequest, "date harus berformat YYYY-MM-DD")
+		return
+	}
+	if len(exercise) > 160 {
+		writeError(w, http.StatusBadRequest, "filter gerakan terlalu panjang")
+		return
+	}
+	sessions, err := h.store.ListWorkoutSessions(r.Context(), date, exercise, actor.ID, actor.Role == "admin")
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "sesi workout tidak dapat dibaca")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"date": nullableString(date), "sessions": sessions})
+}
+
+func (h *handler) updateWorkoutSession(w http.ResponseWriter, r *http.Request) {
+	actor, ok := h.requireActor(w, r)
+	if !ok {
+		return
+	}
+	var input model.WorkoutSession
+	if err := decodeJSON(r, &input); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	input.ID = r.PathValue("id")
+	if !validUUID(input.ID) || !normalizeWorkoutPlan(&input, false) {
+		writeError(w, http.StatusBadRequest, "data sesi workout tidak valid")
+		return
+	}
+	for movementIndex := range input.Movements {
+		movement := &input.Movements[movementIndex]
+		if !validUUID(movement.ID) {
+			writeError(w, http.StatusBadRequest, "id gerakan tidak valid")
+			return
+		}
+		movement.SessionID = input.ID
+		for setIndex := range movement.Sets {
+			if !validUUID(movement.Sets[setIndex].ID) {
+				writeError(w, http.StatusBadRequest, "id set tidak valid")
+				return
+			}
+			movement.Sets[setIndex].MovementID = movement.ID
+		}
+	}
+	baseUpdatedAt := input.UpdatedAt
+	input.UpdatedAt = h.auth.Now()
+	updated, found, conflict, err := h.store.UpdateWorkoutSession(r.Context(), input, actor.ID, actor.Role == "admin", baseUpdatedAt)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "sesi workout tidak dapat diperbarui")
+		return
+	}
+	if conflict {
+		writeError(w, http.StatusConflict, "sesi workout sudah berubah; muat ulang sebelum menyimpan")
+		return
+	}
+	if !found {
+		writeError(w, http.StatusNotFound, "sesi workout tidak ditemukan")
+		return
+	}
+	h.auditSubject(r.Context(), actor, updated.OwnerUserID, "update", "workout_session", updated.ID, "Memperbarui sesi workout: "+updated.Name, map[string]any{"status": updated.Status})
+	writeJSON(w, http.StatusOK, updated)
+}
+
+func (h *handler) deleteWorkoutSession(w http.ResponseWriter, r *http.Request) {
+	actor, ok := h.requireActor(w, r)
+	if !ok {
+		return
+	}
+	id := r.PathValue("id")
+	if !validUUID(id) {
+		writeError(w, http.StatusBadRequest, "id sesi tidak valid")
+		return
+	}
+	deleted, err := h.store.DeleteWorkoutSession(r.Context(), id, actor.ID, actor.Role == "admin")
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "sesi workout tidak dapat dihapus")
+		return
+	}
+	if !deleted {
+		writeError(w, http.StatusNotFound, "sesi workout tidak ditemukan")
+		return
+	}
+	h.audit(r.Context(), actor, "delete", "workout_session", id, "Menghapus sesi workout", nil)
+	writeJSON(w, http.StatusOK, map[string]string{"deleted": id})
+}
+
+func resetTemplateMovements(movements []model.WorkoutMovement) []model.WorkoutMovement {
+	for movementIndex := range movements {
+		movement := &movements[movementIndex]
+		movement.ID = ""
+		movement.SessionID = ""
+		movement.Status = "planned"
+		movement.Position = movementIndex + 1
+		for setIndex := range movement.Sets {
+			movement.Sets[setIndex].ID = ""
+			movement.Sets[setIndex].MovementID = ""
+			movement.Sets[setIndex].Actual = nil
+			movement.Sets[setIndex].Status = "unrecorded"
+			movement.Sets[setIndex].RecordedAt = nil
+			movement.Sets[setIndex].RPE = nil
+		}
+	}
+	return movements
+}
+
+func (h *handler) createWorkoutTemplate(w http.ResponseWriter, r *http.Request) {
+	actor, ok := h.requireActor(w, r)
+	if !ok {
+		return
+	}
+	var input model.WorkoutTemplate
+	if err := decodeJSON(r, &input); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	input.Name = strings.TrimSpace(input.Name)
+	input.Movements = resetTemplateMovements(input.Movements)
+	probe := model.WorkoutSession{Name: input.Name, Date: "2000-01-01", Timezone: "Asia/Jakarta", Status: "planned", Movements: input.Movements}
+	if input.Name == "" || len(input.Name) > 160 || !normalizeWorkoutPlan(&probe, true) {
+		writeError(w, http.StatusBadRequest, "template workout tidak valid")
+		return
+	}
+	now := h.auth.Now()
+	input.ID = newUUID()
+	input.OwnerUserID = actor.ID
+	input.CreatedAt = now
+	input.UpdatedAt = now
+	input.Movements = resetTemplateMovements(probe.Movements)
+	created, err := h.store.CreateWorkoutTemplate(r.Context(), input)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "template workout tidak dapat disimpan")
+		return
+	}
+	h.audit(r.Context(), actor, "create", "workout_template", created.ID, "Menyimpan template workout: "+created.Name, map[string]any{"movements": len(created.Movements)})
+	writeJSON(w, http.StatusCreated, created)
+}
+
+func (h *handler) listWorkoutTemplates(w http.ResponseWriter, r *http.Request) {
+	actor, ok := h.requireActor(w, r)
+	if !ok {
+		return
+	}
+	templates, err := h.store.ListWorkoutTemplates(r.Context(), actor.ID, actor.Role == "admin")
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "template workout tidak dapat dibaca")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"templates": templates})
 }
 
 func (h *handler) createJournal(w http.ResponseWriter, r *http.Request) {
