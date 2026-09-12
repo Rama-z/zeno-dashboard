@@ -1,383 +1,305 @@
 export type LandingTheme = 'dark' | 'light';
-
-type LandingCallbacks = {
-  onThemeToggle: () => void;
-};
-
-type FeatureKey = 'session' | 'activity' | 'changes';
+type LandingCallbacks = { onThemeToggle: () => void };
 type WorkspaceKey = 'doing' | 'learning' | 'workout' | 'journaling' | 'spending';
+type FeatureKey = 'session' | 'activity' | 'changes';
 type AccessKey = 'user' | 'admin';
-
-type InteractiveCopy = {
-  label: string;
-  title: string;
-  copy: string;
-  detail: string;
-};
+type InteractiveCopy = { label: string; title: string; copy: string; detail: string; icon: string };
 
 const featureCopy: Record<FeatureKey, InteractiveCopy> = {
-  session: {
-    label: 'Session Log',
-    title: 'Baca sesi tanpa membuka semuanya.',
-    copy: 'Cari, filter, lalu buka pertanyaan dan jawaban hanya saat konteksnya dibutuhkan.',
-    detail: 'Ringkasan bersumber dari Markdown dan tetap terhubung ke detail aslinya.',
-  },
-  activity: {
-    label: 'Activity',
-    title: 'Setiap perubahan punya pelaku.',
-    copy: 'Audit trail menyimpan actor, action, entity, dan waktu agar asal perubahan tetap jelas.',
-    detail: 'Tampilan mengikuti role dan ownership akun yang sedang aktif.',
-  },
-  changes: {
-    label: 'Change Log',
-    title: 'Riwayat tetap bisa ditelusuri.',
-    copy: 'Kelompokkan update per tanggal, pilih rentang waktu, lalu urutkan dari terbaru atau terlama.',
-    detail: 'Catatan perubahan tersimpan di PostgreSQL dengan fallback lokal.',
-  },
+  session: { label: 'Session Log', title: 'Konteksnya ketemu. Lanjutkan idemu.', copy: 'Cari dan filter ringkasan sesi. Buka pertanyaan serta jawaban saat kamu perlu membaca konteks lengkapnya.', detail: 'Ringkasan bersumber dari Markdown dan tetap terhubung ke detail aslinya.', icon: 'notebook' },
+  activity: { label: 'Activity', title: 'Setiap perubahan punya pelaku.', copy: 'Audit trail mencatat actor, action, entity, dan waktu. Kamu bisa menelusuri apa yang berubah dan siapa yang mengubahnya.', detail: 'Tampilan mengikuti role dan ownership akun yang sedang aktif.', icon: 'pulse' },
+  changes: { label: 'Change Log', title: 'Zeno bertumbuh, riwayatnya tetap ada.', copy: 'Baca update produk per tanggal, pilih rentang waktu, lalu urutkan dari terbaru atau terlama.', detail: 'Catatan perubahan tersimpan di PostgreSQL dengan fallback lokal.', icon: 'clock-counter-clockwise' },
 };
-
 const workspaceCopy: Record<WorkspaceKey, InteractiveCopy> = {
-  doing: {
-    label: 'Doing',
-    title: 'Rencana harian yang tetap bergerak.',
-    copy: 'Susun task per tanggal, tandai yang selesai, dan lihat unfinished badge langsung dari kalender.',
-    detail: 'Tambah, edit, hapus, checklist, dan scroll position tetap terjaga.',
-  },
-  learning: {
-    label: 'Learning',
-    title: 'Pelajaran tersimpan di hari yang tepat.',
-    copy: 'Catat apa yang dipelajari melalui kalender lintas bulan dan tahun.',
-    detail: 'Kategori, catatan, checklist, dan histori harian tetap mudah dicari kembali.',
-  },
-  workout: {
-    label: 'Workout',
-    title: 'Latihan terlihat sebagai kebiasaan.',
-    copy: 'Pantau sesi, set, repetisi, durasi, dan status selesai tanpa meninggalkan workspace.',
-    detail: 'Kalender membedakan latihan aktif dan hari yang sudah tuntas.',
-  },
-  journaling: {
-    label: 'Journaling',
-    title: 'Tulis fokus, simpan otomatis.',
-    copy: 'Gunakan editor Markdown, live preview, autosave draft, arsip, shortcut, dan mode fokus.',
-    detail: 'Ruang tulis dan arsip berada dalam alur yang sama.',
-  },
-  spending: {
-    label: 'Spending',
-    title: 'Pengeluaran punya konteks waktu.',
-    copy: 'Catat transaksi dan lihat total harian, mingguan, bulanan, serta tahunan.',
-    detail: 'Ledger tersimpan bersama area personal lain tanpa mencampur data pengguna.',
-  },
+  doing: { label: 'Doing', title: 'Satu centang. Satu langkah maju.', copy: 'Ide besar boleh mulai dari tugas kecil. Susun rencana harian, tandai yang selesai, lalu beri ruang untuk hal berikutnya.', detail: 'Coba centang tugas di samping. Progresmu ikut bergerak.', icon: 'check-square' },
+  learning: { label: 'Learning', title: 'Rasa penasaran punya tempat.', copy: 'Kumpulkan pelajaran, catatan, dan progres belajarmu. Sedikit hari ini, makin paham esok hari.', detail: 'Intip contoh catatan belajar bahasa Inggris di workspace mini.', icon: 'book-open' },
+  workout: { label: 'Workout', title: 'Gerak sedikit. Rasanya beda.', copy: 'Rencanakan sesi, set, repetisi, dan durasi. Lihat latihan sebagai kebiasaan, bukan sekadar angka.', detail: 'Ini contoh rencana latihan, bukan timer yang sedang berjalan.', icon: 'barbell' },
+  journaling: { label: 'Journaling', title: 'Nggak harus rapi. Tulis saja.', copy: 'Beri pikiranmu ruang untuk singgah. Refleksi kecil, ide spontan, atau satu hal baik yang ingin kamu ingat.', detail: 'Coba tulis di sini. Teks hanya diingat selama halaman ini terbuka.', icon: 'note-pencil' },
+  spending: { label: 'Spending', title: 'Tahu ke mana uangmu pergi.', copy: 'Catat pengeluaran beserta konteksnya. Dari kopi sampai kebutuhan harian, semuanya lebih mudah ditelusuri.', detail: 'Jumlah di samping dihitung dari transaksi contoh, bukan data akun.', icon: 'wallet' },
 };
-
 const accessCopy: Record<AccessKey, InteractiveCopy> = {
-  user: {
-    label: 'User',
-    title: 'Ruang kerja tetap personal.',
-    copy: 'Pengguna biasa hanya melihat dan mengubah record serta activity miliknya.',
-    detail: 'Ownership diterapkan di backend untuk Doing, Learning, Workout, Journaling, Spending, dan audit activity.',
-  },
-  admin: {
-    label: 'Admin',
-    title: 'Visibilitas operasional saat dibutuhkan.',
-    copy: 'Admin dapat melihat seluruh record dan activity untuk kebutuhan pengelolaan workspace.',
-    detail: 'Role admin ditentukan lewat konfigurasi server, bukan kontrol visual di browser.',
-  },
+  user: { label: 'User', title: 'Ruang kerja tetap personal.', copy: 'Pengguna biasa hanya melihat dan mengubah record serta activity miliknya.', detail: 'Ownership diterapkan di backend untuk Doing, Learning, Workout, Journaling, Spending, dan audit activity.', icon: 'user-circle' },
+  admin: { label: 'Admin', title: 'Pengelolaan dengan akses lebih luas.', copy: 'Admin dapat melihat dan mengelola seluruh record serta activity, termasuk data pengguna lain.', detail: 'Role admin ditentukan lewat konfigurasi server (ADMIN_EMAILS), bukan tombol di browser. Memilih demo ini tidak mengubah hak akses.', icon: 'shield-check' },
 };
+const icon = (name: string) => `<span class="ph ph-${name}" aria-hidden="true"></span>`;
+const escapeText = (text: string) => text.replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]!);
+const taskLabels = ['Bikin ruang untuk ide baru', 'Selesaikan ide keren itu', 'Jalan sore tanpa notifikasi'];
+const transactions = [{ label: 'Kopi & waktu sendiri', amount: 28000, icon: 'coffee' }, { label: 'Buku untuk akhir pekan', amount: 89000, icon: 'book-open' }, { label: 'Bekal hari ini', amount: 35000, icon: 'bowl-food' }];
+const rupiah = (value: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(value);
+// Page-lifetime demo only. Never localStorage, fetch, API, or dashboard state.
+const demo = { tasks: [true, false, false], journal: 'Hari ini, pelan-pelan juga tetap maju.', workspace: 'doing' as WorkspaceKey, feature: 'session' as FeatureKey, access: 'user' as AccessKey, paused: false };
 
-const renderTabs = <T extends string>(items: Record<T, InteractiveCopy>, attribute: string, active: T) =>
-  (Object.entries(items) as [T, InteractiveCopy][])
-    .map(([key, item]) => `<button class="landing-choice ${key === active ? 'is-active' : ''}" type="button" role="tab" ${attribute}="${key}" aria-selected="${key === active}" tabindex="${key === active ? '0' : '-1'}">${item.label}</button>`)
-    .join('');
+function renderTabs<T extends string>(items: Record<T, InteractiveCopy>, group: string, attribute: string, active: T) {
+  return (Object.entries(items) as [T, InteractiveCopy][]).map(([key, item]) => `<button class="landing-choice ${active === key ? 'is-active' : ''}" type="button" role="tab" id="landing-${group}-tab-${key}" aria-controls="landing-${group}-panel-${key}" ${attribute}="${key}" aria-selected="${active === key}" tabindex="${active === key ? '0' : '-1'}">${icon(item.icon)}${item.label}</button>`).join('');
+}
+function renderCopy(item: InteractiveCopy) {
+  return `<span class="landing-panel-label">${icon(item.icon)} ${item.label}</span><h3>${item.title}</h3><p>${item.copy}</p><small>${item.detail}</small>`;
+}
+function renderInfoPanels<T extends string>(items: Record<T, InteractiveCopy>, group: string, active: T) {
+  return (Object.entries(items) as [T, InteractiveCopy][]).map(([key, item]) => `<article class="landing-info-panel" role="tabpanel" tabindex="0" id="landing-${group}-panel-${key}" aria-labelledby="landing-${group}-tab-${key}" ${active === key ? '' : 'hidden'}>${renderCopy(item)}</article>`).join('');
+}
+function renderDemo(key: WorkspaceKey) {
+  switch (key) {
+    case 'doing': return `<div class="landing-demo-heading"><h4>Hal kecil, hari ini.</h4>${icon('sun-horizon')}</div><div class="landing-task-list">${taskLabels.map((label, index) => `<label class="landing-task"><input type="checkbox" data-demo-task="${index}" ${demo.tasks[index] ? 'checked' : ''} /><span>${label}</span></label>`).join('')}</div><div class="landing-progress-caption"><span>Ruang untuk progres</span><strong data-demo-count>${demo.tasks.filter(Boolean).length} / 3 selesai</strong></div><progress data-demo-progress max="3" value="${demo.tasks.filter(Boolean).length}" aria-label="Tugas demo selesai"></progress><p class="landing-demo-note">Satu langkah juga tetap langkah.</p>`;
+    case 'learning': return `<div class="landing-demo-heading"><h4>Catatan penasaran.</h4>${icon('book-open')}</div><span class="landing-tag">ENGLISH / PRESENT SIMPLE</span><div class="landing-note-paper"><h5>Hal yang berulang, pakai simple present.</h5><p>Gunakan bentuk dasar kata kerja untuk rutinitas. Tambahkan -s atau -es untuk he, she, dan it.</p><blockquote>“I learn something new every day.”</blockquote><p><strong>Ingat:</strong> “She reads”, bukan “She read”.</p></div>`;
+    case 'workout': return `<div class="landing-demo-heading"><h4>Reset badan & pikiran.</h4>${icon('barbell')}</div><div class="landing-workout-time"><strong>25:00</strong><span>MENIT:DETIK / RENCANA SESI</span></div><dl class="landing-exercise-list"><div><dt>Squat</dt><dd>3 set × 12 repetisi</dd></div><div><dt>Push-up</dt><dd>3 set × 8 repetisi</dd></div><div><dt>Plank</dt><dd>2 set × 30 detik</dd></div></dl>`;
+    case 'journaling': return `<div class="landing-demo-heading"><h4>Cerita yang boleh pelan.</h4>${icon('note-pencil')}</div><label class="landing-journal-label" for="landing-journal">Apa yang ingin kamu ingat hari ini?</label><textarea id="landing-journal" data-demo-journal rows="6" maxlength="5000" aria-describedby="landing-journal-help">${escapeText(demo.journal)}</textarea><p class="landing-demo-note" id="landing-journal-help">Hanya di halaman ini. Tidak dikirim atau disimpan ke akun.</p>`;
+    case 'spending': return `<div class="landing-demo-heading"><h4>Pengeluaran kecil hari ini.</h4>${icon('wallet')}</div><ul class="landing-transactions">${transactions.map((item) => `<li><span>${icon(item.icon)}${item.label}</span><strong>${rupiah(item.amount)}</strong></li>`).join('')}</ul><div class="landing-spending-total"><span>Total contoh</span><strong data-demo-total>${rupiah(transactions.reduce((sum, item) => sum + item.amount, 0))}</strong></div>`;
+  }
+}
+function renderWorkspacePanels() {
+  return (Object.keys(workspaceCopy) as WorkspaceKey[]).map((key) => `<div class="landing-workspace-panel" role="tabpanel" tabindex="0" id="landing-workspace-panel-${key}" aria-labelledby="landing-workspace-tab-${key}" ${demo.workspace === key ? '' : 'hidden'}><div class="landing-workspace-copy">${renderCopy(workspaceCopy[key])}</div><div class="landing-demo"><div class="landing-demo-bar"><span class="landing-window-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>Demo · Data contoh</span>${icon('sparkle')}</div><div class="landing-demo-body">${renderDemo(key)}</div></div></div>`).join('');
+}
 
 export function renderLandingPage(theme: LandingTheme) {
-  const nextTheme = theme === 'dark' ? 'terang' : 'gelap';
-  const currentFeature = featureCopy.session;
-  const currentWorkspace = workspaceCopy.doing;
-  const currentAccess = accessCopy.user;
-
-  return `
-    <main class="zeno-landing" data-landing-page>
-      <header class="landing-nav-shell">
-        <a class="landing-brand" href="#top" aria-label="Zeno home">
-          <img src="/zeno-logo-96.webp" width="40" height="40" alt="" />
-          <span><strong>Zeno</strong><small>PERSONAL WORKSPACE</small></span>
-        </a>
-        <button class="landing-menu-button" type="button" data-landing-menu aria-controls="landing-navigation" aria-expanded="false" aria-label="Buka navigasi">
-          <span></span><span></span><span></span>
-        </button>
-        <nav class="landing-nav-links" id="landing-navigation" aria-label="Navigasi landing page">
-          <a href="#observability">Observability</a>
-          <a href="#workspace">Workspace</a>
-          <a href="#ownership">Ownership</a>
-        </nav>
-        <div class="landing-nav-actions">
-          <button class="landing-theme-button" type="button" data-landing-theme aria-label="Gunakan tema ${nextTheme}"><span aria-hidden="true"></span>${nextTheme}</button>
-          <a class="landing-login" href="/login">Masuk</a>
-        </div>
-      </header>
-
-      <section class="landing-hero" id="top" aria-labelledby="landing-title">
-        <div class="landing-hero-media landing-image-shell is-loading" data-tilt-media>
-          <img src="/zeno-landing-hero.webp" srcset="/zeno-landing-hero-800.webp 800w, /zeno-landing-hero.webp 1600w" sizes="100vw" width="1600" height="900" alt="Objek logam dan kaca biru berbentuk Z pada ruang gelap" fetchpriority="high" data-landing-image />
-          <span class="landing-media-fallback">Visual Zeno tidak tersedia.</span>
-        </div>
-        <div class="landing-hero-scrim"></div>
-        <div class="landing-hero-copy" data-reveal>
-          <p class="landing-eyebrow">ZENO PERSONAL WORKSPACE</p>
-          <h1 id="landing-title"><span>Kerja terlihat.</span><span>Hari terarah.</span></h1>
-          <p>Zeno menyatukan session log, aktivitas, dan progres personal dalam satu workspace yang mudah dibaca.</p>
-          <div class="landing-hero-actions">
-            <a class="landing-primary-button" href="/login">Masuk ke Zeno</a>
-            <a class="landing-secondary-button" href="#observability">Lihat fitur</a>
-          </div>
-        </div>
-        <div class="landing-marquee" aria-label="Fitur Zeno">
-          <span class="sr-only">Session Log, Activity, Change Log, Doing, Learning, Workout, Journaling, Spending</span>
-          <div class="landing-marquee-track" aria-hidden="true">
-            <span>Session Log</span><span>Activity</span><span>Change Log</span><span>Doing</span><span>Learning</span><span>Workout</span><span>Journaling</span><span>Spending</span>
-            <span>Session Log</span><span>Activity</span><span>Change Log</span><span>Doing</span><span>Learning</span><span>Workout</span><span>Journaling</span><span>Spending</span>
-          </div>
-        </div>
-      </section>
-
-      <section class="landing-section landing-observability" id="observability" aria-labelledby="observability-title">
-        <div class="landing-section-heading" data-reveal>
-          <h2 id="observability-title">Dari kejadian ke konteks.</h2>
-          <p>Pilih lapisan informasi yang ingin dibaca. Zeno menjaga ringkasan tetap singkat dan detail tetap dekat.</p>
-        </div>
-        <div class="landing-observe-frame landing-image-shell is-loading" data-reveal>
-          <img src="/zeno-landing-observability.webp" width="1600" height="900" alt="Lapisan kaca dan jalur cahaya yang menggambarkan aliran data" loading="lazy" data-landing-image />
-          <span class="landing-media-fallback">Visual observability tidak tersedia.</span>
-          <div class="landing-observe-scrim"></div>
-          <div class="landing-observe-content">
-            <div class="landing-choice-list" role="tablist" aria-label="Fitur observability">
-              ${renderTabs(featureCopy, 'data-feature-tab', 'session')}
-            </div>
-            <article class="landing-live-panel" role="tabpanel" aria-live="polite" aria-atomic="true">
-              <span data-feature-name>${currentFeature.label}</span>
-              <h3 data-feature-title>${currentFeature.title}</h3>
-              <p data-feature-copy>${currentFeature.copy}</p>
-              <small data-feature-detail>${currentFeature.detail}</small>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <section class="landing-section landing-workspace" id="workspace" aria-labelledby="workspace-title">
-        <div class="landing-workspace-visual landing-image-shell is-loading" data-reveal>
-          <img src="/zeno-landing-workspace.webp" width="1600" height="900" alt="Kalender, jam latihan, buku catatan, dan alat perencanaan Zeno" loading="lazy" data-landing-image />
-          <span class="landing-media-fallback">Visual workspace tidak tersedia.</span>
-        </div>
-        <div class="landing-workspace-copy" data-reveal>
-          <div class="landing-section-heading">
-            <h2 id="workspace-title">Rutinitas harian, satu konteks.</h2>
-            <p>Berpindah area tanpa kehilangan hubungan antara rencana, pembelajaran, kesehatan, catatan, dan pengeluaran.</p>
-          </div>
-          <div class="landing-choice-list landing-workspace-choices" role="tablist" aria-label="Area personal workspace">
-            ${renderTabs(workspaceCopy, 'data-workspace-module', 'doing')}
-          </div>
-          <article class="landing-workspace-panel" role="tabpanel" aria-live="polite" aria-atomic="true">
-            <span data-workspace-name>${currentWorkspace.label}</span>
-            <h3 data-workspace-title>${currentWorkspace.title}</h3>
-            <p data-workspace-copy>${currentWorkspace.copy}</p>
-            <small data-workspace-detail>${currentWorkspace.detail}</small>
-          </article>
-        </div>
-      </section>
-
-      <section class="landing-section landing-ownership" id="ownership" aria-labelledby="ownership-title">
-        <div class="landing-ownership-frame landing-image-shell is-loading" data-reveal>
-          <img src="/zeno-landing-ownership.webp" width="1600" height="900" alt="Jalur cahaya terpisah di antara panel kaca transparan" loading="lazy" data-landing-image />
-          <span class="landing-media-fallback">Visual ownership tidak tersedia.</span>
-          <div class="landing-ownership-scrim"></div>
-          <div class="landing-ownership-copy">
-            <h2 id="ownership-title">Data mengikuti pemiliknya.</h2>
-            <p>Hak akses diterapkan pada record dan activity, bukan sekadar disembunyikan dari tampilan.</p>
-            <div class="landing-access-switch" role="tablist" aria-label="Tampilan akses">
-              ${renderTabs(accessCopy, 'data-access-view', 'user')}
-            </div>
-            <article class="landing-access-panel" role="tabpanel" aria-live="polite" aria-atomic="true">
-              <span data-access-name>${currentAccess.label}</span>
-              <h3 data-access-title>${currentAccess.title}</h3>
-              <p data-access-copy>${currentAccess.copy}</p>
-              <small data-access-detail>${currentAccess.detail}</small>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <section class="landing-section landing-security" aria-labelledby="security-title">
-        <div class="landing-security-visual landing-image-shell is-loading" data-reveal>
-          <img src="/zeno-landing-security.webp" width="1600" height="900" alt="Inti bercahaya di dalam lapisan kaca pelindung" loading="lazy" data-landing-image />
-          <span class="landing-media-fallback">Visual keamanan tidak tersedia.</span>
-        </div>
-        <div class="landing-security-copy" data-reveal>
-          <h2 id="security-title">Akses dimulai dari identitas terverifikasi.</h2>
-          <p>Register, verifikasi email, lalu login. Backend menjaga session dan membatasi data sesuai role serta ownership.</p>
-          <dl class="landing-security-list">
-            <div><dt>Email terverifikasi</dt><dd>Tautan sekali pakai sebelum akun dapat digunakan.</dd></div>
-            <div><dt>Session HttpOnly</dt><dd>Cookie tidak tersedia bagi JavaScript di halaman.</dd></div>
-            <div><dt>Role-based access</dt><dd>Hak admin dan user diputuskan di server.</dd></div>
-            <div><dt>Owner-scoped records</dt><dd>Data personal disaring berdasarkan pemiliknya.</dd></div>
-          </dl>
-        </div>
-      </section>
-
-      <section class="landing-cta landing-image-shell is-loading" aria-labelledby="cta-title" data-reveal>
-        <img src="/zeno-landing-cta.webp" width="1600" height="900" alt="Pita cahaya biru menuju horizon yang terang" loading="lazy" data-landing-image />
-        <span class="landing-media-fallback">Visual Zeno tidak tersedia.</span>
-        <div class="landing-cta-scrim"></div>
-        <div class="landing-cta-copy">
-          <h2 id="cta-title">Buka Zeno. Lanjutkan pekerjaanmu.</h2>
-          <p>Masuk untuk melihat session, aktivitas, dan progres yang tersimpan di workspace.</p>
-          <a class="landing-primary-button" href="/login">Masuk ke Zeno</a>
-        </div>
-      </section>
-
-      <footer class="landing-footer">
-        <a class="landing-brand" href="#top" aria-label="Kembali ke atas">
-          <img src="/zeno-logo-96.webp" width="36" height="36" alt="" />
-          <span><strong>Zeno</strong><small>PERSONAL WORKSPACE</small></span>
-        </a>
-        <p>Session, activity, dan progres harian dalam satu tempat.</p>
-        <a href="/login">Masuk</a>
-      </footer>
-    </main>
-  `;
+  const marquee = `<div class="landing-marquee-group">${['Doing', 'Learning', 'Workout', 'Journaling', 'Spending'].map((label) => `<span>${label}</span><b>✳</b>`).join('')}</div>`;
+  return `<main class="zeno-landing" data-landing-page id="top">
+    <a class="landing-skip" href="#workspace">Lewati ke demo workspace</a>
+    <header class="landing-nav-shell landing-container">
+      <a class="landing-brand" href="#top" aria-label="Zeno home"><img src="/zeno-logo-96.webp" width="40" height="40" alt="" /><strong>Zeno<span class="landing-brand-note">playground</span></strong></a>
+      <nav class="landing-nav-links" id="landing-navigation" aria-label="Navigasi landing page"><a href="#workspace">Workspace</a><a href="#observability">Kenapa Zeno?</a></nav>
+      <div class="landing-nav-actions"><button class="landing-theme-button" type="button" data-landing-theme aria-label="Gunakan tema ${theme === 'dark' ? 'terang' : 'gelap'}">${icon(theme === 'dark' ? 'sun' : 'moon')}</button><a class="landing-login" href="/login">Masuk ${icon('arrow-up-right')}</a><button class="landing-menu-button" type="button" data-landing-menu aria-controls="landing-navigation" aria-expanded="false" aria-label="Buka navigasi">${icon('list')}</button></div>
+    </header>
+    <section class="landing-hero landing-container" aria-labelledby="landing-title">
+      <div class="landing-hero-copy"><p class="landing-eyebrow">A LITTLE STRUCTURE. A LOT OF YOU.</p><h1 id="landing-title"><span>Banyak ide.</span><span>Satu ruang.</span><span class="landing-hero-emphasis">Lebih seru.<svg viewBox="0 0 430 28" aria-hidden="true"><path d="M6 19 Q210 -4 423 14 M45 25 Q235 8 384 23" /></svg></span></h1><p>Dari to-do sampai me-time. Satukan rencana, belajar, dan cerita harianmu di Zeno. Biar hidup nggak cuma buka tab baru.</p><div class="landing-hero-actions"><a class="landing-primary-button" href="#workspace">Jelajahi Zeno ${icon('arrow-right')}</a><a class="landing-secondary-button" href="#observability">Kenalan dulu ${icon('arrow-down-right')}</a></div></div>
+      <div class="landing-hero-art" data-landing-scene role="group" aria-label="Teman kecil untuk harimu. Demo · Data contoh">
+        <div class="landing-orbit-layer" data-depth="0.4" data-scroll-depth="0.035" aria-hidden="true"><div class="landing-orbit"></div><div class="landing-orbit landing-orbit-secondary"></div></div>
+        <span class="landing-star landing-star-one" data-depth="1.2" data-scroll-depth="-0.05" aria-hidden="true">${icon('sparkle')}</span><span class="landing-star landing-star-two" data-depth="-0.7" data-scroll-depth="0.025" aria-hidden="true">${icon('asterisk-simple')}</span>
+        <div class="landing-mascot-layer" data-depth="0.8"><div class="landing-mascot-float"><svg class="landing-mascot" data-landing-mascot viewBox="0 0 340 360" role="img" aria-label="Maskot lime Zeno tersenyum"><path class="landing-blob" d="M165 20 C222 -4 282 34 283 91 C348 111 352 176 311 217 C344 278 298 326 241 320 C208 365 141 363 115 325 C48 345 6 294 28 235 C-10 197 1 137 45 117 C39 59 92 10 137 27 C148 24 156 20 165 20Z"/><ellipse cx="122" cy="150" rx="20" ry="28" fill="#fffef8"/><ellipse cx="211" cy="150" rx="20" ry="28" fill="#fffef8"/><g data-mascot-eyes><ellipse cx="126" cy="154" rx="9" ry="14" fill="#202820"/><ellipse cx="207" cy="154" rx="9" ry="14" fill="#202820"/></g><path d="M134 205 Q170 244 207 202" fill="none" stroke="#202820" stroke-width="9" stroke-linecap="round"/><ellipse cx="103" cy="199" rx="16" ry="9" fill="#accd54"/><ellipse cx="237" cy="196" rx="16" ry="9" fill="#accd54"/></svg></div></div>
+        <div class="landing-float-layer landing-doing-layer" data-depth="-0.6"><article class="landing-float-card landing-doing-card"><span>${icon('check-square')} Doing</span><p>Selesaikan ide keren itu</p><small>Demo · Data contoh</small></article></div>
+        <div class="landing-float-layer landing-workout-layer" data-depth="1.1"><article class="landing-float-card landing-workout-card"><span>${icon('barbell')} Workout</span><strong>25:00</strong><small>Demo · Data contoh</small></article></div>
+        <div class="landing-float-layer landing-journal-layer" data-depth="-0.9"><article class="landing-float-card landing-journal-card"><span>${icon('note-pencil')} Journaling</span><p>Hari ini, pelan-pelan juga tetap maju.</p><small>Demo · Data contoh</small></article></div>
+        <span class="landing-handnote">less chaos, more you.</span>
+      </div>
+      <div class="landing-motion-controls"><button type="button" data-landing-pause aria-pressed="${demo.paused}">${icon(demo.paused ? 'play' : 'pause')}<span>${demo.paused ? 'Lanjutkan animasi' : 'Jeda animasi'}</span></button><span data-motion-note>Atur ritmemu sendiri.</span></div>
+    </section>
+    <section class="landing-marquee" aria-label="Doing, Learning, Workout, Journaling, Spending"><div class="landing-marquee-track" aria-hidden="true">${marquee}${marquee}</div></section>
+    <section class="landing-section landing-container landing-workspace" id="workspace" tabindex="-1" aria-labelledby="workspace-title" data-reveal>
+      <h2 id="workspace-title">Hidup punya banyak tab.<br />Kamu cukup buka satu.</h2><p class="landing-section-intro">Lima ruang untuk harimu. Coba dulu, tanpa perlu masuk.</p>
+      <div class="landing-choice-list landing-workspace-choices" role="tablist" aria-label="Area personal workspace">${renderTabs(workspaceCopy, 'workspace', 'data-workspace-module', demo.workspace)}</div>
+      ${renderWorkspacePanels()}
+      <p class="landing-sr-only" data-demo-status role="status" aria-live="polite" aria-atomic="true"></p>
+    </section>
+    <section class="landing-section landing-container landing-observability" id="observability" tabindex="-1" aria-labelledby="observability-title" data-reveal>
+      <div class="landing-story-heading"><span class="landing-story-mark" aria-hidden="true">${icon('scribble-loop')}</span><h2 id="observability-title">Progres punya cerita.</h2><p class="landing-section-intro">Bukan cuma apa yang selesai. Tapi juga bagaimana kamu sampai di sana.</p></div>
+      <div class="landing-story-card"><div class="landing-choice-list" role="tablist" aria-label="Fitur observability">${renderTabs(featureCopy, 'feature', 'data-feature-tab', demo.feature)}</div>${renderInfoPanels(featureCopy, 'feature', demo.feature)}</div>
+    </section>
+    <section class="landing-section landing-container landing-ownership" id="ownership" aria-labelledby="ownership-title" data-reveal>
+      <div class="landing-ownership-heading"><span class="landing-lock-mark" aria-hidden="true">${icon('lock-key')}</span><h2 id="ownership-title">Ruangmu.<br />Tetap milikmu.</h2><p>Daftar, verifikasi email, lalu masuk. Backend menjaga session dan membatasi data sesuai role serta ownership.</p><span class="landing-security-note">${icon('shield-check')} Session HttpOnly · Hak akses di server</span></div>
+      <div class="landing-access-card"><p class="landing-panel-label">Kenali perbedaan akses</p><div class="landing-choice-list" role="tablist" aria-label="Tampilan akses">${renderTabs(accessCopy, 'access', 'data-access-view', demo.access)}</div>${renderInfoPanels(accessCopy, 'access', demo.access)}</div>
+    </section>
+    <section class="landing-cta landing-container" aria-labelledby="cta-title" data-reveal><span class="landing-cta-star" aria-hidden="true">${icon('asterisk-simple')}</span><h2 id="cta-title">Bikin ruang untuk<br />versi kamu berikutnya.</h2><a class="landing-primary-button" href="/login">Masuk ke Zeno ${icon('arrow-up-right')}</a><p>Rencanakan. Coba. Ceritakan. Ulangi dengan caramu.</p></section>
+    <footer class="landing-footer landing-container"><a class="landing-brand" href="#top" aria-label="Zeno home"><img src="/zeno-logo-96.webp" width="36" height="36" alt="" /><strong>Zeno</strong></a><p>YOUR LIFE, A LITTLE MORE TOGETHER.</p><a href="#top">Kembali ke atas ${icon('arrow-up-right')}</a></footer>
+  </main>`;
 }
 
-function setSelected<T extends string>(selector: string, key: T) {
-  document.querySelectorAll<HTMLButtonElement>(selector).forEach((button) => {
-    const selected = Object.values(button.dataset).includes(key);
-    button.classList.toggle('is-active', selected);
-    button.setAttribute('aria-selected', String(selected));
-    button.tabIndex = selected ? 0 : -1;
-  });
-}
-
-function setText(selector: string, value: string) {
-  const target = document.querySelector<HTMLElement>(selector);
-  if (target) target.textContent = value;
-}
-
-function updateFeature(key: FeatureKey) {
-  const item = featureCopy[key];
-  setSelected('[data-feature-tab]', key);
-  setText('[data-feature-name]', item.label);
-  setText('[data-feature-title]', item.title);
-  setText('[data-feature-copy]', item.copy);
-  setText('[data-feature-detail]', item.detail);
-}
-
-function updateWorkspace(key: WorkspaceKey) {
-  const item = workspaceCopy[key];
-  setSelected('[data-workspace-module]', key);
-  setText('[data-workspace-name]', item.label);
-  setText('[data-workspace-title]', item.title);
-  setText('[data-workspace-copy]', item.copy);
-  setText('[data-workspace-detail]', item.detail);
-}
-
-function updateAccess(key: AccessKey) {
-  const item = accessCopy[key];
-  setSelected('[data-access-view]', key);
-  setText('[data-access-name]', item.label);
-  setText('[data-access-title]', item.title);
-  setText('[data-access-copy]', item.copy);
-  setText('[data-access-detail]', item.detail);
-}
-
-function bindRovingTabs(selector: string) {
-  const buttons = [...document.querySelectorAll<HTMLButtonElement>(selector)];
-  buttons.forEach((button, index) => button.addEventListener('keydown', (event) => {
-    if (!['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
-    event.preventDefault();
-    const direction = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : -1;
-    const targetIndex = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 : (index + direction + buttons.length) % buttons.length;
-    buttons[targetIndex]?.focus();
-    buttons[targetIndex]?.click();
-  }));
-}
-
-function bindLandingImages() {
-  document.querySelectorAll<HTMLImageElement>('[data-landing-image]').forEach((image) => {
-    const shell = image.closest<HTMLElement>('.landing-image-shell');
-    const loaded = () => shell?.classList.replace('is-loading', 'is-loaded');
-    const failed = () => {
-      shell?.classList.remove('is-loading');
-      shell?.classList.add('has-error');
-    };
-    if (image.complete) {
-      image.naturalWidth ? loaded() : failed();
-      return;
-    }
-    image.addEventListener('load', loaded, { once: true });
-    image.addEventListener('error', failed, { once: true });
-  });
-}
-
-let landingObserver: IntersectionObserver | null = null;
-
-function bindLandingMotion() {
-  landingObserver?.disconnect();
-  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  document.documentElement.classList.toggle('landing-motion-ready', !reduced);
-  if (reduced || !('IntersectionObserver' in window)) {
-    document.querySelectorAll<HTMLElement>('[data-reveal]').forEach((element) => element.classList.add('is-visible'));
-    return;
-  }
-  landingObserver = new IntersectionObserver((entries, observer) => {
-    entries.forEach((entry) => {
-      if (!entry.isIntersecting) return;
-      (entry.target as HTMLElement).classList.add('is-visible');
-      observer.unobserve(entry.target);
-    });
-  }, { threshold: 0.18, rootMargin: '0px 0px -6% 0px' });
-  document.querySelectorAll<HTMLElement>('[data-reveal]').forEach((element) => landingObserver?.observe(element));
-
-  if (!window.matchMedia('(pointer: fine)').matches) return;
-  const media = document.querySelector<HTMLElement>('[data-tilt-media]');
-  if (!media) return;
+function bindLandingMotion(root: HTMLElement, signal: AbortSignal) {
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const fine = window.matchMedia('(hover: hover) and (pointer: fine)');
+  const pointerAllowed = () => fine.matches && !(navigator.maxTouchPoints > 0);
+  const scene = root.querySelector<HTMLElement>('[data-landing-scene]')!;
+  const eyes = root.querySelector<SVGElement>('[data-mascot-eyes]')!;
+  const layers = [...root.querySelectorAll<HTMLElement>('[data-depth]')].map((element) => ({ element, depth: Number(element.dataset.depth), scrollDepth: Number(element.dataset.scrollDepth ?? 0) }));
+  const pause = root.querySelector<HTMLButtonElement>('[data-landing-pause]')!;
+  const note = root.querySelector<HTMLElement>('[data-motion-note]')!;
+  const reveals = [...root.querySelectorAll<HTMLElement>('[data-reveal]')];
+  let observer: IntersectionObserver | undefined;
   let frame = 0;
-  media.addEventListener('pointermove', (event) => {
-    const rect = media.getBoundingClientRect();
-    const x = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
-    const y = ((event.clientY - rect.top) / rect.height - 0.5) * 2;
-    cancelAnimationFrame(frame);
-    frame = requestAnimationFrame(() => {
-      media.style.setProperty('--landing-tilt-x', `${(-y * 1.2).toFixed(2)}deg`);
-      media.style.setProperty('--landing-tilt-y', `${(x * 1.6).toFixed(2)}deg`);
+  let targetX = 0, targetY = 0, currentX = 0, currentY = 0;
+  let targetScroll = window.scrollY, currentScroll = window.scrollY;
+  let box = { left: 0, top: 0, width: 1, height: 1 };
+  let viewportHeight = window.innerHeight;
+  const measure = () => {
+    const rect = scene.getBoundingClientRect();
+    box = { left: rect.left, top: rect.top + window.scrollY, width: rect.width || 1, height: rect.height || 1 };
+    viewportHeight = window.innerHeight;
+  };
+  const running = () => root.dataset.motion === 'running' && root.isConnected;
+  const inView = () => targetScroll + viewportHeight >= box.top && targetScroll <= box.top + box.height;
+  const applyTransforms = () => {
+    layers.forEach(({ element, depth, scrollDepth }) => {
+      element.style.setProperty('--px', `${(currentX * depth * 8).toFixed(2)}px`);
+      element.style.setProperty('--py', `${(currentY * depth * 6).toFixed(2)}px`);
+      element.style.setProperty('--sy', `${(Math.min(500, Math.max(0, currentScroll)) * scrollDepth).toFixed(2)}px`);
     });
-  });
-  media.addEventListener('pointerleave', () => {
-    media.style.setProperty('--landing-tilt-x', '0deg');
-    media.style.setProperty('--landing-tilt-y', '0deg');
-  });
+    eyes.style.transform = `translate(${(currentX * 5).toFixed(2)}px, ${(currentY * 4).toFixed(2)}px)`;
+  };
+  const tick = () => {
+    frame = 0;
+    if (!running() || !inView()) return;
+    currentX += (targetX - currentX) * 0.13;
+    currentY += (targetY - currentY) * 0.13;
+    currentScroll += (targetScroll - currentScroll) * 0.13;
+    applyTransforms();
+    if (Math.abs(targetX - currentX) > 0.002 || Math.abs(targetY - currentY) > 0.002 || Math.abs(targetScroll - currentScroll) > 0.1) schedule();
+  };
+  const schedule = () => {
+    if (!frame && running() && inView()) frame = requestAnimationFrame(tick);
+  };
+  const stopFrame = () => { cancelAnimationFrame(frame); frame = 0; };
+  const refreshPolicy = () => {
+    stopFrame();
+    const mode = reduced.matches ? 'reduced' : demo.paused || document.hidden ? 'paused' : 'running';
+    root.dataset.motion = mode;
+    root.dataset.pointerMotion = String(mode === 'running' && pointerAllowed());
+    pause.disabled = reduced.matches;
+    pause.setAttribute('aria-pressed', String(demo.paused));
+    pause.innerHTML = `${icon(reduced.matches || demo.paused ? 'play' : 'pause')}<span>${reduced.matches ? 'Animasi dikurangi' : demo.paused ? 'Lanjutkan animasi' : 'Jeda animasi'}</span>`;
+    note.textContent = reduced.matches ? 'Mengikuti preferensi perangkatmu.' : 'Atur ritmemu sendiri.';
+    observer?.disconnect();
+    if (mode !== 'running' || !('IntersectionObserver' in window)) {
+      reveals.forEach((element) => element.classList.add('is-visible'));
+    } else {
+      root.classList.add('landing-motion-ready');
+      observer ??= new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            observer?.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+      reveals.filter((element) => !element.classList.contains('is-visible')).forEach((element) => observer!.observe(element));
+    }
+    if (reduced.matches || !pointerAllowed()) {
+      targetX = targetY = currentX = currentY = 0;
+      if (reduced.matches) currentScroll = 0;
+      applyTransforms();
+    }
+    if (mode === 'running') { measure(); targetScroll = window.scrollY; schedule(); }
+  };
+  pause.addEventListener('click', () => { demo.paused = !demo.paused; refreshPolicy(); }, { signal });
+  reduced.addEventListener('change', refreshPolicy, { signal });
+  fine.addEventListener('change', refreshPolicy, { signal });
+  document.addEventListener('visibilitychange', refreshPolicy, { signal });
+  // Geometry is measured on entry/resize, never inside the pointermove hot path.
+  scene.addEventListener('pointerenter', measure, { signal, passive: true });
+  scene.addEventListener('pointermove', (event) => {
+    if (!running() || !pointerAllowed() || event.pointerType === 'touch') return;
+    targetX = Math.max(-1, Math.min(1, (event.clientX - box.left) / box.width * 2 - 1));
+    targetY = Math.max(-1, Math.min(1, (event.clientY + window.scrollY - box.top) / box.height * 2 - 1));
+    schedule();
+  }, { signal, passive: true });
+  scene.addEventListener('pointerleave', () => { targetX = targetY = 0; schedule(); }, { signal, passive: true });
+  window.addEventListener('scroll', () => { targetScroll = window.scrollY; schedule(); }, { signal, passive: true });
+  window.addEventListener('resize', () => { measure(); schedule(); }, { signal, passive: true });
+  let resizeObserver: ResizeObserver | undefined;
+  if ('ResizeObserver' in window) {
+    resizeObserver = new ResizeObserver(() => { measure(); schedule(); });
+    resizeObserver.observe(scene);
+  }
+  refreshPolicy();
+  return () => {
+    stopFrame();
+    observer?.disconnect();
+    resizeObserver?.disconnect();
+    root.dataset.motion = 'paused';
+    root.dataset.pointerMotion = 'false';
+    root.classList.remove('landing-motion-ready');
+  };
 }
 
-export function bindLandingEvents(callbacks: LandingCallbacks) {
-  document.querySelector<HTMLButtonElement>('[data-landing-theme]')?.addEventListener('click', callbacks.onThemeToggle);
+let activeCleanup: (() => void) | undefined;
 
-  const menuButton = document.querySelector<HTMLButtonElement>('[data-landing-menu]');
-  const navigation = document.querySelector<HTMLElement>('#landing-navigation');
-  menuButton?.addEventListener('click', () => {
-    const open = menuButton.getAttribute('aria-expanded') !== 'true';
+export function bindLandingEvents(callbacks: LandingCallbacks): () => void {
+  activeCleanup?.();
+  const root = document.querySelector<HTMLElement>('[data-landing-page]');
+  if (!root) return () => {};
+  const controller = new AbortController();
+  const { signal } = controller;
+  const status = root.querySelector<HTMLElement>('[data-demo-status]')!;
+  const selectTab = (button: HTMLButtonElement) => {
+    const group = button.closest('[role="tablist"]')!;
+    group.querySelectorAll<HTMLButtonElement>('[role="tab"]').forEach((tab) => {
+      const selected = tab === button;
+      tab.setAttribute('aria-selected', String(selected));
+      tab.tabIndex = selected ? 0 : -1;
+      tab.classList.toggle('is-active', selected);
+      const panel = root.querySelector<HTMLElement>(`#${tab.getAttribute('aria-controls')}`);
+      if (panel) panel.hidden = !selected;
+    });
+    if (button.dataset.workspaceModule) {
+      demo.workspace = button.dataset.workspaceModule as WorkspaceKey;
+      status.textContent = `Demo ${workspaceCopy[demo.workspace].label} dipilih. ${workspaceCopy[demo.workspace].detail}`;
+    } else if (button.dataset.featureTab) {
+      demo.feature = button.dataset.featureTab as FeatureKey;
+      status.textContent = `${featureCopy[demo.feature].label}. ${featureCopy[demo.feature].title}`;
+    } else if (button.dataset.accessView) {
+      demo.access = button.dataset.accessView as AccessKey;
+      status.textContent = `${accessCopy[demo.access].label}. ${accessCopy[demo.access].copy}`;
+    }
+  };
+  root.querySelectorAll<HTMLButtonElement>('[role="tab"]').forEach((button) => {
+    button.addEventListener('click', () => selectTab(button), { signal });
+    button.addEventListener('keydown', (event) => {
+      if (!['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+      event.preventDefault();
+      const buttons = [...button.closest('[role="tablist"]')!.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+      const direction = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : -1;
+      const index = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 : (buttons.indexOf(button) + direction + buttons.length) % buttons.length;
+      buttons[index].focus();
+      selectTab(buttons[index]);
+    }, { signal });
+  });
+  const themeButton = root.querySelector<HTMLButtonElement>('[data-landing-theme]')!;
+  themeButton.addEventListener('click', () => {
+    callbacks.onThemeToggle();
+    const dark = document.documentElement.dataset.theme === 'dark';
+    themeButton.setAttribute('aria-label', `Gunakan tema ${dark ? 'terang' : 'gelap'}`);
+    themeButton.innerHTML = icon(dark ? 'sun' : 'moon');
+  }, { signal });
+  const menuButton = root.querySelector<HTMLButtonElement>('[data-landing-menu]')!;
+  const navigation = root.querySelector<HTMLElement>('#landing-navigation')!;
+  const setMenu = (open: boolean) => {
     menuButton.setAttribute('aria-expanded', String(open));
     menuButton.setAttribute('aria-label', open ? 'Tutup navigasi' : 'Buka navigasi');
-    navigation?.classList.toggle('is-open', open);
+    menuButton.innerHTML = icon(open ? 'x' : 'list');
+    navigation.classList.toggle('is-open', open);
+  };
+  menuButton.addEventListener('click', () => setMenu(menuButton.getAttribute('aria-expanded') !== 'true'), { signal });
+  root.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && menuButton.getAttribute('aria-expanded') === 'true') {
+      setMenu(false);
+      menuButton.focus();
+    }
+  }, { signal });
+  document.addEventListener('click', (event) => {
+    const path = event.composedPath();
+    if (!path.includes(navigation) && !path.includes(menuButton)) setMenu(false);
+  }, { signal });
+  root.querySelectorAll<HTMLAnchorElement>('a[href^="#"]').forEach((link) => {
+    link.addEventListener('click', (event) => {
+      const target = root.querySelector<HTMLElement>(link.hash) ?? (link.hash === '#top' ? root : null);
+      if (!target) return;
+      event.preventDefault();
+      setMenu(false);
+      target.setAttribute('tabindex', '-1');
+      target.focus({ preventScroll: true });
+      target.scrollIntoView({ behavior: root.dataset.motion === 'running' ? 'smooth' : 'auto', block: 'start' });
+      history.pushState(null, '', link.hash);
+    }, { signal });
   });
-  navigation?.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => {
-    menuButton?.setAttribute('aria-expanded', 'false');
-    navigation.classList.remove('is-open');
-  }));
-
-  document.querySelectorAll<HTMLButtonElement>('[data-feature-tab]').forEach((button) => button.addEventListener('click', () => updateFeature(button.dataset.featureTab as FeatureKey)));
-  document.querySelectorAll<HTMLButtonElement>('[data-workspace-module]').forEach((button) => button.addEventListener('click', () => updateWorkspace(button.dataset.workspaceModule as WorkspaceKey)));
-  document.querySelectorAll<HTMLButtonElement>('[data-access-view]').forEach((button) => button.addEventListener('click', () => updateAccess(button.dataset.accessView as AccessKey)));
-
-  bindRovingTabs('[data-feature-tab]');
-  bindRovingTabs('[data-workspace-module]');
-  bindRovingTabs('[data-access-view]');
-  bindLandingImages();
-  bindLandingMotion();
+  root.querySelectorAll<HTMLInputElement>('[data-demo-task]').forEach((checkbox) => {
+    checkbox.addEventListener('change', () => {
+      demo.tasks[Number(checkbox.dataset.demoTask)] = checkbox.checked;
+      const count = demo.tasks.filter(Boolean).length;
+      root.querySelector<HTMLElement>('[data-demo-count]')!.textContent = `${count} / 3 selesai`;
+      root.querySelector<HTMLProgressElement>('[data-demo-progress]')!.value = count;
+      status.textContent = `Demo Doing: ${count} dari 3 tugas selesai.`;
+    }, { signal });
+  });
+  root.querySelector<HTMLTextAreaElement>('[data-demo-journal]')?.addEventListener('input', (event) => {
+    demo.journal = (event.currentTarget as HTMLTextAreaElement).value;
+  }, { signal });
+  const stopMotion = bindLandingMotion(root, signal);
+  const removalObserver = new MutationObserver(() => { if (!root.isConnected) cleanup(); });
+  const cleanup = () => {
+    controller.abort();
+    stopMotion();
+    removalObserver.disconnect();
+    if (activeCleanup === cleanup) activeCleanup = undefined;
+  };
+  removalObserver.observe(document.documentElement, { childList: true, subtree: true });
+  activeCleanup = cleanup;
+  return cleanup;
 }

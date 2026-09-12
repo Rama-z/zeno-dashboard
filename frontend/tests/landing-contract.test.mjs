@@ -20,13 +20,18 @@ test('anonymous root has a complete interactive Zeno landing page', async () => 
   assert.match(main, /if \(!authChecked\) \{\s*if \(isPublicLandingPath\(window\.location\.pathname\)\) \{\s*renderPublicLanding\(\);/s, 'public root must render before the auth probe completes');
   assert.doesNotMatch(main, /import '\.\/styles\.css';/, 'dashboard CSS must not block the public landing route');
   assert.match(main, /function ensureAppStyles\(\)/, 'dashboard and auth routes must load their CSS on demand');
+  assert.match(main, /function render\(\)\s*\{\s*disposeLanding\?\.\(\)/, 'leaving/rerendering landing must dispose its events and animation');
+  assert.match(main, /disposeLanding = bindLandingEvents/, 'landing lifecycle must own the returned cleanup');
+  const landingRenderer = main.slice(main.indexOf('function renderPublicLanding()'), main.indexOf('function orbitRole()'));
+  assert.doesNotMatch(landingRenderer, /\brender\(\)/, 'theme toggle must preserve demo focus and DOM rather than rerender');
   assert.match(appStyles, /import '\.\/styles\.css';[\s\S]*import '\.\/lifestyle\.css';[\s\S]*import '\.\/auth\.css';/, 'dynamic app style bundle is incomplete');
 
   assert.match(landing, /export function renderLandingPage/, 'landing renderer is missing');
   assert.match(landing, /class="zeno-landing"/, 'landing root marker is missing');
   assert.match(landing, /src="\/zeno-logo-96\.webp"/, 'landing must use the optimized brand asset');
   assert.doesNotMatch(landing, /src="\/zeno-logo\.png"/, 'landing must not download the oversized dashboard logo');
-  assert.match(landing, /srcset="\/zeno-landing-hero-800\.webp 800w, \/zeno-landing-hero\.webp 1600w"/, 'hero must offer a responsive LCP source');
+  assert.match(landing, /data-landing-mascot/, 'hero must provide the lightweight Playground mascot');
+  assert.doesNotMatch(landing, /src="\/zeno-landing-/, 'retired landing images must not download');
   assert.match(landing, /href="\/login"/, 'landing must lead to the existing login route');
   assert.match(landing, /data-feature-tab/, 'observability accordion interaction is missing');
   assert.match(landing, /data-workspace-module/, 'personal workspace interaction is missing');
@@ -35,13 +40,13 @@ test('anonymous root has a complete interactive Zeno landing page', async () => 
   assert.doesNotMatch(landing, /[—–]/, 'visible landing copy must not contain em/en dashes');
 
   assert.match(styles, /min-height:\s*100dvh/, 'landing hero must use the stable dynamic viewport');
-  assert.match(styles, /\.landing-hero\s+\.landing-hero-media\s*\{[^}]*position:\s*absolute/s, 'hero media must stay out of document flow');
+  assert.match(styles, /\.zeno-landing \.landing-hero\s*\{[^}]*grid-template-columns:/s, 'Playground hero must use a scoped split layout');
   assert.match(styles, /prefers-reduced-motion:\s*reduce/, 'motion must have a reduced-motion fallback');
   assert.match(styles, /data-theme=['"]light['"]/, 'landing must support light mode');
   assert.match(styles, /@media\s*\(max-width:\s*767px\)/, 'mobile collapse must be explicit below 768px');
   assert.match(styles, /overflow-x:\s*(?:clip|hidden)/, 'landing must prevent horizontal overflow');
 
   assert.match(index, /Zeno/, 'document metadata must retain the product brand');
-  assert.match(index, /imagesrcset="\/zeno-landing-hero-800\.webp 800w, \/zeno-landing-hero\.webp 1600w"/, 'hero preload must use the responsive source set');
+  assert.doesNotMatch(index, /rel="preload"[^>]*zeno-landing-hero/, 'retired hero must not be preloaded');
   assert.match(robots, /^User-agent:\s*\*\s*\nAllow:\s*\/$/m, 'robots.txt must explicitly allow the public landing page');
 });

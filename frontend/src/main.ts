@@ -1,6 +1,7 @@
 import '@fontsource-variable/outfit/wght.css';
 import '@fontsource/dm-mono/latin-400.css';
 import '@fontsource/dm-mono/latin-500.css';
+import '@phosphor-icons/web/regular';
 import './landing.css';
 import { sessionLog as initialLogs, sourceFile, generatedAt } from './generated-log';
 import { api, ApiError, type ActivityEvent, type ApiLog, type AuthUser, type SettingsResponse } from './api';
@@ -516,15 +517,16 @@ async function removeLearningEntry(entry: LearningEntry) {
   render();
 }
 
+let disposeLanding: (() => void) | undefined;
+
 function renderPublicLanding() {
   document.title = 'Zeno | Personal workspace';
   app.innerHTML = renderLandingPage(theme);
-  bindLandingEvents({
+  disposeLanding = bindLandingEvents({
     onThemeToggle: () => {
       theme = theme === 'dark' ? 'light' : 'dark';
       localStorage.setItem('hermes-monitor-theme', theme);
       applyTheme();
-      render();
     },
   });
 }
@@ -794,6 +796,8 @@ window.addEventListener('scroll', scheduleOrbitTriggerDock, true);
 window.addEventListener('resize', scheduleOrbitTriggerDock);
 
 function render() {
+  disposeLanding?.();
+  disposeLanding = undefined;
   if (!authChecked) {
     if (isPublicLandingPath(window.location.pathname)) {
       renderPublicLanding();
