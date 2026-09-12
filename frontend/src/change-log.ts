@@ -345,4 +345,11 @@ export const changeLogUpdates: ChangeLogUpdate[] = [
     description: 'Menyelaraskan halaman Login, Register, dan Email Verification dengan desain Zeno Playground melalui panel lime editorial, surface off-white dan charcoal, aksen cobalt, kartu 24px, tombol pill, Outfit dan DM Mono, serta parity light/dark dan responsive mobile. Alur autentikasi, validasi, route, dan keamanan tetap dipertahankan. Verifikasi mencakup contract test, full frontend test, production build, serta browser QA light/dark pada 390px, 768px, dan 1440px dengan axe tanpa violation.',
     category: 'Frontend',
   },
+  {
+    id: '2026-09-12-dashboard-typography-alignment',
+    occurredAt: '2026-09-12T17:55:03+07:00',
+    title: 'Tipografi dashboard selaras dengan Zeno Playground',
+    description: 'Menyelaraskan hierarki tipografi dashboard dengan landing page menggunakan Outfit sebagai suara utama dan DM Mono secara selektif untuk metadata. Skala Compact, Standard, dan Expanded kini memiliki body, heading, control, line-height, weight, serta tracking yang lebih nyaman tanpa mengubah preferensi tersimpan. Responsive fix menjaga status topbar dan CTA Journaling bebas benturan dengan Orbit. Verifikasi mencakup RED-GREEN contract, 96 test frontend, production build, serta 36 skenario browser pada Overview dan Journaling untuk tiga viewport, tiga profil, light/dark, tanpa overflow, page error, atau axe violation.',
+    category: 'Frontend',
+  },
 ];

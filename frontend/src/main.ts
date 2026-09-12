@@ -778,7 +778,8 @@ function updateOrbitTriggerDock() {
   }
   const controls = [...document.querySelectorAll<HTMLElement>('.doing-editor :is(button[type="submit"],[data-doing-editor-cancel])')];
   const workoutCriticalControls = [...document.querySelectorAll<HTMLElement>('[data-workout-save-set],[data-workout-retry],.rest-timer.visible,.end-actions button')];
-  controls.push(...workoutCriticalControls);
+  const journalCriticalControls = [...document.querySelectorAll<HTMLElement>('.feature-empty [data-journal-tab="write"]')];
+  controls.push(...workoutCriticalControls, ...journalCriticalControls);
   const triggerRect = trigger.getBoundingClientRect();
   const avoidRects = controls.map((control) => control.getBoundingClientRect()).filter((rect) => rect.width > 0 && rect.height > 0);
   trigger.dataset.orbitDock = chooseOrbitTriggerDock(

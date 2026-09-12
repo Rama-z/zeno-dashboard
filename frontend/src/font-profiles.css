@@ -13,6 +13,8 @@
   font-size: var(--zeno-type-page-title-size);
   line-height: var(--zeno-type-page-title-line-height);
   letter-spacing: var(--zeno-type-page-title-tracking);
+  font-weight: 550;
+  text-wrap: balance;
 }
 .zeno-dashboard .content :is(.subheading,.question p,.answer-body p,.activity-audit-copy p,.feature-empty span,.learning-entry p,.learning-empty,.update-card p,.timeline-item p,.session-card>p:not(.eyebrow),.profile-identity p) {
   font-size: var(--zeno-type-body-size);
@@ -28,11 +30,13 @@
   font-size: var(--zeno-type-section-title-size);
   line-height: var(--zeno-type-section-title-line-height);
   letter-spacing: var(--zeno-type-section-title-tracking);
+  font-weight: 550;
 }
 .zeno-dashboard .content :is(.entry-title,.update-card h3,.activity-audit-copy h3,.timeline-item strong,.learning-entry h3,.workout-copy h3,.journal-card-head h3,.journal-revision-head h3,.spending-copy h3,.writer-topbar strong,.ledger-toolbar h2) {
   font-size: var(--zeno-type-card-title-size);
   line-height: var(--zeno-type-card-title-line-height);
   letter-spacing: var(--zeno-type-card-title-tracking);
+  font-weight: 550;
 }
 .zeno-dashboard .metric-card strong {
   font-size: var(--zeno-type-stat-size);
@@ -284,9 +288,10 @@
 /* Preserve intentional mobile hiding and fixed icon geometry. */
 @media (max-width: 640px) {
   .zeno-dashboard .api-status {
-    font-size: 0;
+    font-size: 0 !important;
     line-height: 1;
     letter-spacing: 0;
+    overflow: hidden;
   }
   .zeno-dashboard .entry-status {
     font-size: 0;

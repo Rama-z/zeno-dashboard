@@ -24,12 +24,53 @@ test('font profile preference is exposed in Appearance with Compact as the defau
   const compact = styles.match(/:root\[data-font-profile=['"]compact['"]\]\s*\{([\s\S]*?)\n\}/)?.[1] ?? '';
   const standard = styles.match(/:root\[data-font-profile=['"]standard['"]\]\s*\{([\s\S]*?)\n\}/)?.[1] ?? '';
   const expanded = styles.match(/:root\[data-font-profile=['"]expanded['"]\]\s*\{([\s\S]*?)\n\}/)?.[1] ?? '';
-  assert.match(compact, /--zeno-type-body-size:\s*13px/);
-  assert.match(compact, /--zeno-type-page-title-size:\s*clamp\(33px,3\.35vw,47px\)/);
-  assert.match(standard, /--zeno-type-body-size:\s*14px/);
-  assert.match(expanded, /--zeno-type-body-size:\s*15px/);
+  assert.match(compact, /--zeno-type-body-size:\s*15px/);
+  assert.match(compact, /--zeno-type-body-line-height:\s*1\.72/);
+  assert.match(compact, /--zeno-type-page-title-size:\s*clamp\(36px,3\.5vw,50px\)/);
+  assert.match(standard, /--zeno-type-body-size:\s*16px/);
+  assert.match(standard, /--zeno-type-body-line-height:\s*1\.76/);
+  assert.match(expanded, /--zeno-type-body-size:\s*17px/);
+  assert.match(expanded, /--zeno-type-body-line-height:\s*1\.8/);
   assert.match(styles, /--zeno-type-display-size:/);
   assert.match(styles, /--zeno-type-code-size:/);
+});
+
+test('dashboard typography keeps landing rhythm with a denser product scale', () => {
+  const styles = read('src/styles.css');
+  const mappings = read('src/font-profiles.css');
+  const profile = (name) => styles.match(new RegExp(`:root\\[data-font-profile=['"]${name}['"]\\]\\s*\\{([\\s\\S]*?)\\n\\}`))?.[1] ?? '';
+
+  const compact = profile('compact');
+  const standard = profile('standard');
+  const expanded = profile('expanded');
+
+  for (const [block, values] of [
+    [compact, { section: 21, card: 18, control: 14, meta: 10 }],
+    [standard, { section: 22, card: 19, control: 15, meta: 11 }],
+    [expanded, { section: 24, card: 21, control: 16, meta: 12 }],
+  ]) {
+    assert.match(block, new RegExp(`--zeno-type-section-title-size:\\s*${values.section}px`));
+    assert.match(block, new RegExp(`--zeno-type-card-title-size:\\s*${values.card}px`));
+    assert.match(block, new RegExp(`--zeno-type-control-size:\\s*${values.control}px`));
+    assert.match(block, new RegExp(`--zeno-type-meta-size:\\s*${values.meta}px`));
+    assert.match(block, /--zeno-type-body-tracking:\s*0em/);
+  }
+
+  assert.match(styles, /:root\s*\{[^}]*font-family:'Outfit Variable',system-ui,sans-serif/s);
+  assert.match(styles, /\.nav-label,\.eyebrow\{font:500 10px 'DM Mono'/);
+  assert.match(mappings, /\.zeno-dashboard \.page-heading h1\s*\{[^}]*font-weight:\s*550/s);
+  assert.match(mappings, /\.zeno-dashboard \.content :is\([^}]*section-toolbar h2[^}]*\)\s*\{[^}]*font-weight:\s*550/s);
+});
+
+test('dashboard typography keeps expanded mobile chrome and actions collision-free', () => {
+  const mappings = read('src/font-profiles.css');
+  const lifestyle = read('src/lifestyle.css');
+  const main = read('src/main.ts');
+  assert.match(mappings, /@media\s*\(max-width:\s*640px\)[\s\S]*?\.zeno-dashboard \.api-status\s*\{[^}]*font-size:\s*0\s*!important/s);
+  assert.match(mappings, /@media\s*\(max-width:\s*640px\)[\s\S]*?\.zeno-dashboard \.api-status\s*\{[^}]*overflow:\s*hidden/s);
+  assert.match(main, /\.feature-empty \[data-journal-tab="write"\]/);
+  assert.match(lifestyle, /@media\(max-width:640px\)\{[\s\S]*?\.journal-archive \.feature-empty\.large\{padding-bottom:136px\}/);
+  assert.match(lifestyle, /\.journal-archive \.feature-empty \.feature-button\{min-height:44px\}/);
 });
 
 test('font profile controls are keyboard-accessible and do not add a dependency', () => {

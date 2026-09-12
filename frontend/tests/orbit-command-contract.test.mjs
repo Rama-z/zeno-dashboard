@@ -172,11 +172,12 @@ test('Orbit floating geometry clamps the trigger and keeps its dialog inside the
   );
 });
 
-test('dashboard continuously docks Orbit away from visible Doing submit and cancel controls', async () => {
+test('dashboard continuously docks Orbit away from visible critical actions', async () => {
   const [main, styles] = await Promise.all([read('src/main.ts'), read('src/styles.css')]);
 
   assert.match(main, /chooseOrbitTriggerDock/);
   assert.match(main, /\.doing-editor :is\(button\[type="submit"\],\[data-doing-editor-cancel\]\)/);
+  assert.match(main, /\.feature-empty \[data-journal-tab="write"\]/);
   assert.match(main, /trigger\.dataset\.orbitDock\s*=\s*chooseOrbitTriggerDock/);
   assert.match(main, /window\.addEventListener\('scroll', scheduleOrbitTriggerDock, true\)/);
   assert.match(main, /window\.addEventListener\('resize', scheduleOrbitTriggerDock\)/);
