@@ -804,7 +804,7 @@ function render() {
       return;
     }
     document.title = 'Loading · Zeno';
-    app.innerHTML = '<main class="auth-shell"><section class="auth-brand-panel"><div class="auth-brand-lockup"><img src="/zeno-logo.png" alt="Zeno" /><div><strong>Zeno</strong><span>PERSONAL WORKSPACE</span></div></div></section><section class="auth-form-panel"><div class="auth-card auth-verify-card"><div class="auth-spinner" aria-label="Loading"></div><p>Memeriksa session…</p></div></section></main>';
+    app.innerHTML = '<main class="auth-shell"><section class="auth-brand-panel"><div class="auth-brand-lockup"><img src="/zeno-logo-96.webp" width="44" height="44" alt="Zeno" /><div><strong>Zeno</strong><span>PERSONAL WORKSPACE</span></div></div></section><section class="auth-form-panel"><div class="auth-card auth-verify-card"><div class="auth-spinner" aria-label="Loading"></div><p>Memeriksa session…</p></div></section></main>';
     return;
   }
   if (!currentUser) {

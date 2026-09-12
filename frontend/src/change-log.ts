@@ -338,4 +338,11 @@ export const changeLogUpdates: ChangeLogUpdate[] = [
     description: 'Menyelesaikan Workout Trail dan Focus Mode dengan planner mingguan multi-sesi, model sesi ke gerakan ke set, target dan hasil aktual terpisah, gerakan adaptif strength, bodyweight, cardio, mobility, dan interval, timer sesi serta istirahat yang pulih setelah refresh, pencatatan retry single-flight tanpa kehilangan draft, partial completion, duplikasi plan-only, template, filter riwayat, previous result yang sebanding, dan ringkasan jujur. Verifikasi lulus melalui 80 test frontend, production build, served UI desktop dan mobile, browser QA recovery, save-failure, klik cepat, responsive-accessibility geometry, real API dan PostgreSQL readback, serta cleanup fixture nol.',
     category: 'General',
   },
+  {
+    id: '2026-09-12-auth-playground-alignment',
+    occurredAt: '2026-09-12T16:55:50+07:00',
+    title: 'Login Zeno menyatu dengan Playground',
+    description: 'Menyelaraskan halaman Login, Register, dan Email Verification dengan desain Zeno Playground melalui panel lime editorial, surface off-white dan charcoal, aksen cobalt, kartu 24px, tombol pill, Outfit dan DM Mono, serta parity light/dark dan responsive mobile. Alur autentikasi, validasi, route, dan keamanan tetap dipertahankan. Verifikasi mencakup contract test, full frontend test, production build, serta browser QA light/dark pada 390px, 768px, dan 1440px dengan axe tanpa violation.',
+    category: 'Frontend',
+  },
 ];
