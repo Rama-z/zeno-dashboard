@@ -352,4 +352,11 @@ export const changeLogUpdates: ChangeLogUpdate[] = [
     description: 'Menyelaraskan hierarki tipografi dashboard dengan landing page menggunakan Outfit sebagai suara utama dan DM Mono secara selektif untuk metadata. Skala Compact, Standard, dan Expanded kini memiliki body, heading, control, line-height, weight, serta tracking yang lebih nyaman tanpa mengubah preferensi tersimpan. Responsive fix menjaga status topbar dan CTA Journaling bebas benturan dengan Orbit. Verifikasi mencakup RED-GREEN contract, 96 test frontend, production build, serta 36 skenario browser pada Overview dan Journaling untuk tiga viewport, tiga profil, light/dark, tanpa overflow, page error, atau axe violation.',
     category: 'Frontend',
   },
+  {
+    id: '2026-09-14-aurora-ribbon-dashboard-background',
+    occurredAt: '2026-09-14T12:07:48+07:00',
+    title: 'Aurora Ribbon diterapkan pada seluruh dashboard Zeno',
+    description: 'Menambahkan satu background Aurora Ribbon pada dashboard shell dengan pita lime dan biru yang lembut, blur terpusat pada artwork, komposisi perimeter yang sama untuk dark dan light mode, responsive intensity, serta reduced-motion fallback. UI, Orbit Command, route, auth, API, CRUD, autosave, font profile, dan persistence tetap dipertahankan. Verifikasi berhasil melalui 97 test frontend, production build, Docker no-cache build/recreate, container healthy, browser QA Overview dan Journaling dark/light, halaman panjang, mobile tanpa overflow, Orbit, reduced motion, serta landing-login flow tanpa kebocoran styling.',
+    category: 'Frontend',
+  },
 ];
