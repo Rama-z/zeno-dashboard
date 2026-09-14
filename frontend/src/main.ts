@@ -52,6 +52,7 @@ let currentUser: AuthUser | null = null;
 let authChecked = false;
 let authView: AuthView = authViewFromPath(window.location.pathname);
 let authState: AuthScreenState = { busy: false, message: '', error: '', verificationStatus: 'idle' };
+let dashboardEntryPending = true;
 let profileBusy = false;
 let profileMessage = '';
 let profileError = '';
@@ -110,7 +111,7 @@ let learningEntries: Record<string, LearningEntry[]> = (() => {
 function applyTheme() {
   document.documentElement.dataset.theme = theme;
   document.documentElement.dataset.fontProfile = fontProfile;
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'light' ? '#F6F9FC' : '#07091A');
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'light' ? '#F5F4ED' : '#202820');
 }
 
 const iconNames: Record<string, string> = {
@@ -408,7 +409,7 @@ async function saveProfile(displayName: string) {
 async function logoutAccount() {
   profileBusy = true; render();
   try { await api.logout(); } catch { /* cookie is cleared locally by the next auth gate */ }
-  currentUser = null; authChecked = true; profileBusy = false;
+  currentUser = null; authChecked = true; profileBusy = false; dashboardEntryPending = true;
   authView = 'login'; authState = { busy: false, message: 'Anda sudah logout.', error: '', verificationStatus: 'idle' };
   history.replaceState({ authView: 'login' }, '', '/login');
   render();
@@ -838,7 +839,7 @@ function render() {
           <div class="settings-grid"><form class="settings-card" id="settings-form"><div class="settings-card-heading"><span class="settings-icon">${icon('settings')}</span><div><h2>Workspace</h2><p>Identitas dan sumber data dari API.</p></div></div><label class="setting-row"><span><strong>Workspace name</strong><small>Disimpan melalui PUT /api/settings</small></span><input name="workspaceName" value="${escapeHtml(backendSettings.workspaceName)}" aria-label="Workspace name" required /></label><label class="setting-row"><span><strong>Source file</strong><small>File Markdown yang dipantau backend</small></span><input value="${escapeHtml(backendSettings.sourceFile)}" aria-label="Source file" readonly /></label><button class="settings-save" type="submit">Save to backend</button></form><div class="settings-card"><div class="settings-card-heading"><span class="settings-icon">${icon('moon')}</span><div><h2>Appearance</h2><p>Preferensi tampilan dashboard.</p></div></div><div class="setting-row"><span><strong>Color mode</strong><small>Gunakan tombol di topbar untuk mengganti tema.</small></span><span class="setting-badge">${theme === 'dark' ? 'Dark mode' : 'Light mode'}</span></div><div class="setting-row"><span><strong>Navigation mode</strong><small>Navigasi overlay tidak mengurangi lebar konten.</small></span><span class="setting-badge">Orbit Command</span></div><div class="setting-row font-profile-row"><span><strong>Font profile</strong><small>Atur ukuran dan jarak teks dashboard.</small></span><fieldset class="font-profile-options" role="radiogroup" aria-label="Font profile"><legend class="sr-only">Font profile</legend>${(Object.keys(fontProfileLabels) as FontProfile[]).map((profile) => `<label class="font-profile-option"><input type="radio" name="fontProfile" value="${profile}" data-font-profile aria-label="${fontProfileLabels[profile]}" ${fontProfile === profile ? 'checked' : ''} /><span>${fontProfileLabels[profile]}</span><small>${fontProfileDescriptions[profile]}</small></label>`).join('')}</fieldset></div></div></div>`;
   app.innerHTML = `
     <a class="skip-link" href="#dashboard-content">Skip to dashboard content</a>
-    <div class="shell zeno-dashboard">
+    <div class="shell zeno-dashboard" data-playground-entry="${dashboardEntryPending ? 'enter' : 'steady'}">
       <main class="main">
         <header class="topbar"><div class="crumb"><span>Workspace</span><b>/</b><strong>${pageLabel}</strong></div><div class="top-actions"><span class="api-status ${backendOnline ? 'connected' : 'offline'}" title="${escapeHtml(backendError || 'Zeno API connected')}"><i></i>${backendOnline ? 'API' : 'Offline'}</span><button class="icon-button" type="button" data-global-search title="Search session log" aria-label="Search session log">${icon('search')}</button><button class="theme-toggle" type="button" id="theme-toggle" title="Switch to ${theme === 'dark' ? 'light' : 'dark'} mode" aria-label="Switch to ${theme === 'dark' ? 'light' : 'dark'} mode"><span class="theme-icon">${theme === 'dark' ? icon('sun') : icon('moon')}</span><span>${theme === 'dark' ? 'Light' : 'Dark'}</span></button><button class="avatar" type="button" data-page="profile" title="${escapeHtml(currentUser.displayName)}" aria-label="Open profile">${escapeHtml(currentUser.displayName.slice(0, 1).toUpperCase())}</button></div></header>
         <section class="content" id="dashboard-content" tabindex="-1">
@@ -846,6 +847,7 @@ function render() {
         </section>
       </main>
     </div>${pendingDeleteEntry ? `<button class="delete-popover-backdrop" data-learning-delete-cancel aria-label="Cancel delete"></button><div class="delete-popover" role="dialog" aria-label="Confirm delete" style="top:${deletePopoverPosition.top}px;left:${deletePopoverPosition.left}px"><strong>Delete lesson?</strong><span>${escapeHtml(pendingDeleteEntry.title)}</span><div><button class="delete-confirm" data-learning-delete-confirm>Delete</button><button data-learning-delete-cancel>Cancel</button></div></div>` : ''}${renderOrbitCommand()}`;
+  dashboardEntryPending = false;
   bindOrbitCommand();
   updateOrbitTriggerDock();
   scheduleOrbitTriggerDock();
@@ -969,6 +971,7 @@ window.addEventListener('zeno:unauthorized', () => {
   if (!currentUser) return;
   currentUser = null;
   authChecked = true;
+  dashboardEntryPending = true;
   authView = 'login';
   authState = { busy: false, message: '', error: 'Session berakhir. Silakan login kembali.', verificationStatus: 'idle' };
   history.replaceState({ authView }, '', '/login');

@@ -102,9 +102,9 @@ test('localized decimal set fields preserve comma drafts and expose inline valid
   assert.match(ui, /role="alert"/);
   assert.match(ui, /aria-invalid=/);
   assert.match(ui, /aria-describedby=/);
-  assert.match(css, /--workout-focus:#bef264/);
+  assert.match(css, /--workout-focus:var\(--accent\)/);
   assert.match(css, /outline:2px solid var\(--workout-focus\)/);
-  assert.match(css, /:root\[data-theme='light'\] \.workout-shell\{[^}]*--workout-focus:#6d28d9/);
+  assert.match(css, /:root\[data-theme='light'\] \.workout-shell\{/);
   assert.match(css, /:root\[data-theme='light'\] \.focus-mobile-set\{[^}]*background:#fff/);
   assert.match(css, /:root\[data-theme='light'\] \.mobile-set-inputs input/);
   assert.match(css, /\.set-input-error/);

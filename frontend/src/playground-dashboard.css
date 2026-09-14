@@ -1,0 +1,713 @@
+/* Zeno Playground dashboard bridge.
+   The dashboard uses the landing palette as a solid work surface. The legacy
+   glass aliases remain available for old feature selectors, but this layer is
+   the final visual contract for authenticated dashboard UI and overlays. */
+
+:root[data-theme='light'] {
+  --orbit-charcoal: #202820;
+  --orbit-navy: #FFFEF8;
+  --orbit-navy-raised: #EEEEE3;
+  --orbit-line: #D9DDCE;
+  --orbit-text: #202820;
+  --orbit-muted: #626E5F;
+  --orbit-active: #DAF978;
+  --orbit-selected: #DAF978;
+}
+:root[data-theme='dark'] {
+  --orbit-charcoal: #202820;
+  --orbit-navy: #2A342A;
+  --orbit-navy-raised: #344034;
+  --orbit-line: #465242;
+  --orbit-text: #F5F4ED;
+  --orbit-muted: #AAB6A2;
+  --orbit-active: #DAF978;
+  --orbit-selected: #40503F;
+}
+
+html:has(.zeno-dashboard),
+body:has(.zeno-dashboard) {
+  background: var(--background);
+  color: var(--text-primary);
+}
+body:has(.zeno-dashboard) {
+  min-width: 320px;
+  overflow-x: clip;
+}
+
+.zeno-dashboard {
+  --dashboard-gap: 16px;
+  --dashboard-content-width: 1440px;
+  position: relative;
+  isolation: isolate;
+  display: block;
+  min-height: 100dvh;
+  padding: var(--dashboard-gap);
+  overflow-x: clip;
+  background: var(--background);
+  color: var(--text-primary);
+  font-family: 'Outfit Variable', 'Outfit', system-ui, sans-serif;
+}
+.zeno-dashboard::before,
+.zeno-dashboard::after {
+  display: none;
+}
+.zeno-dashboard > .main {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  min-width: 0;
+}
+.zeno-dashboard .topbar {
+  position: sticky;
+  z-index: 20;
+  top: var(--dashboard-gap);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 66px;
+  height: auto;
+  margin: 0 auto;
+  padding: 10px 18px;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.zeno-dashboard .crumb {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: var(--zeno-type-control-size);
+}
+.zeno-dashboard .crumb span { color: var(--text-muted); }
+.zeno-dashboard .crumb b { color: var(--border); font-weight: 500; }
+.zeno-dashboard .crumb strong {
+  overflow: hidden;
+  color: var(--text-primary);
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.zeno-dashboard .top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.zeno-dashboard .api-status,
+.zeno-dashboard .icon-button,
+.zeno-dashboard .theme-toggle,
+.zeno-dashboard .avatar,
+.zeno-dashboard .connection,
+.zeno-dashboard .search,
+.zeno-dashboard .filters,
+.zeno-dashboard .nav-count,
+.zeno-dashboard .sidebar-toggle,
+.zeno-dashboard .footnote {
+  border-color: var(--border);
+  background: var(--surface-secondary);
+  box-shadow: none;
+}
+.zeno-dashboard .api-status,
+.zeno-dashboard .connection {
+  min-height: 36px;
+  border-radius: 999px;
+  color: var(--text-secondary);
+}
+.zeno-dashboard .api-status {
+  padding: 0 11px;
+  font-size: var(--zeno-type-meta-size);
+}
+.zeno-dashboard .api-status i,
+.zeno-dashboard .connection .pulse,
+.zeno-dashboard .connection .status-dot {
+  box-shadow: none;
+}
+.zeno-dashboard .api-status.connected {
+  color: var(--success);
+  border-color: color-mix(in srgb, var(--success) 42%, var(--border));
+  background: var(--success-bg);
+}
+.zeno-dashboard .api-status.offline {
+  color: var(--warning);
+  border-color: color-mix(in srgb, var(--warning) 40%, var(--border));
+  background: var(--warning-bg);
+}
+.zeno-dashboard .api-status.connected i { background: var(--success); }
+.zeno-dashboard .api-status.offline i { background: var(--warning); }
+.zeno-dashboard .icon-button,
+.zeno-dashboard .theme-toggle,
+.zeno-dashboard .avatar {
+  min-width: 42px;
+  min-height: 42px;
+  height: 42px;
+  border-radius: 999px;
+  color: var(--text-secondary);
+  transition: color .2s ease, background-color .2s ease, border-color .2s ease, transform .2s ease;
+}
+.zeno-dashboard .icon-button {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  font-size: 18px;
+}
+.zeno-dashboard .theme-toggle {
+  gap: 8px;
+  padding: 0 14px;
+  font-size: var(--zeno-type-control-size);
+}
+.zeno-dashboard .avatar {
+  width: 42px;
+  padding: 0;
+  border-color: var(--accent);
+  color: var(--text-primary);
+  background: var(--accent);
+  font-weight: 700;
+}
+.zeno-dashboard :is(.icon-button,.theme-toggle,.avatar):hover {
+  color: var(--text-primary);
+  border-color: var(--accent);
+  background: var(--surface-hover);
+  transform: translateY(-1px);
+}
+.zeno-dashboard :is(.icon-button,.theme-toggle,.avatar):active {
+  transform: translateY(1px) scale(.98);
+}
+
+.zeno-dashboard .content {
+  width: min(var(--dashboard-content-width), 100%);
+  max-width: none;
+  margin: 0 auto;
+  padding: 42px clamp(8px, 2.5vw, 28px) 132px;
+  outline: 0;
+}
+.zeno-dashboard .page-heading {
+  position: relative;
+  align-items: flex-end;
+  gap: 22px;
+  margin-bottom: 30px;
+  padding: 6px 58px 4px 0;
+}
+.zeno-dashboard .page-heading::after {
+  content: '✳';
+  position: absolute;
+  right: 7px;
+  top: 2px;
+  color: var(--accent);
+  font: 400 33px/1 'DM Mono', monospace;
+  transform: rotate(12deg);
+}
+.zeno-dashboard .eyebrow {
+  margin-bottom: 10px;
+  color: var(--accent);
+  font-size: var(--zeno-type-meta-size);
+  letter-spacing: .12em;
+}
+.zeno-dashboard h1 {
+  color: var(--text-primary);
+  font-size: var(--zeno-type-page-title-size);
+  font-weight: 560;
+  line-height: var(--zeno-type-page-title-line-height);
+  letter-spacing: var(--zeno-type-page-title-tracking);
+  text-wrap: balance;
+}
+.zeno-dashboard .subheading {
+  max-width: 68ch;
+  margin-top: 12px;
+  color: var(--text-secondary);
+  font-size: var(--zeno-type-body-size);
+  line-height: var(--zeno-type-body-line-height);
+  text-wrap: pretty;
+}
+.zeno-dashboard .connection {
+  padding: 0 13px;
+  font-size: var(--zeno-type-meta-size);
+}
+
+.zeno-dashboard .metrics,
+.zeno-dashboard .activity-summary {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 34px;
+}
+.zeno-dashboard .metric-card {
+  position: relative;
+  min-height: 138px;
+  padding: 22px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  font-variant-numeric: tabular-nums;
+}
+.zeno-dashboard .metric-card.featured,
+.zeno-dashboard .activity-summary .metric-card:first-child { grid-column: span 6; }
+.zeno-dashboard .metric-card.compact,
+.zeno-dashboard .activity-summary .metric-card:not(:first-child) { grid-column: span 3; }
+.zeno-dashboard .metric-card::after { display: none; }
+.zeno-dashboard .metric-card.accent,
+.zeno-dashboard .metric-card.featured.accent {
+  border-color: #BFD96A;
+  background: var(--primary);
+  color: #202820;
+  box-shadow: 0 12px 28px rgb(91 112 39 / .15);
+}
+.zeno-dashboard .metric-card > span {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+.zeno-dashboard .metric-card.accent > span,
+.zeno-dashboard .metric-card.accent strong,
+.zeno-dashboard .metric-card.accent small { color: #202820; }
+.zeno-dashboard .metric-card strong {
+  position: relative;
+  z-index: 1;
+  display: block;
+  margin: 15px 0 9px;
+  color: var(--text-primary);
+  font-size: var(--zeno-type-stat-size);
+  font-weight: 600;
+  line-height: .95;
+  letter-spacing: -.055em;
+}
+.zeno-dashboard .metric-card em { color: var(--text-muted); font-size: .48em; }
+.zeno-dashboard .metric-card.accent em { color: #455134; }
+.zeno-dashboard .metric-card small {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--text-muted);
+}
+.zeno-dashboard .metric-card small .ph { color: var(--success); font-size: 14px; }
+.zeno-dashboard .metric-card.accent small .ph { color: #335EEA; }
+:root[data-theme='light'] .zeno-dashboard .metric-card.accent,
+:root[data-theme='dark'] .zeno-dashboard .metric-card.accent,
+:root[data-theme='light'] .zeno-dashboard .metric-card.featured.accent,
+:root[data-theme='dark'] .zeno-dashboard .metric-card.featured.accent {
+  border-color: #BFD96A;
+  background: var(--primary);
+  color: #202820;
+}
+
+.zeno-dashboard .section-toolbar {
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 12px;
+  padding: 17px 0 14px;
+  border-top: 1px solid var(--border);
+}
+.zeno-dashboard .section-toolbar h2,
+.zeno-dashboard .panel-heading h2 {
+  margin: 0 0 4px;
+  color: var(--text-primary);
+  font-weight: 560;
+}
+.zeno-dashboard .result-count { color: var(--text-muted); }
+.zeno-dashboard .toolbar-controls { gap: 8px; }
+.zeno-dashboard .search {
+  width: min(300px, 30vw);
+  min-height: 44px;
+  padding: 0 13px;
+  border-radius: 999px;
+}
+.zeno-dashboard .search:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.zeno-dashboard .search input {
+  color: var(--text-primary);
+  font: var(--zeno-type-control-size)/var(--zeno-type-control-line-height) 'Outfit Variable', sans-serif;
+}
+.zeno-dashboard .search input::placeholder { color: var(--text-muted); }
+.zeno-dashboard .filters {
+  min-height: 44px;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+}
+.zeno-dashboard .filter,
+.zeno-dashboard .period-filter {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: var(--text-secondary);
+  background: transparent;
+  font-size: var(--zeno-type-control-size);
+  transition: color .2s ease, background-color .2s ease, border-color .2s ease, transform .2s ease;
+}
+.zeno-dashboard .filter:hover,
+.zeno-dashboard .period-filter:hover { color: var(--text-primary); background: var(--surface-hover); }
+.zeno-dashboard .filter.selected,
+.zeno-dashboard .period-filter.selected,
+.zeno-dashboard .font-profile-option:has(input:checked) {
+  color: #202820;
+  border-color: #BFD96A;
+  background: var(--primary);
+  box-shadow: none;
+}
+.zeno-dashboard .period-filter span {
+  color: inherit;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.zeno-dashboard .log-list {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+.zeno-dashboard .log-entry { border-bottom-color: var(--border-subtle); }
+.zeno-dashboard .entry-header {
+  min-height: 70px;
+  padding: 12px 16px;
+  border-radius: 0;
+  background: transparent;
+  transition: background-color .2s ease;
+}
+.zeno-dashboard .entry-header:hover { background: var(--surface-secondary); }
+.zeno-dashboard .entry-number { color: var(--text-muted); }
+.zeno-dashboard .entry-title { color: var(--text-primary); font-weight: 600; }
+.zeno-dashboard .entry-excerpt { color: var(--text-secondary); }
+.zeno-dashboard .entry-status {
+  min-height: 30px;
+  border-radius: 999px;
+  font-size: var(--zeno-type-meta-size);
+}
+.zeno-dashboard .entry-status.success { color: var(--success); background: var(--success-bg); }
+.zeno-dashboard .entry-status.info { color: var(--info); border-color: color-mix(in srgb, var(--info) 42%, var(--border)); background: var(--info-bg); }
+.zeno-dashboard .entry-detail {
+  padding: 20px 56px 25px;
+  border-top-color: var(--border-subtle);
+  background: var(--surface-secondary);
+}
+.zeno-dashboard .question > span,
+.zeno-dashboard .answer > span { color: var(--accent); }
+.zeno-dashboard .question p,
+.zeno-dashboard .answer-body p { color: var(--text-secondary); }
+.zeno-dashboard .answer-body { border-left-color: var(--accent); }
+.zeno-dashboard .footnote { border-radius: 999px; }
+
+.zeno-dashboard :is(
+  .calendar-panel,.learning-detail,.lifestyle-panel,.activity-panel,.settings-card,
+  .change-log-toolbar,.update-card,.journal-writing,.workout-detail,.lifestyle-calendar,
+  .learning-material-card,.learning-topic-card,.lesson-hero,.lesson-section,
+  .concept-card,.lesson-example,.review-card,.mastery-panel,.workout-material-category-card,
+  .workout-material-card,.workout-material-hero,.workout-material-section,
+  .workout-material-action-card,.workout-material-summary-item,.workout-session-card,
+  .workout-week,.workout-context-panel,.workout-summary,.workout-history,
+  .workout-focus-shell,.workout-session-card,.activity-group-card
+) {
+  border-color: var(--border);
+  border-radius: 22px;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+.zeno-dashboard :is(.learning-material-card,.learning-topic-card,.workout-material-category-card,.workout-material-card,.workout-session-card) {
+  transition: color .22s ease, background-color .22s ease, border-color .22s ease, transform .22s ease, box-shadow .22s ease;
+}
+.zeno-dashboard :is(.learning-material-card,.learning-topic-card,.workout-material-category-card,.workout-material-card,.workout-session-card):hover {
+  border-color: var(--accent);
+  background: var(--surface-hover);
+  box-shadow: 0 13px 30px var(--shadow);
+  transform: translateY(-2px);
+}
+.zeno-dashboard :is(.learning-material-card,.learning-topic-card,.workout-material-category-card,.workout-material-card,.workout-session-card):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 50%, transparent);
+  outline-offset: 3px;
+}
+.zeno-dashboard :is(.learning-material-card,.learning-topic-card,.lesson-hero,.lesson-section,.concept-card,.lesson-example,.review-card,.mastery-panel,.workout-material-hero,.workout-material-section,.workout-context-panel,.workout-summary,.workout-history) {
+  padding: clamp(18px, 2.2vw, 28px);
+}
+.zeno-dashboard :is(.learning-material-card p,.learning-topic-card p,.lesson-hero p,.lesson-section p,.concept-card p,.review-card li,.workout-material-card p,.workout-material-category-card p,.workout-material-hero p) {
+  color: var(--text-secondary);
+}
+.zeno-dashboard :is(.learning-material-card .material-arrow,.learning-material-card .material-kicker,.learning-material-breadcrumb a,.learning-material-breadcrumb button,.workout-material-breadcrumb button,.workout-material-hero-target strong,.material-arrow) {
+  color: var(--accent);
+}
+.zeno-dashboard :is(.material-chip,.topic-status,.workout-material-card-meta span,.workout-material-chips span,.workout-material-difficulty,.date-badge,.mood-pill,.journal-tags span,.setting-badge) {
+  border-color: var(--border);
+  border-radius: 999px;
+  background: var(--surface-secondary);
+}
+.zeno-dashboard :is(.topic-status.mastered,.material-chip.success) { color: var(--success); background: var(--success-bg); }
+.zeno-dashboard :is(.topic-status.progress,.topic-status.awareness) { color: var(--info); background: var(--info-bg); }
+.zeno-dashboard .topic-status.due { color: var(--warning); background: var(--warning-bg); }
+.zeno-dashboard :is(.learning-material-loading,.learning-material-error-state,.learning-material-empty.large,.learning-material-not-found,.feature-empty.large,.activity-empty,.doing-empty,.workout-empty-state) {
+  border: 1px dashed var(--border);
+  border-radius: 22px;
+  background: var(--surface-secondary);
+  box-shadow: none;
+}
+.zeno-dashboard :is(.learning-material-loading,.learning-material-error-state,.learning-material-empty.large,.learning-material-not-found,.feature-empty.large,.activity-empty,.doing-empty,.workout-empty-state) strong,
+.zeno-dashboard :is(.learning-material-loading,.learning-material-error-state,.learning-material-empty.large,.learning-material-not-found,.feature-empty.large,.activity-empty,.doing-empty,.workout-empty-state) h1,
+.zeno-dashboard :is(.learning-material-loading,.learning-material-error-state,.learning-material-empty.large,.learning-material-not-found,.feature-empty.large,.activity-empty,.doing-empty,.workout-empty-state) h2 { color: var(--text-primary); }
+.zeno-dashboard :is(.learning-material-error-state,.learning-material-not-found,.feature-empty.large,.activity-empty,.doing-empty,.workout-empty-state) p,
+.zeno-dashboard .learning-material-loading small { color: var(--text-secondary); }
+
+/* Forms, calendars, editors, and controls stay dense even when panels are soft. */
+.zeno-dashboard :is(input,select,textarea) {
+  border-color: var(--border);
+  border-radius: 12px;
+  color: var(--text-primary);
+  background: var(--control-bg);
+}
+.zeno-dashboard :is(input,select,textarea):hover { border-color: var(--glass-border-strong); }
+.zeno-dashboard :is(input,select,textarea):focus,
+.zeno-dashboard :is(input,select,textarea):focus-visible {
+  border-color: var(--accent);
+  outline: 0;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.zeno-dashboard select,
+.zeno-dashboard option { color-scheme: light; }
+:root[data-theme='dark'] .zeno-dashboard select,
+:root[data-theme='dark'] .zeno-dashboard option { color-scheme: dark; }
+.zeno-dashboard :is(.calendar-nav,.today-button,.feature-button,.feature-icon-button,.doing-secondary-button,.doing-icon-button,.doing-complete-button,.workout-primary,.learning-item-submit,.learning-material-back,.topic-open,.settings-save,.spending-action,.markdown-toolbar button,.journal-history-controls button) {
+  min-height: 42px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  background: var(--surface-secondary);
+  box-shadow: none;
+  transition: color .2s ease, background-color .2s ease, border-color .2s ease, transform .2s ease;
+}
+.zeno-dashboard :is(.calendar-nav,.today-button,.feature-button,.feature-icon-button,.doing-secondary-button,.doing-icon-button,.doing-complete-button,.workout-primary,.learning-item-submit,.learning-material-back,.topic-open,.settings-save,.spending-action,.markdown-toolbar button,.journal-history-controls button):hover {
+  color: var(--text-primary);
+  border-color: var(--accent);
+  background: var(--surface-hover);
+}
+.zeno-dashboard :is(.feature-button.primary,.doing-primary-button,.learning-form button,.settings-save,.workout-primary,.learning-item-submit,.topic-open):not(:disabled) {
+  color: #202820;
+  border-color: #BFD96A;
+  background: var(--primary);
+  box-shadow: 0 8px 20px rgb(91 112 39 / .14);
+}
+.zeno-dashboard :is(.feature-button.primary,.doing-primary-button,.learning-form button,.settings-save,.workout-primary,.learning-item-submit,.topic-open):not(:disabled):hover {
+  color: #202820;
+  border-color: #B4CF5D;
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+.zeno-dashboard :is(button,a,input,select,textarea):focus-visible,
+.delete-popover :is(button,a,input,select,textarea):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 58%, transparent);
+  outline-offset: 3px;
+}
+.zeno-dashboard .calendar-day {
+  border-radius: 12px;
+  color: var(--text-secondary);
+}
+.zeno-dashboard .calendar-day:hover { border-color: var(--accent); background: var(--surface-hover); }
+.zeno-dashboard .calendar-day.selected {
+  color: #202820;
+  border-color: #BFD96A;
+  background: var(--primary);
+  box-shadow: none;
+}
+.zeno-dashboard .calendar-day.today:not(.selected) { color: var(--accent); border-color: var(--accent); }
+.zeno-dashboard .calendar-day i,
+.zeno-dashboard .legend-progress { color: var(--info); background: var(--info-bg); }
+.zeno-dashboard .calendar-day.all-completed { color: var(--success); border-color: var(--success); background: var(--success-bg); }
+.zeno-dashboard .lifestyle-tabs,
+.zeno-dashboard .journal-archive-toolbar,
+.zeno-dashboard .spending-anchor,
+.zeno-dashboard .doing-command-bar,
+.zeno-dashboard .workout-material-schedule {
+  border-color: var(--border);
+  border-radius: 18px;
+  background: var(--surface-secondary);
+}
+.zeno-dashboard .lifestyle-tabs > button.active,
+.zeno-dashboard .spending-summary-card.active {
+  color: #202820;
+  border-color: #BFD96A;
+  background: var(--primary);
+}
+.zeno-dashboard .feature-meta span,
+.zeno-dashboard .journal-tags span,
+.zeno-dashboard .spending-category-icon,
+.zeno-dashboard .form-section-title > span,
+.zeno-dashboard .settings-icon {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: var(--info-bg);
+}
+.zeno-dashboard .markdown-body blockquote { background: var(--info-bg); color: var(--text-secondary); }
+.zeno-dashboard .markdown-body code { color: var(--accent); background: var(--info-bg); }
+.zeno-dashboard .markdown-body pre { background: var(--background-secondary); }
+.zeno-dashboard .writer-surface textarea { background: var(--background-secondary); }
+.zeno-dashboard .journal-live-preview { background: var(--surface); }
+.zeno-dashboard .journal-writing.focus-mode { background: var(--surface); }
+.zeno-dashboard .inline-confirm,
+.zeno-dashboard .journal-reason-panel,
+.zeno-dashboard .workout-context-panel {
+  border-color: var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow-raised);
+}
+.zeno-dashboard .feature-icon-button.danger:hover,
+.zeno-dashboard .inline-confirm button.danger,
+.zeno-dashboard .spending-action.danger:hover {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--border));
+  background: var(--danger-bg);
+}
+.zeno-dashboard :is(.auth-alert.error,.learning-feedback.incorrect,.learning-progress-error,.workout-material-error,.panel-form-error) {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 48%, var(--border));
+  background: var(--danger-bg);
+}
+.zeno-dashboard :is(.auth-alert.success,.learning-feedback.correct,.mastery-panel.saved) {
+  color: var(--success);
+  border-color: color-mix(in srgb, var(--success) 48%, var(--border));
+  background: var(--success-bg);
+}
+
+/* The delete confirmation is rendered beside #app, so it owns its own tokens. */
+.delete-popover-backdrop { background: transparent; }
+.delete-popover {
+  border-color: var(--border);
+  border-radius: 18px;
+  color: var(--text-primary);
+  background: var(--surface);
+  box-shadow: var(--shadow-overlay);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.delete-popover strong { color: var(--text-primary); }
+.delete-popover > span { color: var(--text-secondary); }
+.delete-popover button {
+  min-height: 40px;
+  border-color: var(--border);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  background: var(--surface-secondary);
+}
+.delete-popover button:hover { color: var(--text-primary); border-color: var(--accent); background: var(--surface-hover); }
+.delete-popover .delete-confirm { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 42%, var(--border)); background: var(--danger-bg); }
+
+/* Orbit Command keeps its geometry, docking, focus lifecycle, and hit areas. */
+.orbit-trigger {
+  min-height: 58px;
+  border-color: #40503F;
+  border-radius: 999px;
+  color: #F5F4ED;
+  background: var(--orbit-charcoal);
+  box-shadow: 0 12px 30px rgb(12 19 11 / .22);
+}
+.orbit-trigger:hover { background: #344034; }
+.orbit-trigger-icon { color: var(--orbit-active); }
+.orbit-trigger-key { color: var(--orbit-muted); }
+.orbit-overlay { background: transparent; }
+.orbit-backdrop {
+  background: rgb(32 40 32 / .72);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.orbit-segment { color: var(--orbit-text); }
+.orbit-shape path { fill: var(--orbit-navy); stroke: var(--orbit-line); }
+.orbit-segment:hover .orbit-shape path { fill: var(--orbit-navy-raised); }
+.orbit-segment.active { color: #202820; }
+.orbit-segment.active .orbit-shape path { fill: var(--orbit-active); stroke: #BFD96A; }
+.orbit-segment:focus-visible .orbit-shape path { stroke: var(--accent); }
+.orbit-center { border-color: var(--orbit-line); color: var(--orbit-text); background: var(--orbit-charcoal); }
+.orbit-center-action:hover { background: #344034; }
+.orbit-pagination button { border-color: var(--orbit-line); border-radius: 999px; color: var(--orbit-text); background: var(--orbit-charcoal); }
+.orbit-pagination span { color: var(--orbit-text); }
+.orbit-trigger:focus-visible,
+.orbit-center-action:focus-visible,
+.orbit-pagination button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+
+/* Entry motion is opt-in from main.ts and therefore does not replay on rerender. */
+.zeno-dashboard[data-playground-entry='enter'] .page-heading,
+.zeno-dashboard[data-playground-entry='enter'] .metrics,
+.zeno-dashboard[data-playground-entry='enter'] .content > .learning-layout,
+.zeno-dashboard[data-playground-entry='enter'] .content > .lifestyle-panel,
+.zeno-dashboard[data-playground-entry='enter'] .content > .settings-grid,
+.zeno-dashboard[data-playground-entry='enter'] .content > .learning-materials,
+.zeno-dashboard[data-playground-entry='enter'] .content > .workout-shell {
+  animation: zeno-dashboard-enter .34s cubic-bezier(.2,.78,.2,1) both;
+}
+.zeno-dashboard[data-playground-entry='enter'] .metrics { animation-delay: .05s; }
+@keyframes zeno-dashboard-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 980px) {
+  .zeno-dashboard .metric-card.featured,
+  .zeno-dashboard .activity-summary .metric-card:first-child { grid-column: span 12; }
+  .zeno-dashboard .metric-card.compact,
+  .zeno-dashboard .activity-summary .metric-card:not(:first-child) { grid-column: span 6; }
+}
+@media (max-width: 800px) {
+  .zeno-dashboard { --dashboard-gap: 10px; }
+  .zeno-dashboard .topbar { top: 10px; min-height: 58px; padding: 8px 12px; border-radius: 18px; }
+  .zeno-dashboard .content { padding: 32px 10px 128px; }
+  .zeno-dashboard .page-heading { align-items: flex-start; flex-direction: column; margin-bottom: 24px; padding-right: 44px; }
+  .zeno-dashboard .connection { align-self: flex-start; }
+  .zeno-dashboard .section-toolbar { align-items: stretch; flex-direction: column; }
+  .zeno-dashboard .toolbar-controls { width: 100%; flex-wrap: wrap; }
+  .zeno-dashboard .search { flex: 1; width: auto; min-width: 200px; }
+  .zeno-dashboard .entry-detail { grid-template-columns: 1fr; gap: 14px; padding: 18px 42px 22px; }
+}
+@media (max-width: 640px) {
+  .zeno-dashboard .top-actions { gap: 5px; }
+  .zeno-dashboard .api-status { width: 38px; padding: 0; justify-content: center; font-size: 0; }
+  .zeno-dashboard .api-status i { width: 7px; height: 7px; }
+  .zeno-dashboard .theme-toggle { width: 42px; padding: 0; justify-content: center; }
+  .zeno-dashboard .theme-toggle > span:last-child,
+  .zeno-dashboard .top-actions > .avatar { display: none; }
+  .zeno-dashboard .crumb span,
+  .zeno-dashboard .crumb b { display: none; }
+  .zeno-dashboard .crumb strong { max-width: 120px; }
+  .zeno-dashboard .metric-card.compact,
+  .zeno-dashboard .activity-summary .metric-card:not(:first-child) { grid-column: span 12; }
+  .zeno-dashboard .toolbar-controls { display: grid; grid-template-columns: 1fr; }
+  .zeno-dashboard .search { width: 100%; min-width: 0; }
+  .zeno-dashboard .filters { width: 100%; }
+  .zeno-dashboard .filter { flex: 1; }
+  .zeno-dashboard .entry-header { grid-template-columns: 28px minmax(0, 1fr) 20px; gap: 8px; padding: 11px 12px; }
+  .zeno-dashboard .entry-status { display: none; }
+  .zeno-dashboard .entry-excerpt { max-width: 52vw; }
+  .zeno-dashboard .page-heading::after { right: 0; font-size: 28px; }
+}
+@media (max-width: 460px) {
+  .zeno-dashboard .content { padding-inline: 4px; }
+  .zeno-dashboard .topbar { margin-inline: 0; }
+  .zeno-dashboard .metric-card { padding: 18px; }
+  .zeno-dashboard .entry-detail { padding-inline: 30px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .zeno-dashboard *,
+  .zeno-dashboard *::before,
+  .zeno-dashboard *::after,
+  .delete-popover,
+  .orbit-trigger,
+  .orbit-backdrop,
+  .orbit-dialog,
+  .orbit-segment {
+    animation: none !important;
+    transition-duration: .001ms !important;
+  }
+  .zeno-dashboard[data-playground-entry='enter'] :is(.page-heading,.metrics,.learning-layout,.lifestyle-panel,.settings-grid,.learning-materials,.workout-shell) {
+    opacity: 1;
+    transform: none;
+  }
+  .zeno-dashboard :is(button,a,input,select,textarea):hover { transform: none; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .orbit-backdrop { background: rgb(32 40 32 / .9); }
+}
