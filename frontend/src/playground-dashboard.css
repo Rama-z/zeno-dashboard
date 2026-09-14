@@ -24,6 +24,32 @@
   --orbit-selected: #40503F;
 }
 
+/* Aurora Ribbon artwork tokens stay separate from semantic status colors. */
+:root[data-theme='light'] {
+  --aurora-lime: #BFD878;
+  --aurora-blue: #9BAFEA;
+  --aurora-cyan: #A8D5C9;
+  --aurora-center: rgb(245 244 237 / .62);
+  --aurora-core-opacity: .42;
+  --aurora-cloud-opacity: .22;
+  --aurora-core-blur: 34px;
+  --aurora-cloud-blur: 76px;
+  --aurora-core-width: 118;
+  --aurora-cloud-width: 246;
+}
+:root[data-theme='dark'] {
+  --aurora-lime: #B8D85E;
+  --aurora-blue: #7896EA;
+  --aurora-cyan: #65BBAE;
+  --aurora-center: rgb(32 40 32 / .64);
+  --aurora-core-opacity: .35;
+  --aurora-cloud-opacity: .20;
+  --aurora-core-blur: 38px;
+  --aurora-cloud-blur: 82px;
+  --aurora-core-width: 126;
+  --aurora-cloud-width: 260;
+}
+
 html:has(.zeno-dashboard),
 body:has(.zeno-dashboard) {
   background: var(--background);
@@ -56,6 +82,46 @@ body:has(.zeno-dashboard) {
   z-index: 1;
   width: 100%;
   min-width: 0;
+}
+.zeno-dashboard .aurora-ribbon {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+}
+.zeno-dashboard .aurora-ribbon svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.zeno-dashboard .aurora-ribbon path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.zeno-dashboard .aurora-ribbon-cloud {
+  stroke-width: var(--aurora-cloud-width);
+  opacity: var(--aurora-cloud-opacity);
+  filter: blur(var(--aurora-cloud-blur));
+}
+.zeno-dashboard .aurora-ribbon-core {
+  stroke-width: var(--aurora-core-width);
+  opacity: var(--aurora-core-opacity);
+  filter: blur(var(--aurora-core-blur));
+}
+.zeno-dashboard .aurora-ribbon .aurora-lime { stroke: var(--aurora-lime); }
+.zeno-dashboard .aurora-ribbon .aurora-blue { stroke: var(--aurora-blue); }
+.zeno-dashboard .aurora-ribbon .aurora-cyan { stroke: var(--aurora-cyan); }
+.zeno-dashboard .aurora-ribbon::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 48%, var(--aurora-center) 0%, color-mix(in srgb, var(--aurora-center) 72%, transparent) 43%, transparent 76%);
 }
 .zeno-dashboard .topbar {
   position: sticky;
@@ -654,6 +720,12 @@ body:has(.zeno-dashboard) {
 }
 @media (max-width: 800px) {
   .zeno-dashboard { --dashboard-gap: 10px; }
+  .zeno-dashboard .aurora-ribbon {
+    --aurora-core-opacity: .28;
+    --aurora-cloud-opacity: .16;
+    --aurora-core-blur: 30px;
+    --aurora-cloud-blur: 62px;
+  }
   .zeno-dashboard .topbar { top: 10px; min-height: 58px; padding: 8px 12px; border-radius: 18px; }
   .zeno-dashboard .content { padding: 32px 10px 128px; }
   .zeno-dashboard .page-heading { align-items: flex-start; flex-direction: column; margin-bottom: 24px; padding-right: 44px; }
@@ -664,6 +736,12 @@ body:has(.zeno-dashboard) {
   .zeno-dashboard .entry-detail { grid-template-columns: 1fr; gap: 14px; padding: 18px 42px 22px; }
 }
 @media (max-width: 640px) {
+  .zeno-dashboard .aurora-ribbon {
+    --aurora-core-opacity: .23;
+    --aurora-cloud-opacity: .13;
+    --aurora-core-blur: 26px;
+    --aurora-cloud-blur: 54px;
+  }
   .zeno-dashboard .top-actions { gap: 5px; }
   .zeno-dashboard .api-status { width: 38px; padding: 0; justify-content: center; font-size: 0; }
   .zeno-dashboard .api-status i { width: 7px; height: 7px; }
@@ -707,7 +785,9 @@ body:has(.zeno-dashboard) {
     transform: none;
   }
   .zeno-dashboard :is(button,a,input,select,textarea):hover { transform: none; }
+  .zeno-dashboard .aurora-ribbon { animation: none !important; }
 }
 @media (prefers-reduced-transparency: reduce) {
   .orbit-backdrop { background: rgb(32 40 32 / .9); }
+  .zeno-dashboard .aurora-ribbon { opacity: .42; }
 }

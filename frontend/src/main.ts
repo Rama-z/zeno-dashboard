@@ -840,6 +840,18 @@ function render() {
   app.innerHTML = `
     <a class="skip-link" href="#dashboard-content">Skip to dashboard content</a>
     <div class="shell zeno-dashboard" data-playground-entry="${dashboardEntryPending ? 'enter' : 'steady'}">
+      <div class="aurora-ribbon" aria-hidden="true">
+        <svg viewBox="0 0 1600 1000" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+          <path class="aurora-ribbon-cloud aurora-lime" d="M -190,-90 C 250,25 240,208 78,382 C -58,530 36,685 300,770" />
+          <path class="aurora-ribbon-cloud aurora-blue" d="M 1715,-120 C 1410,45 1372,208 1510,332 C 1610,425 1435,560 1225,598" />
+          <path class="aurora-ribbon-cloud aurora-cyan" d="M -170,930 C 150,742 350,775 430,925 C 488,1030 220,1085 -170,1110" />
+          <path class="aurora-ribbon-cloud aurora-lime" d="M 1690,250 C 1452,360 1418,570 1545,704 C 1615,790 1412,925 1150,1045" />
+          <path class="aurora-ribbon-core aurora-lime" d="M -190,-90 C 250,25 240,208 78,382 C -58,530 36,685 300,770" />
+          <path class="aurora-ribbon-core aurora-blue" d="M 1715,-120 C 1410,45 1372,208 1510,332 C 1610,425 1435,560 1225,598" />
+          <path class="aurora-ribbon-core aurora-cyan" d="M -170,930 C 150,742 350,775 430,925 C 488,1030 220,1085 -170,1110" />
+          <path class="aurora-ribbon-core aurora-lime" d="M 1690,250 C 1452,360 1418,570 1545,704 C 1615,790 1412,925 1150,1045" />
+        </svg>
+      </div>
       <main class="main">
         <header class="topbar"><div class="crumb"><span>Workspace</span><b>/</b><strong>${pageLabel}</strong></div><div class="top-actions"><span class="api-status ${backendOnline ? 'connected' : 'offline'}" title="${escapeHtml(backendError || 'Zeno API connected')}"><i></i>${backendOnline ? 'API' : 'Offline'}</span><button class="icon-button" type="button" data-global-search title="Search session log" aria-label="Search session log">${icon('search')}</button><button class="theme-toggle" type="button" id="theme-toggle" title="Switch to ${theme === 'dark' ? 'light' : 'dark'} mode" aria-label="Switch to ${theme === 'dark' ? 'light' : 'dark'} mode"><span class="theme-icon">${theme === 'dark' ? icon('sun') : icon('moon')}</span><span>${theme === 'dark' ? 'Light' : 'Dark'}</span></button><button class="avatar" type="button" data-page="profile" title="${escapeHtml(currentUser.displayName)}" aria-label="Open profile">${escapeHtml(currentUser.displayName.slice(0, 1).toUpperCase())}</button></div></header>
         <section class="content" id="dashboard-content" tabindex="-1">

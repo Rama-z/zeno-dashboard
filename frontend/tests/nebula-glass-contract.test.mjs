@@ -54,6 +54,24 @@ test('Playground uses solid warm surfaces and central semantic states', () => {
   assert.doesNotMatch(playground, /backdrop-filter:\s*blur/);
 });
 
+test('Aurora Ribbon is a shared, non-interactive, edge-framed dashboard layer', () => {
+  assert.match(main, /class="aurora-ribbon" aria-hidden="true"/);
+  assert.match(main, /<svg viewBox="0 0 1600 1000" preserveAspectRatio="none"/);
+  for (const token of ['--aurora-lime', '--aurora-blue', '--aurora-cyan', '--aurora-center', '--aurora-core-opacity', '--aurora-cloud-opacity', '--aurora-core-blur', '--aurora-cloud-blur']) {
+    assert.match(playground, new RegExp(`${token.replaceAll('-', '\\-')}\\s*:`), `${token} missing`);
+  }
+  assert.match(playground, /\.zeno-dashboard \.aurora-ribbon\s*\{[\s\S]*position:\s*fixed[\s\S]*pointer-events:\s*none/);
+  assert.match(playground, /\.zeno-dashboard \.aurora-ribbon svg\s*\{[\s\S]*width:\s*100%[\s\S]*height:\s*100%/);
+  assert.match(playground, /\.zeno-dashboard \.aurora-ribbon-core\s*\{[\s\S]*filter:\s*blur\(var\(--aurora-core-blur\)\)/);
+  assert.match(playground, /\.zeno-dashboard \.aurora-ribbon-cloud\s*\{[\s\S]*filter:\s*blur\(var\(--aurora-cloud-blur\)\)/);
+  assert.match(playground, /\.zeno-dashboard \.aurora-ribbon::after[\s\S]*var\(--aurora-center\)/);
+  assert.match(playground, /\.zeno-dashboard > \.main[\s\S]*z-index:\s*1/);
+  assert.doesNotMatch(playground, /\.aurora-ribbon[^{]*\{[^}]*backdrop-filter/);
+  assert.match(playground, /@media \(max-width: 640px\)[\s\S]*\.zeno-dashboard \.aurora-ribbon[\s\S]*--aurora-core-opacity/);
+  assert.match(playground, /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.zeno-dashboard \.aurora-ribbon/);
+  assert.match(playground, /@media \(prefers-reduced-transparency: reduce\)[\s\S]*\.zeno-dashboard \.aurora-ribbon/);
+});
+
 test('Playground removes glass behavior from ordinary feature cards without weakening status states', () => {
   for (const css of [playground, lifestyle, learningMaterials, workoutMaterials]) {
     assert.doesNotMatch(css, /\.lifestyle-panel[^{}]*backdrop-filter|\.journal-card[^{}]*backdrop-filter|\.spending-summary-card[^{}]*backdrop-filter|\.learning-material-card[^{}]*backdrop-filter|\.workout-material-card[^{}]*backdrop-filter/s);

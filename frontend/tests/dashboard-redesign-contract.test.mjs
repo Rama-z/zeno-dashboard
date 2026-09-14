@@ -24,7 +24,8 @@ test('dashboard redesign keeps functionality while replacing generic shell patte
   assert.match(main, /data-global-search/, 'topbar search action must be functional rather than decorative');
   assert.match(main, /metric-card featured/, 'overview metrics must have an intentional asymmetric hierarchy');
   assert.match(main, /ph ph-/, 'dashboard icons must use the Phosphor family');
-  assert.doesNotMatch(main.replace(/<svg class="orbit-shape"[\s\S]*?<\/svg>/g, ''), /<svg\b/, 'dashboard must not keep hand-rolled SVG icons');
+  const nonDecorativeMarkup = main.replace(/<div class="aurora-ribbon"[\s\S]*?<\/div>/g, '').replace(/<svg class="orbit-shape"[\s\S]*?<\/svg>/g, '');
+  assert.doesNotMatch(nonDecorativeMarkup, /<svg\b/, 'dashboard must not keep hand-rolled SVG icons');
 
   assert.match(packageJson, /"@phosphor-icons\/web"/, 'Phosphor web icons dependency is missing');
   assert.match(appStyles, /@phosphor-icons\/web/, 'dashboard style chunk must load Phosphor icons');
