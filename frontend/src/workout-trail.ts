@@ -333,6 +333,10 @@ export function currentWorkoutTrailDate() {
   return selectedDate;
 }
 
+export function workoutOverviewSessions() {
+  return sessions.map((session) => ({ ...session, movements: [...session.movements] }));
+}
+
 export async function scheduleWorkoutMaterial(input: WorkoutInput) {
   const material = mobilityMaterials.find((entry) => entry.id === input.materialId);
   const draft = emptyMovementDraft('mobility');

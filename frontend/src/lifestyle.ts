@@ -222,6 +222,13 @@ export function lifestyleRecordCount(page: LifestylePage) {
   return spending.length;
 }
 
+export function lifestyleOverviewSnapshot() {
+  return {
+    journals: journals.map((entry) => ({ ...entry })),
+    spending: spending.map((entry) => ({ ...entry })),
+  };
+}
+
 function escapeHtml(value: string) {
   return value.replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]!));
 }

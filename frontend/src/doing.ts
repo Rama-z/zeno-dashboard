@@ -143,6 +143,10 @@ export async function syncDoingData() {
   saveEntries();
 }
 
+export function doingOverviewEntries() {
+  return Object.values(entriesByDate).flat().map((entry) => ({ ...entry }));
+}
+
 function monthCells() {
   const year = visibleMonth.getFullYear();
   const month = visibleMonth.getMonth();

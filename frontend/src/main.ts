@@ -6,8 +6,8 @@ import './landing.css';
 import { sessionLog as initialLogs, sourceFile, generatedAt } from './generated-log';
 import { api, ApiError, type ActivityEvent, type ApiLog, type AuthUser, type SettingsResponse } from './api';
 import { changeLogUpdates, type ChangeLogUpdate } from './change-log';
-import { bindLifestyleEvents, currentWorkoutDate, isLifestylePage, renderLifestylePage, scheduleWorkout, syncLifestyleData, syncLifestyleRoute } from './lifestyle';
-import { bindDoingEvents, renderDoingPage, syncDoingData } from './doing';
+import { bindLifestyleEvents, currentWorkoutDate, isLifestylePage, lifestyleOverviewSnapshot, renderLifestylePage, scheduleWorkout, syncLifestyleData, syncLifestyleRoute } from './lifestyle';
+import { bindDoingEvents, doingOverviewEntries, renderDoingPage, syncDoingData } from './doing';
 import { authPath, authViewFromPath, bindAuthEvents, bindProfileEvents, renderAuthScreen, renderProfilePage, type AuthScreenState, type AuthView, type FontProfileOption } from './auth';
 import { bindLandingEvents, renderLandingPage } from './landing';
 import { bindLearningMaterialsEvents, ensureLearningMaterialData, renderLearningMaterials as learningMaterials } from './learning-materials';
@@ -15,6 +15,8 @@ import { bindWorkoutMaterialEvents, renderWorkoutMaterials } from './workout-mat
 import { isLearningMaterialRoute, isLearningRoute, isWorkoutMaterialsRoute, pageForRoute, pagePaths, resolveAppRoute, type AppRoute, type Page } from './app-route';
 import { activeOrbitLocation, chooseOrbitTriggerDock, clampOrbitTriggerPosition, orbitDialogSize, orbitSegmentGeometry, paginateOrbitItems, placeOrbitDialog, visibleOrbitNavigation, type OrbitDestination, type OrbitDialogPlacement, type OrbitNavigationItem, type OrbitPoint, type OrbitRole } from './orbit-navigation';
 import { splitActivityActorGroups } from './activity-grouping';
+import { calculateOverviewSummary } from './overview-summary';
+import { workoutOverviewSessions } from './workout-trail';
 
 type Filter = 'all' | 'success' | 'info';
 type ChangeLogPeriod = 'all' | 'today' | 'yesterday' | 'week' | 'older';
@@ -48,6 +50,13 @@ let expandedActivityEvents = new Set<string>();
 let backendSettings: SettingsResponse = { workspaceName: 'Default workspace', sourceFile };
 let backendOnline = false;
 let backendError = '';
+type OverviewDataState = 'loading' | 'ready' | 'partial' | 'error';
+let overviewDataState: OverviewDataState = 'loading';
+type OverviewSource = 'doing' | 'learning' | 'lifestyle' | 'activity' | 'session';
+const overviewFailedSources = new Set<OverviewSource>();
+const overviewMotionStorageKey = 'zeno-overview-motion-v1';
+let overviewMotionEnabled = localStorage.getItem(overviewMotionStorageKey) !== 'off';
+let disposeOverviewMotion: (() => void) | undefined;
 let currentUser: AuthUser | null = null;
 let authChecked = false;
 let authView: AuthView = authViewFromPath(window.location.pathname);
@@ -115,7 +124,7 @@ function applyTheme() {
 }
 
 const iconNames: Record<string, string> = {
-  grid: 'squares-four', activity: 'pulse', settings: 'sliders-horizontal', profile: 'user-circle', users: 'users-three', search: 'magnifying-glass', arrow: 'arrow-up-right', check: 'check', info: 'info', chevron: 'caret-down', file: 'notebook', doing: 'check-square', calendar: 'calendar-dots', workout: 'barbell', journal: 'note-pencil', spending: 'wallet', sun: 'sun', moon: 'moon', collapse: 'caret-left', expand: 'caret-right', edit: 'pencil-simple', trash: 'trash', compass: 'compass-rose', close: 'x', back: 'arrow-left', next: 'arrow-right',
+  grid: 'squares-four', activity: 'pulse', settings: 'sliders-horizontal', profile: 'user-circle', users: 'users-three', search: 'magnifying-glass', arrow: 'arrow-up-right', check: 'check', info: 'info', chevron: 'caret-down', file: 'notebook', doing: 'check-square', calendar: 'calendar-dots', workout: 'barbell', journal: 'note-pencil', spending: 'wallet', sun: 'sun', moon: 'moon', pause: 'pause', play: 'play', collapse: 'caret-left', expand: 'caret-right', edit: 'pencil-simple', trash: 'trash', compass: 'compass-rose', close: 'x', back: 'arrow-left', next: 'arrow-right',
 };
 const icon = (name: string) => `<span class="ph ph-${iconNames[name] ?? 'circle'}" aria-hidden="true"></span>`;
 
@@ -175,14 +184,14 @@ function periodForUpdate(occurredAt: string, reference = new Date()): Exclude<Ch
   return 'older';
 }
 
-function renderSessionEntriesContent(visible: { log: ApiLog; index: number }[], successCount: number) {
+function renderSessionEntriesContent(visible: { log: ApiLog; index: number }[], successCount: number, sourceLabel = 'Served by Zeno API') {
   return `
           <div class="metrics"><div class="metric-card featured accent" data-metric="verified"><span>Verified outcomes</span><strong>${successCount}<em>/${logs.length}</em></strong><small>${icon('check')} Positive signals in the active source</small></div><div class="metric-card compact" data-metric="entries"><span>Total entries</span><strong>${logs.length}</strong><small>Source-backed sections</small></div><div class="metric-card compact" data-metric="coverage"><span>Coverage</span><strong>100<em>%</em></strong><small>Updated ${new Date(runtimeGeneratedAt).toLocaleDateString('id-ID')}</small></div></div>
           <div class="section-toolbar"><div><h2>Session log</h2><span class="result-count">${visible.length} of ${logs.length} entries visible</span></div><div class="toolbar-controls"><label class="search" aria-label="Search session entries"><span>${icon('search')}</span><input id="search" placeholder="Search entries" value="${escapeHtml(query)}" /></label><div class="filters" aria-label="Filter session entries"><button class="filter ${filter === 'all' ? 'selected' : ''}" data-filter="all" aria-pressed="${filter === 'all'}">All</button><button class="filter ${filter === 'success' ? 'selected' : ''}" data-filter="success" aria-pressed="${filter === 'success'}">Verified</button><button class="filter ${filter === 'info' ? 'selected' : ''}" data-filter="info" aria-pressed="${filter === 'info'}">Info</button></div></div></div>
           <div class="log-list">${visible.length ? visible.map(({ log, index }) => `
             <article class="log-entry ${expanded.has(index) ? 'open' : ''}"><button class="entry-header" data-expand="${index}"><span class="entry-number">${String(index + 1).padStart(2, '0')}</span><span class="entry-main"><span class="entry-title">${escapeHtml(log.title.replace(/^\d+\.\s*/, ''))}</span><span class="entry-excerpt">${escapeHtml(log.excerpt)}</span></span><span class="entry-status ${log.status}"><i>${log.status === 'success' ? icon('check') : icon('info')}</i>${log.status === 'success' ? 'Verified' : 'Reference'}</span><span class="entry-chevron">${icon('chevron')}</span></button>${expanded.has(index) ? `<div class="entry-detail"><div class="question"><span>QUESTION</span><p>${renderMarkdown(log.question)}</p></div><div class="answer"><span>ANSWER</span><div class="answer-body"><p>${renderMarkdown(log.answer)}</p></div></div></div>` : ''}</article>
           `).join('') : '<div class="empty">No entries match your search.</div>'}</div>
-          <footer class="footnote">Reading from <code>${escapeHtml(runtimeSourceFile)}</code><span>•</span> Served by Zeno API</footer>`;
+          <footer class="footnote">Reading from <code>${escapeHtml(runtimeSourceFile)}</code><span>•</span> ${escapeHtml(sourceLabel)}</footer>`;
 }
 
 function renderChangeLogUpdates() {
@@ -298,6 +307,63 @@ function renderActivityTrail(user: AuthUser) {
             }).join('')}</div></section>`;
           }).join('') : '<div class="activity-empty"><span class="activity-day-icon">'+icon('activity')+'</span><strong>Tidak ada aktivitas</strong><p>Ubah pencarian atau filter untuk melihat event lain.</p></div>'}</div>
           ${actorGroups.length > activityVisibleGroups ? `<button class="activity-load-more" data-activity-load-more><span></span>Lihat aktivitas sebelumnya${icon('chevron')}</button>` : ''}`;
+}
+
+function formatOverviewCurrency(value: number) {
+  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(value);
+}
+
+function relativeOverviewTime(value: string, reference = new Date()) {
+  const difference = Math.max(0, reference.getTime() - new Date(value).getTime());
+  const minutes = Math.floor(difference / 60000);
+  if (minutes < 1) return 'Baru saja';
+  if (minutes < 60) return `${minutes} menit lalu`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} jam lalu`;
+  const days = Math.floor(hours / 24);
+  return days === 1 ? 'Kemarin' : `${days} hari lalu`;
+}
+
+function renderOverviewPage(user: AuthUser, visible: { log: ApiLog; index: number }[], successCount: number) {
+  const now = new Date();
+  const lifestyle = lifestyleOverviewSnapshot();
+  const learning = Object.entries(learningEntries).flatMap(([date, entries]) => entries.map((entry) => ({ ...entry, date })));
+  const summary = calculateOverviewSummary({ now, doing: doingOverviewEntries(), learning, workouts: workoutOverviewSessions(), journals: lifestyle.journals, spending: lifestyle.spending });
+  const ready = overviewDataState === 'ready' || overviewDataState === 'partial';
+  const sourceReady = (source: OverviewSource) => ready && !overviewFailedSources.has(source);
+  const value = (content: string | number, source: OverviewSource) => sourceReady(source) ? String(content) : overviewDataState === 'loading' ? '…' : '—';
+  const helper = (content: string, source: OverviewSource) => sourceReady(source) ? content : overviewDataState === 'loading' ? 'Menyinkronkan data akun' : 'Sumber data belum tersedia';
+  const greeting = now.getHours() < 11 ? 'Selamat pagi' : now.getHours() < 15 ? 'Selamat siang' : now.getHours() < 19 ? 'Selamat sore' : 'Selamat malam';
+  const personalActivity = [...activityEvents].filter((entry) => entry.userId === user.id).sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)).slice(0, 5);
+  const recentChanges = [...changeLogEntries].sort((a, b) => Date.parse(b.occurredAt) - Date.parse(a.occurredAt)).slice(0, 3);
+  const modules = [
+    { page: 'doing', icon: 'doing', label: 'Doing', copy: 'Ubah ide menjadi langkah yang bisa diselesaikan.', metric: value(summary.doing.active, 'doing'), unit: 'task aktif', note: helper(`${summary.doing.blocked} blocked · ${summary.doing.completedToday} selesai hari ini`, 'doing') },
+    { page: 'learning', icon: 'calendar', label: 'Learning', copy: 'Catat pelajaran dan lanjutkan material berikutnya.', metric: value(summary.learning.thisWeek, 'learning'), unit: 'catatan minggu ini', note: helper(`${summary.learning.completedThisWeek} sudah selesai`, 'learning') },
+    { page: 'workout', icon: 'workout', label: 'Workout', copy: 'Rencanakan sesi dan ikuti setiap gerakan.', metric: value(summary.workout.completedThisWeek, 'lifestyle'), unit: 'sesi selesai', note: helper(`${summary.workout.plannedThisWeek} terencana minggu ini`, 'lifestyle') },
+    { page: 'journaling', icon: 'journal', label: 'Journaling', copy: 'Simpan pikiran, cerita, dan perubahan sudut pandang.', metric: value(summary.journaling.thisMonth, 'lifestyle'), unit: 'catatan bulan ini', note: helper(summary.journaling.latest ? `Terakhir ${relativeOverviewTime(summary.journaling.latest.updatedAt, now)}` : 'Belum ada catatan', 'lifestyle') },
+    { page: 'spending', icon: 'spending', label: 'Spending', copy: 'Kenali arus pengeluaran tanpa kehilangan konteks.', metric: sourceReady('lifestyle') ? formatOverviewCurrency(summary.spending.thisMonth) : value('', 'lifestyle'), unit: 'bulan ini', note: helper(`${summary.spending.transactions} transaksi`, 'lifestyle') },
+  ];
+  const focusItems = ready ? [
+    ...(sourceReady('doing') ? summary.today.priorityDoing.map((entry) => `<button type="button" class="overview-focus-row" data-overview-route="/doing"><span class="overview-focus-icon">${icon('doing')}</span><span><small>DOING · ${escapeHtml(entry.priority.toUpperCase())}</small><strong>${escapeHtml(entry.title)}</strong><em>${entry.timeBlockStart ? `${escapeHtml(entry.timeBlockStart)} · ` : ''}${entry.estimatedMinutes ? `${entry.estimatedMinutes} menit · ` : ''}${escapeHtml(entry.energyFocus ?? 'focus')}</em></span>${icon('arrow')}</button>`) : []),
+    ...(sourceReady('lifestyle') && summary.today.workout ? [`<button type="button" class="overview-focus-row" data-overview-route="/workout?date=${summary.range.today}"><span class="overview-focus-icon">${icon('workout')}</span><span><small>WORKOUT · ${escapeHtml(summary.today.workout.status.toUpperCase())}</small><strong>${escapeHtml(summary.today.workout.name)}</strong><em>${summary.today.workout.localTime ? `${escapeHtml(summary.today.workout.localTime)} · ` : ''}${summary.today.workout.movements.length} gerakan</em></span>${icon('arrow')}</button>`] : []),
+    ...(sourceReady('learning') ? summary.today.learning.map((entry) => `<button type="button" class="overview-focus-row" data-overview-route="/learning"><span class="overview-focus-icon">${icon('calendar')}</span><span><small>LEARNING · ${entry.completed ? 'SELESAI' : 'HARI INI'}</small><strong>${escapeHtml(entry.title)}</strong><em>${entry.completed ? 'Catatan sudah ditandai selesai' : 'Lanjutkan catatan pembelajaran'}</em></span>${icon('arrow')}</button>`) : []),
+  ].slice(0, 5).join('') : '';
+
+  return `<div class="overview-home ${overviewMotionEnabled ? '' : 'motion-off'}">
+    <section class="overview-hero" data-overview-hero>
+      <div class="overview-hero-copy"><p class="eyebrow">PERSONAL OVERVIEW</p><h1>${greeting}, ${escapeHtml(user.displayName.split(/\s+/)[0] || user.displayName)}.</h1><p class="subheading">Satu pandangan untuk memilih apa yang layak mendapat perhatianmu hari ini.</p><div class="overview-date-line"><span>${now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span><i></i><span>${user.role === 'admin' ? 'Personal admin view' : 'Personal workspace'}</span></div></div>
+      <div class="overview-kinetic" aria-hidden="true"><span class="overview-orbit orbit-a" data-overview-depth=".35"></span><span class="overview-orbit orbit-b" data-overview-depth="-.28"></span><span class="overview-z" data-overview-depth=".7">Z</span><span class="overview-note note-a" data-overview-depth="1">ONE THING AT A TIME</span><span class="overview-note note-b" data-overview-depth="-.8">YOUR PACE · YOUR SPACE</span></div>
+      <button type="button" class="overview-motion-toggle" data-overview-motion aria-pressed="${overviewMotionEnabled}" title="Aktifkan atau nonaktifkan motion dekoratif">${icon(overviewMotionEnabled ? 'pause' : 'next')}<span>Motion ${overviewMotionEnabled ? 'on' : 'off'}</span></button>
+    </section>
+    ${overviewDataState === 'partial' || overviewDataState === 'error' ? `<div class="overview-data-notice" role="status">${icon('info')}<span><strong>${overviewDataState === 'partial' ? 'Sebagian ringkasan belum tersedia.' : 'Ringkasan belum dapat diperbarui.'}</strong> ${escapeHtml(backendError || `Sumber bermasalah: ${[...overviewFailedSources].join(', ')}.`)} Modul lain tetap dapat digunakan.</span></div>` : ''}
+    <section class="overview-glance" aria-label="Ringkasan hari ini"><div><strong>${value(summary.doing.active, 'doing')}</strong><span>task aktif</span></div><div><strong>${value(summary.learning.thisWeek, 'learning')}</strong><span>learning minggu ini</span></div><div><strong>${value(summary.workout.completedThisWeek, 'lifestyle')}</strong><span>workout minggu ini</span></div><div><strong>${sourceReady('lifestyle') ? formatOverviewCurrency(summary.spending.thisMonth) : value('', 'lifestyle')}</strong><span>spending bulan ini</span></div></section>
+    <section class="overview-section"><div class="overview-section-heading"><div><p class="eyebrow">WORKSPACE SNAPSHOT</p><h2>Lima ruang, satu ritme.</h2></div><p>Pilih satu ruang untuk melihat detail lengkap.</p></div><div class="overview-module-grid">${modules.map((module) => `<button type="button" class="overview-module-card overview-${module.page}" data-overview-route="${pagePaths[module.page as Page]}"><span class="overview-card-top"><i>${icon(module.icon)}</i>${icon('arrow')}</span><span><strong>${module.label}</strong><small>${module.copy}</small></span><span class="overview-module-metric"><b>${escapeHtml(module.metric)}</b><em>${module.unit}</em></span><span class="overview-module-note">${escapeHtml(module.note)}</span></button>`).join('')}</div></section>
+    <div class="overview-split"><section class="overview-section overview-focus"><div class="overview-section-heading"><div><p class="eyebrow">TODAY'S FOCUS</p><h2>Mulai dari yang dekat.</h2></div></div><div class="overview-panel">${overviewDataState === 'loading' ? '<div class="overview-empty">Menyusun fokus hari ini…</div>' : overviewDataState === 'error' || (overviewFailedSources.has('doing') && overviewFailedSources.has('learning') && overviewFailedSources.has('lifestyle')) ? '<div class="overview-empty">Fokus belum dapat dimuat. Buka modul untuk melanjutkan.</div>' : focusItems || '<div class="overview-empty"><strong>Belum ada fokus untuk hari ini.</strong><span>Tambahkan task, learning, atau jadwal workout saat kamu siap.</span></div>'}</div></section>
+    <section class="overview-section overview-activity"><div class="overview-section-heading"><div><p class="eyebrow">RECENT ACTIVITY</p><h2>Jejak kecilmu.</h2></div><button type="button" data-overview-route="/activity">Lihat semua ${icon('arrow')}</button></div><div class="overview-panel">${overviewDataState === 'loading' ? '<div class="overview-empty">Memuat aktivitas…</div>' : overviewFailedSources.has('activity') ? '<div class="overview-empty">Aktivitas belum tersedia.</div>' : personalActivity.length ? personalActivity.map((entry) => `<div class="overview-activity-row"><span>${activityEventIcon(entry)}</span><span><strong>${escapeHtml(activityActionLabel(entry))}</strong><small>${escapeHtml(entry.description)}</small></span><time datetime="${escapeHtml(entry.createdAt)}" title="${escapeHtml(new Date(entry.createdAt).toLocaleString('id-ID'))}">${relativeOverviewTime(entry.createdAt, now)}</time></div>`).join('') : '<div class="overview-empty"><strong>Belum ada aktivitas.</strong><span>Aksi pertamamu akan muncul di sini.</span></div>'}</div></section></div>
+    <section class="overview-section overview-quick-actions"><div class="overview-section-heading"><div><p class="eyebrow">QUICK ACTIONS</p><h2>Buat ruang untuk satu hal.</h2></div><p>Aksi membuka form asli pada modul terkait.</p></div><div class="overview-action-list"><button data-overview-action="doing">${icon('doing')}<span>Tambah Doing</span></button><button data-overview-action="learning">${icon('calendar')}<span>Tambah Learning</span></button><button data-overview-action="workout">${icon('workout')}<span>Buat Workout</span></button><button data-overview-route="/journaling?view=write">${icon('journal')}<span>Tulis Journal</span></button><button data-overview-action="spending">${icon('spending')}<span>Catat Spending</span></button></div></section>
+    <section class="overview-section overview-changes"><div class="overview-section-heading"><div><p class="eyebrow">PRODUCT NOTES</p><h2>Zeno juga bertumbuh.</h2></div><button type="button" data-overview-route="/change-log">Change Log ${icon('arrow')}</button></div><div class="overview-change-grid">${recentChanges.length ? recentChanges.map((entry) => `<article><div><span>${escapeHtml(entry.category)}</span><time datetime="${escapeHtml(entry.occurredAt)}">${new Date(entry.occurredAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}</time></div><h3>${escapeHtml(entry.title)}</h3><p>${escapeHtml(entry.description)}</p></article>`).join('') : '<div class="overview-empty">Belum ada catatan perubahan.</div>'}</div></section>
+    <details class="overview-session-log" ${query ? 'open' : ''}><summary><span>${icon('file')}<span><small>SESSION OBSERVABILITY</small><strong>Zeno session log</strong></span></span><span>${logs.length} entries ${icon('chevron')}</span></summary><div class="overview-session-content">${renderSessionEntriesContent(visible, successCount, overviewFailedSources.has('session') ? 'Bundled fallback · API unavailable' : 'Served by Zeno API')}</div></details>
+  </div>`;
 }
 
 function isAuthPath(pathname: string) {
@@ -456,37 +522,58 @@ async function bootstrapAuth() {
 }
 
 async function syncBackend() {
-  try {
-    const [, overview, activity, settings, learning, changeLogs] = await Promise.all([
-      api.health(), api.overview(), api.activity(), api.settings(), api.learning(), api.changeLogs(), syncLifestyleData(), syncDoingData(),
-    ]);
-    logs = overview.entries.map((entry) => ({ ...entry }));
-    runtimeSourceFile = overview.sourceFile;
-    runtimeGeneratedAt = overview.generatedAt;
-    activityEvents = activity.events;
-    backendSettings = settings;
-    if (changeLogs.entries.length) changeLogEntries = changeLogs.entries;
-    let remoteEntries = learning.entries;
-    if (!remoteEntries.length) {
-      const localEntries = Object.entries(learningEntries).flatMap(([date, entries]) => entries.filter((entry) => !entry.id.startsWith('seed-')).map((entry) => ({ date, title: entry.title, note: entry.note, category: entry.category, completed: entry.completed })));
-      if (localEntries.length) {
-        await Promise.all(localEntries.map((entry) => api.createLearning(entry)));
-        remoteEntries = (await api.learning()).entries;
+  overviewDataState = 'loading';
+  overviewFailedSources.clear();
+  const errors: string[] = [];
+  const [healthResult, sessionResult, activityResult, settingsResult, learningResult, changeLogResult, lifestyleResult, doingResult] = await Promise.allSettled([
+    api.health(), api.overview(), api.activity(), api.settings(), api.learning(), api.changeLogs(), syncLifestyleData(), syncDoingData(),
+  ]);
+  const fail = (source: OverviewSource | null, reason: unknown) => {
+    if (source) overviewFailedSources.add(source);
+    errors.push(errorMessage(reason));
+  };
+
+  backendOnline = healthResult.status === 'fulfilled';
+  if (healthResult.status === 'rejected') fail(null, healthResult.reason);
+  if (sessionResult.status === 'fulfilled') {
+    logs = sessionResult.value.entries.map((entry) => ({ ...entry }));
+    runtimeSourceFile = sessionResult.value.sourceFile;
+    runtimeGeneratedAt = sessionResult.value.generatedAt;
+  } else fail('session', sessionResult.reason);
+  if (activityResult.status === 'fulfilled') activityEvents = activityResult.value.events;
+  else fail('activity', activityResult.reason);
+  if (settingsResult.status === 'fulfilled') backendSettings = settingsResult.value;
+  else fail(null, settingsResult.reason);
+  if (changeLogResult.status === 'fulfilled') {
+    if (changeLogResult.value.entries.length) changeLogEntries = changeLogResult.value.entries;
+  } else fail(null, changeLogResult.reason);
+  if (lifestyleResult.status === 'rejected') fail('lifestyle', lifestyleResult.reason);
+  if (doingResult.status === 'rejected') fail('doing', doingResult.reason);
+
+  if (learningResult.status === 'fulfilled') {
+    try {
+      let remoteEntries = learningResult.value.entries;
+      if (!remoteEntries.length) {
+        const localEntries = Object.entries(learningEntries).flatMap(([date, entries]) => entries.filter((entry) => !entry.id.startsWith('seed-')).map((entry) => ({ date, title: entry.title, note: entry.note, category: entry.category, completed: entry.completed })));
+        if (localEntries.length) {
+          await Promise.all(localEntries.map((entry) => api.createLearning(entry)));
+          remoteEntries = (await api.learning()).entries;
+        }
       }
-    }
-    if (remoteEntries.length) {
       learningEntries = remoteEntries.reduce<Record<string, LearningEntry[]>>((grouped, entry) => {
         (grouped[entry.date] ??= []).push({ id: entry.id, title: entry.title, note: entry.note, category: entry.category, completed: entry.completed });
         return grouped;
       }, {});
       localStorage.setItem(learningStorageKey, JSON.stringify(learningEntries));
+    } catch (error) {
+      fail('learning', error);
     }
-    backendOnline = true;
-    backendError = '';
-  } catch (error) {
-    backendOnline = false;
-    backendError = error instanceof Error ? error.message : 'Backend tidak tersedia';
-  }
+  } else fail('learning', learningResult.reason);
+
+  const personalSources: OverviewSource[] = ['doing', 'learning', 'lifestyle', 'activity'];
+  const allPersonalFailed = personalSources.every((source) => overviewFailedSources.has(source));
+  overviewDataState = allPersonalFailed ? 'error' : overviewFailedSources.size ? 'partial' : 'ready';
+  backendError = [...new Set(errors)].join(' · ');
   render();
 }
 async function persistLearningEntry(entry: LearningEntry) {
@@ -519,6 +606,102 @@ async function removeLearningEntry(entry: LearningEntry) {
 }
 
 let disposeLanding: (() => void) | undefined;
+
+function bindOverviewEvents() {
+  const root = document.querySelector<HTMLElement>('.overview-home');
+  if (!root) return;
+  const disposers: (() => void)[] = [];
+  const listen = <K extends keyof HTMLElementEventMap>(element: HTMLElement | Window, event: K, handler: EventListenerOrEventListenerObject, options?: AddEventListenerOptions) => {
+    element.addEventListener(event, handler, options);
+    disposers.push(() => element.removeEventListener(event, handler, options));
+  };
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
+  let frame = 0;
+  let scrollFrame = 0;
+  const motionAllowed = () => overviewMotionEnabled && !reduceMotion.matches;
+  const resetTransforms = () => {
+    root.querySelectorAll<HTMLElement>('[data-overview-depth], .overview-module-card').forEach((element) => { element.style.transform = ''; });
+    const kinetic = root.querySelector<HTMLElement>('.overview-kinetic');
+    if (kinetic) kinetic.style.translate = '';
+  };
+  reduceMotion.addEventListener('change', resetTransforms);
+  disposers.push(() => reduceMotion.removeEventListener('change', resetTransforms));
+
+  root.querySelector<HTMLButtonElement>('[data-overview-motion]')?.addEventListener('click', () => {
+    overviewMotionEnabled = !overviewMotionEnabled;
+    localStorage.setItem(overviewMotionStorageKey, overviewMotionEnabled ? 'on' : 'off');
+    resetTransforms();
+    render();
+  });
+  root.querySelectorAll<HTMLButtonElement>('[data-overview-route]').forEach((button) => button.addEventListener('click', () => navigateTo(button.dataset.overviewRoute!)));
+  root.querySelectorAll<HTMLButtonElement>('[data-overview-action]').forEach((button) => button.addEventListener('click', () => {
+    const action = button.dataset.overviewAction;
+    const destinations: Record<string, { path: string; selector: string; click?: boolean }> = {
+      doing: { path: '/doing', selector: '[data-doing-new]', click: true },
+      learning: { path: '/learning', selector: '#learning-form input[name="title"]' },
+      workout: { path: `/workout?date=${dateKey(new Date())}`, selector: '[data-workout-create-session]', click: true },
+      spending: { path: '/spending', selector: '#spending-form input[name="description"]' },
+    };
+    const destination = action ? destinations[action] : undefined;
+    if (!destination) return;
+    navigateTo(destination.path);
+    requestAnimationFrame(() => {
+      const target = document.querySelector<HTMLElement>(destination.selector);
+      if (destination.click) target?.click();
+      else target?.focus();
+    });
+  }));
+
+  const hero = root.querySelector<HTMLElement>('[data-overview-hero]');
+  if (hero) listen(hero, 'pointermove', ((event: PointerEvent) => {
+    if (!motionAllowed() || !finePointer.matches || event.pointerType === 'touch') return;
+    window.cancelAnimationFrame(frame);
+    frame = window.requestAnimationFrame(() => {
+      const bounds = hero.getBoundingClientRect();
+      const x = (event.clientX - bounds.left) / bounds.width - .5;
+      const y = (event.clientY - bounds.top) / bounds.height - .5;
+      hero.querySelectorAll<HTMLElement>('[data-overview-depth]').forEach((element) => {
+        const depth = Number(element.dataset.overviewDepth ?? 0);
+        element.style.transform = `translate3d(${x * depth * 28}px, ${y * depth * 20}px, 0)`;
+      });
+    });
+  }) as EventListener);
+  if (hero) listen(hero, 'pointerleave', resetTransforms);
+  listen(window, 'scroll', (() => {
+    if (!motionAllowed()) return;
+    window.cancelAnimationFrame(scrollFrame);
+    scrollFrame = window.requestAnimationFrame(() => {
+      const kinetic = root.querySelector<HTMLElement>('.overview-kinetic');
+      if (kinetic) kinetic.style.translate = `0 ${Math.min(window.scrollY, 480) * .035}px`;
+    });
+  }) as EventListener, { passive: true });
+
+  root.querySelectorAll<HTMLElement>('.overview-module-card').forEach((card) => {
+    listen(card, 'pointermove', ((event: PointerEvent) => {
+      if (!motionAllowed() || !finePointer.matches || event.pointerType === 'touch') return;
+      const bounds = card.getBoundingClientRect();
+      const x = (event.clientX - bounds.left) / bounds.width - .5;
+      const y = (event.clientY - bounds.top) / bounds.height - .5;
+      card.style.transform = `perspective(900px) rotateX(${-y * 3.5}deg) rotateY(${x * 3.5}deg) translateY(-4px)`;
+    }) as EventListener);
+    listen(card, 'pointerleave', () => { card.style.transform = ''; });
+  });
+
+  const observer = new IntersectionObserver((entries) => entries.forEach((entry) => {
+    if (!entry.isIntersecting) return;
+    if (motionAllowed()) entry.target.classList.add('overview-revealed');
+    observer.unobserve(entry.target);
+  }), { threshold: .08 });
+  root.querySelectorAll('.overview-section, .overview-session-log').forEach((element) => observer.observe(element));
+  disposers.push(() => observer.disconnect());
+  disposeOverviewMotion = () => {
+    window.cancelAnimationFrame(frame);
+    window.cancelAnimationFrame(scrollFrame);
+    disposers.forEach((dispose) => dispose());
+    disposeOverviewMotion = undefined;
+  };
+}
 
 function renderPublicLanding() {
   document.title = 'Zeno | Personal workspace';
@@ -800,6 +983,7 @@ window.addEventListener('resize', scheduleOrbitTriggerDock);
 function render() {
   disposeLanding?.();
   disposeLanding = undefined;
+  disposeOverviewMotion?.();
   if (!authChecked) {
     if (isPublicLandingPath(window.location.pathname)) {
       renderPublicLanding();
@@ -825,9 +1009,7 @@ function render() {
   const pendingDeleteEntry = (learningEntries[selectedLearningDate] ?? []).find((entry) => entry.id === pendingDeleteLearningId);
   document.title = `${pageLabel} · Zeno`;
   if (isLearningMaterialRoute(route)) ensureLearningMaterialData(route, render);
-  const pageContent = route.kind !== 'page' ? (isLearningRoute(route) ? learningMaterials(route) : isWorkoutMaterialsRoute(route) ? renderWorkoutMaterials(route) : renderRouteNotFound(window.location.pathname)) : page === 'overview' ? `
-          <div class="page-heading"><div><p class="eyebrow">SESSION OBSERVABILITY</p><h1>Zeno session log</h1><p class="subheading">Pantau ringkasan percakapan dan konfigurasi agent dalam satu tempat.</p></div><div class="connection"><span class="pulse"></span><span>Source connected</span></div></div>
-          ${renderSessionEntriesContent(visible, successCount)}` : page === 'changelog' ? `
+  const pageContent = route.kind !== 'page' ? (isLearningRoute(route) ? learningMaterials(route) : isWorkoutMaterialsRoute(route) ? renderWorkoutMaterials(route) : renderRouteNotFound(window.location.pathname)) : page === 'overview' ? renderOverviewPage(currentUser, visible, successCount) : page === 'changelog' ? `
           <div class="page-heading"><div><p class="eyebrow">CHANGE HISTORY</p><h1>Change log</h1><p class="subheading">Lacak riwayat update berdasarkan hari, tanggal, dan permintaan.</p></div><div class="connection"><span class="pulse"></span><span>${changeLogEntries.length} updates · ${backendOnline ? 'PostgreSQL' : 'local fallback'}</span></div></div>
           ${renderChangeLogUpdates()}` : page === 'activity' ? `
           ${renderActivityTrail(currentUser)}` : page === 'doing' ? `
@@ -860,6 +1042,7 @@ function render() {
       </main>
     </div>${pendingDeleteEntry ? `<button class="delete-popover-backdrop" data-learning-delete-cancel aria-label="Cancel delete"></button><div class="delete-popover" role="dialog" aria-label="Confirm delete" style="top:${deletePopoverPosition.top}px;left:${deletePopoverPosition.left}px"><strong>Delete lesson?</strong><span>${escapeHtml(pendingDeleteEntry.title)}</span><div><button class="delete-confirm" data-learning-delete-confirm>Delete</button><button data-learning-delete-cancel>Cancel</button></div></div>` : ''}${renderOrbitCommand()}`;
   dashboardEntryPending = false;
+  if (page === 'overview') bindOverviewEvents();
   bindOrbitCommand();
   updateOrbitTriggerDock();
   scheduleOrbitTriggerDock();
@@ -890,9 +1073,14 @@ function render() {
       navigateTo(pagePaths.overview);
     }
     requestAnimationFrame(() => {
-      const input = document.querySelector<HTMLInputElement>('#search');
-      input?.focus();
-      input?.select();
+      const session = document.querySelector<HTMLDetailsElement>('.overview-session-log');
+      if (session) session.open = true;
+      requestAnimationFrame(() => {
+        const input = document.querySelector<HTMLInputElement>('#search');
+        input?.focus();
+        input?.select();
+        input?.scrollIntoView({ block: 'center' });
+      });
     });
   });
   document.querySelector<HTMLInputElement>('#search')?.addEventListener('input', (event) => { query = (event.target as HTMLInputElement).value; render(); document.querySelector<HTMLInputElement>('#search')?.focus(); });

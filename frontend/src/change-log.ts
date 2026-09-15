@@ -10,6 +10,13 @@ export type ChangeLogUpdate = {
 // Gunakan timestamp ISO dengan zona waktu agar sorting dan filter tanggal tetap akurat.
 export const changeLogUpdates: ChangeLogUpdate[] = [
   {
+    id: '2026-09-15-personal-overview-motion',
+    occurredAt: '2026-09-15T15:49:47+07:00',
+    title: 'Overview personal interaktif tersedia',
+    description: 'Mengubah Overview menjadi ringkasan personal untuk Doing, Learning, Workout, Journaling, dan Spending dengan fokus hari ini, aktivitas milik pengguna, quick actions ke form asli, preview Change Log, serta Session Observability yang tetap dapat dicari. Menambahkan pointer dan scroll parallax, hover tilt ringan, reveal satu kali, kontrol motion tersimpan, reduced-motion, state loading/empty/partial failure, tema existing, dan profil tipografi Compact, Standard, serta Expanded.',
+    category: 'Frontend',
+  },
+  {
     id: '2026-08-22-change-log-time-groups',
     occurredAt: '2026-08-22T23:54:16+07:00',
     title: 'Pembagian waktu dan tab baru pada Change Log',
