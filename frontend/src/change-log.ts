@@ -10,6 +10,13 @@ export type ChangeLogUpdate = {
 // Gunakan timestamp ISO dengan zona waktu agar sorting dan filter tanggal tetap akurat.
 export const changeLogUpdates: ChangeLogUpdate[] = [
   {
+    id: '2026-09-23-learning-home-journey',
+    occurredAt: '2026-09-23T23:08:47+07:00',
+    title: 'Beranda Learning Jejak Belajar terhubung ke sesi',
+    description: 'Mengubah /learning menjadi pintu masuk Jejak Belajar dengan ringkasan berbasis sesi tersimpan, linimasa, pencarian dan filter, pengingat review dari tanggal sesi, pertanyaan yang belum jelas, serta pintasan modul, rencana sesi, katalog, dan jurnal kalender lama di /learning/journal. Jurnal lama tetap dapat dikelola; isolasi akun pada data jurnal diperketat agar cache atau respons terlambat tidak terbawa ke akun lain. Verifikasi: 125 test frontend, build produksi, dan 39 pemeriksaan browser terisolasi dengan PostgreSQL sementara termasuk tema gelap/terang serta lebar 320/390 px.',
+    category: 'Frontend',
+  },
+  {
     id: '2026-09-23-learning-manual-modules-sessions',
     occurredAt: '2026-09-23T18:32:44+07:00',
     title: 'Modul dan sesi belajar manual dengan refleksi wajib',

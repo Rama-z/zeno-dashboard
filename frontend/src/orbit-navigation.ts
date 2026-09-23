@@ -100,7 +100,9 @@ export const orbitNavigation: OrbitNavigationItem[] = [
   { id: 'doing', label: 'Doing', icon: 'check-square', route: '/doing', activeLabel: 'Planner' },
   {
     id: 'learning', label: 'Learning', icon: 'calendar-dots', route: '/learning', children: [
-      { id: 'learning-journal', label: 'Journal', icon: 'calendar-check', route: '/learning' },
+      { id: 'learning-home', label: 'Jejak belajar', icon: 'calendar-dots', route: '/learning' },
+      { id: 'learning-journal', label: 'Journal', icon: 'calendar-check', route: '/learning/journal' },
+      { id: 'learning-modules', label: 'Modules', icon: 'books', route: '/learning/modules', match: 'prefix' },
       { id: 'learning-materials', label: 'Materials', icon: 'books', route: '/learning/materials', match: 'prefix' },
     ],
   },
@@ -151,6 +153,12 @@ export function activeOrbitLocation(pathname: string, role: OrbitRole): ActiveOr
     if (destination) {
       return { item, destination, label: `${item.label} (${destination.activeLabel ?? destination.label})` };
     }
+  }
+  // Session editor/detail pages belong to Learning, but the navigable hub is /learning.
+  if (pathname.split('?')[0].startsWith('/learning/sessions/')) {
+    const learning = items.find((item) => item.id === 'learning');
+    const destination = learning?.children?.find((child) => child.id === 'learning-home');
+    if (learning && destination) return { item: learning, destination, label: `${learning.label} (${destination.label})` };
   }
   const fallback = items[0];
   return { item: fallback, destination: fallback, label: `${fallback.label} (${fallback.activeLabel ?? fallback.label})` };

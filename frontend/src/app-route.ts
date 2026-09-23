@@ -15,6 +15,7 @@ export const pagePaths: Record<Page, string> = {
 
 export type AppRoute =
   | { kind: 'page'; page: Page }
+  | { kind: 'learning-journal' }
   | { kind: 'learning-modules' }
   | { kind: 'learning-module-editor' }
   | { kind: 'learning-module-detail'; id: string }
@@ -51,6 +52,7 @@ export function resolveAppRoute(pathname: string): AppRoute {
   if (page) return { kind: 'page', page };
 
   const segments = path.split('/').filter(Boolean);
+  if (path === '/learning/journal') return { kind: 'learning-journal' };
   if (segments[0] === 'doing') {
     if (segments.length === 2 && segments[1] === 'new') return { kind: 'doing-editor', taskId: null };
     if (segments.length === 2) return { kind: 'doing-detail', taskId: decodeURIComponent(segments[1]) };
@@ -104,6 +106,7 @@ export function isWorkoutMaterialsRoute(route: AppRoute): route is WorkoutMateri
 
 export function appRoutePath(route: Exclude<AppRoute, { kind: 'not-found' }>) {
   if (route.kind === 'page') return pagePaths[route.page];
+  if (route.kind === 'learning-journal') return '/learning/journal';
   if (route.kind === 'learning-modules') return '/learning/modules';
   if (route.kind === 'learning-module-editor') return '/learning/modules/new';
   if (route.kind === 'learning-module-detail') return `/learning/modules/${encodeURIComponent(route.id)}`;

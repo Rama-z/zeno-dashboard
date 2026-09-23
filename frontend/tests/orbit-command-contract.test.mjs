@@ -103,7 +103,8 @@ test('Orbit route labels and permissions stay derived from the real navigation t
   assert.equal(adminNavigation.length, 8, 'admin uses the same main information architecture');
   assert.deepEqual(userNavigation.find((item) => item.id === 'account').children.map((item) => item.id), ['profile']);
   assert.deepEqual(adminNavigation.find((item) => item.id === 'account').children.map((item) => item.id), ['profile', 'settings']);
-  assert.equal(activeOrbitLocation('/learning', 'user').label, 'Learning (Journal)');
+  assert.equal(activeOrbitLocation('/learning', 'user').label, 'Learning (Jejak belajar)');
+  assert.equal(activeOrbitLocation('/learning/journal', 'user').label, 'Learning (Journal)');
   assert.equal(activeOrbitLocation('/learning/materials/english/grammar/present-simple', 'user').label, 'Learning (Materials)');
   assert.equal(activeOrbitLocation('/workout/materials/mobility/open-book', 'user').label, 'Workout (Materials)');
   assert.equal(activeOrbitLocation('/spending', 'user').label, 'Lifestyle (Spending)');

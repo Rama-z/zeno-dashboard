@@ -12,6 +12,7 @@ import { authPath, authViewFromPath, bindAuthEvents, bindProfileEvents, renderAu
 import { bindLandingEvents, renderLandingPage } from './landing';
 import { bindLearningMaterialsEvents, ensureLearningMaterialData, renderLearningMaterials as learningMaterials } from './learning-materials';
 import { bindLearningManualEvents, ensureLearningManualData, renderLearningManual, resetLearningManualData, type ManualRoute } from './learning-manual';
+import { createLearningHome } from './learning-home';
 import { bindWorkoutMaterialEvents, renderWorkoutMaterials } from './workout-materials';
 import { isLearningMaterialRoute, isLearningRoute, isWorkoutMaterialsRoute, pageForRoute, pagePaths, resolveAppRoute, type AppRoute, type Page } from './app-route';
 import { activeOrbitLocation, chooseOrbitTriggerDock, clampOrbitTriggerPosition, orbitDialogSize, orbitSegmentGeometry, paginateOrbitItems, placeOrbitDialog, visibleOrbitNavigation, type OrbitDestination, type OrbitDialogPlacement, type OrbitNavigationItem, type OrbitPoint, type OrbitRole } from './orbit-navigation';
@@ -59,6 +60,7 @@ const overviewMotionStorageKey = 'zeno-overview-motion-v1';
 let overviewMotionEnabled = localStorage.getItem(overviewMotionStorageKey) !== 'off';
 let disposeOverviewMotion: (() => void) | undefined;
 let currentUser: AuthUser | null = null;
+const learningHome = createLearningHome({ modules: async () => (await api.learningModules()).modules, sessions: async () => (await api.learningSessions()).sessions });
 let authChecked = false;
 let authView: AuthView = authViewFromPath(window.location.pathname);
 let authState: AuthScreenState = { busy: false, message: '', error: '', verificationStatus: 'idle' };
@@ -94,7 +96,7 @@ let orbitDialogPosition: OrbitDialogPlacement | null = null;
 let orbitSuppressNextClick = false;
 let orbitCloseTimer: number | null = null;
 let orbitTransitionToken = 0;
-const learningStorageKey = 'hermes-monitor-learning-v1';
+// Legacy key `hermes-monitor-learning-v1` is unowned; leave it untouched and unread.
 const today = new Date();
 const dateKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 const todayKey = dateKey(today);
@@ -113,9 +115,24 @@ function restoreLearningListScroll() {
   requestAnimationFrame(() => { apply(); requestAnimationFrame(apply); });
   window.setTimeout(apply, 80);
 }
-let learningEntries: Record<string, LearningEntry[]> = (() => {
-  try { return JSON.parse(localStorage.getItem(learningStorageKey) ?? '{}') as Record<string, LearningEntry[]>; } catch { return {}; }
-})();
+// Preserve the old unowned cache for potential recovery, but never read or upload it.
+// The authenticated backend is the authority for journal entries.
+let learningEntries: Record<string, LearningEntry[]> = {};
+let learningOwnerId: string | null = null;
+let learningAuthEpoch = 0;
+function setLearningOwner(user: AuthUser | null) {
+  const ownerId = user?.id ?? null;
+  if (ownerId === learningOwnerId) return;
+  learningOwnerId = ownerId;
+  learningAuthEpoch++;
+  learningEntries = {};
+  editingLearningId = null;
+  pendingDeleteLearningId = null;
+  learningListScrollTop = 0;
+}
+function isCurrentLearningOwner(ownerId: string, epoch: number) {
+  return currentUser?.id === ownerId && learningOwnerId === ownerId && learningAuthEpoch === epoch;
+}
 
 
 function applyTheme() {
@@ -430,6 +447,7 @@ async function loginAccount(email: string, password: string) {
   render();
   try {
     currentUser = (await api.login(email, password)).user;
+    setLearningOwner(currentUser);
     authChecked = true;
     authState = { busy: false, message: '', error: '', verificationStatus: 'idle' };
     route = { kind: 'page', page: 'overview' };
@@ -474,6 +492,7 @@ async function saveProfile(displayName: string) {
 }
 
 async function logoutAccount() {
+  setLearningOwner(null);
   profileBusy = true; render();
   try { await api.logout(); } catch { /* cookie is cleared locally by the next auth gate */ }
   currentUser = null; authChecked = true; profileBusy = false; dashboardEntryPending = true;
@@ -486,11 +505,13 @@ async function bootstrapAuth() {
   if (window.location.pathname === '/verify-email') {
     authChecked = true;
     currentUser = null;
+    setLearningOwner(null);
     await verifyCurrentEmailToken();
     return;
   }
   try {
     currentUser = (await api.me()).user;
+    setLearningOwner(currentUser);
     authChecked = true;
     if (isAuthPath(window.location.pathname)) {
       route = { kind: 'page', page: 'overview' };
@@ -511,6 +532,7 @@ async function bootstrapAuth() {
     const publicLandingAlreadyRendered = isPublicLandingPath(window.location.pathname) && Boolean(app.querySelector('.zeno-landing'));
     if (!(error instanceof ApiError) || error.status !== 401) backendError = errorMessage(error);
     currentUser = null; authChecked = true;
+    setLearningOwner(null);
     authView = authViewFromPath(window.location.pathname);
     if (!isAuthPath(window.location.pathname) && !isPublicLandingPath(window.location.pathname)) {
       authView = 'login';
@@ -523,12 +545,16 @@ async function bootstrapAuth() {
 }
 
 async function syncBackend() {
+  const ownerId = currentUser?.id;
+  if (!ownerId) return;
+  const epoch = learningAuthEpoch;
   overviewDataState = 'loading';
   overviewFailedSources.clear();
   const errors: string[] = [];
   const [healthResult, sessionResult, activityResult, settingsResult, learningResult, changeLogResult, lifestyleResult, doingResult] = await Promise.allSettled([
     api.health(), api.overview(), api.activity(), api.settings(), api.learning(), api.changeLogs(), syncLifestyleData(), syncDoingData(),
   ]);
+  if (!isCurrentLearningOwner(ownerId, epoch)) return;
   const fail = (source: OverviewSource | null, reason: unknown) => {
     if (source) overviewFailedSources.add(source);
     errors.push(errorMessage(reason));
@@ -553,19 +579,10 @@ async function syncBackend() {
 
   if (learningResult.status === 'fulfilled') {
     try {
-      let remoteEntries = learningResult.value.entries;
-      if (!remoteEntries.length) {
-        const localEntries = Object.entries(learningEntries).flatMap(([date, entries]) => entries.filter((entry) => !entry.id.startsWith('seed-')).map((entry) => ({ date, title: entry.title, note: entry.note, category: entry.category, completed: entry.completed })));
-        if (localEntries.length) {
-          await Promise.all(localEntries.map((entry) => api.createLearning(entry)));
-          remoteEntries = (await api.learning()).entries;
-        }
-      }
-      learningEntries = remoteEntries.reduce<Record<string, LearningEntry[]>>((grouped, entry) => {
+      learningEntries = learningResult.value.entries.reduce<Record<string, LearningEntry[]>>((grouped, entry) => {
         (grouped[entry.date] ??= []).push({ id: entry.id, title: entry.title, note: entry.note, category: entry.category, completed: entry.completed });
         return grouped;
       }, {});
-      localStorage.setItem(learningStorageKey, JSON.stringify(learningEntries));
     } catch (error) {
       fail('learning', error);
     }
@@ -578,28 +595,38 @@ async function syncBackend() {
   render();
 }
 async function persistLearningEntry(entry: LearningEntry) {
+  const ownerId = currentUser?.id;
+  if (!ownerId) return;
+  const epoch = learningAuthEpoch;
+  const date = selectedLearningDate;
   try {
-    const updated = await api.updateLearning(entry.id, { date: selectedLearningDate, title: entry.title, note: entry.note, category: entry.category, completed: entry.completed });
-    learningEntries[selectedLearningDate] = (learningEntries[selectedLearningDate] ?? []).map((item) => item.id === entry.id ? { id: updated.id, title: updated.title, note: updated.note, category: updated.category, completed: updated.completed } : item);
-    localStorage.setItem(learningStorageKey, JSON.stringify(learningEntries));
+    const updated = await api.updateLearning(entry.id, { date, title: entry.title, note: entry.note, category: entry.category, completed: entry.completed });
+    if (!isCurrentLearningOwner(ownerId, epoch)) return;
+    learningEntries[date] = (learningEntries[date] ?? []).map((item) => item.id === entry.id ? { id: updated.id, title: updated.title, note: updated.note, category: updated.category, completed: updated.completed } : item);
     backendOnline = true;
     backendError = '';
     editingLearningId = null;
   } catch (error) {
+    if (!isCurrentLearningOwner(ownerId, epoch)) return;
     backendOnline = false;
     backendError = error instanceof Error ? error.message : 'Backend tidak tersedia';
   }
   render();
 }
 async function removeLearningEntry(entry: LearningEntry) {
+  const ownerId = currentUser?.id;
+  if (!ownerId) return;
+  const epoch = learningAuthEpoch;
+  const date = selectedLearningDate;
   try {
-    await api.deleteLearning(entry.id, selectedLearningDate);
-    learningEntries[selectedLearningDate] = (learningEntries[selectedLearningDate] ?? []).filter((item) => item.id !== entry.id);
-    localStorage.setItem(learningStorageKey, JSON.stringify(learningEntries));
+    await api.deleteLearning(entry.id, date);
+    if (!isCurrentLearningOwner(ownerId, epoch)) return;
+    learningEntries[date] = (learningEntries[date] ?? []).filter((item) => item.id !== entry.id);
     pendingDeleteLearningId = null;
     backendOnline = true;
     backendError = '';
   } catch (error) {
+    if (!isCurrentLearningOwner(ownerId, epoch)) return;
     backendOnline = false;
     backendError = error instanceof Error ? error.message : 'Backend tidak tersedia';
   }
@@ -640,7 +667,7 @@ function bindOverviewEvents() {
     const action = button.dataset.overviewAction;
     const destinations: Record<string, { path: string; selector: string; click?: boolean }> = {
       doing: { path: '/doing', selector: '[data-doing-new]', click: true },
-      learning: { path: '/learning', selector: '#learning-form input[name="title"]' },
+      learning: { path: '/learning/journal', selector: '#learning-form input[name="title"]' },
       workout: { path: `/workout?date=${dateKey(new Date())}`, selector: '[data-workout-create-session]', click: true },
       spending: { path: '/spending', selector: '#spending-form input[name="description"]' },
     };
@@ -984,6 +1011,8 @@ window.addEventListener('resize', scheduleOrbitTriggerDock);
 function render() {
   disposeLanding?.();
   resetLearningManualData(currentUser?.id ?? null);
+  learningHome.reset(currentUser?.id ?? null);
+  if (route.kind !== 'page' || route.page !== 'learning' || !currentUser) learningHome.deactivate();
   disposeLanding = undefined;
   disposeOverviewMotion?.();
   if (!authChecked) {
@@ -1008,17 +1037,18 @@ function render() {
   const visible = visibleLogs();
   const successCount = logs.filter((item) => item.status === 'success').length;
   const pageLabel = ({ overview: 'Overview', activity: 'Activity', settings: 'Settings', profile: 'Profile', changelog: 'Change Log', doing: 'Doing', learning: 'Learning', workout: 'Workout', journaling: 'Journaling', spending: 'Spending' } as Record<Page, string>)[page];
-  const pendingDeleteEntry = (learningEntries[selectedLearningDate] ?? []).find((entry) => entry.id === pendingDeleteLearningId);
+  const pendingDeleteEntry = route.kind === 'learning-journal' ? (learningEntries[selectedLearningDate] ?? []).find((entry) => entry.id === pendingDeleteLearningId) : undefined;
   document.title = `${pageLabel} · Zeno`;
   if (isLearningMaterialRoute(route)) ensureLearningMaterialData(route, render);
   const manualRoute = ['learning-modules', 'learning-module-editor', 'learning-module-detail', 'learning-session-editor', 'learning-session-detail'].includes(route.kind) ? route as ManualRoute : null;
   if (manualRoute) ensureLearningManualData(manualRoute, render);
-  const pageContent = manualRoute ? renderLearningManual(manualRoute) : route.kind === 'doing-detail' || route.kind === 'doing-editor' ? renderDoingPage(route) : route.kind !== 'page' ? (isLearningMaterialRoute(route) ? learningMaterials(route) : isWorkoutMaterialsRoute(route) ? renderWorkoutMaterials(route) : renderRouteNotFound(window.location.pathname)) : page === 'overview' ? renderOverviewPage(currentUser, visible, successCount) : page === 'changelog' ? `
+  if (route.kind === 'page' && route.page === 'learning') learningHome.activate(currentUser.id, render);
+  const pageContent = manualRoute ? renderLearningManual(manualRoute) : route.kind === 'learning-journal' ? renderLearningPage() : route.kind === 'doing-detail' || route.kind === 'doing-editor' ? renderDoingPage(route) : route.kind !== 'page' ? (isLearningMaterialRoute(route) ? learningMaterials(route) : isWorkoutMaterialsRoute(route) ? renderWorkoutMaterials(route) : renderRouteNotFound(window.location.pathname)) : page === 'overview' ? renderOverviewPage(currentUser, visible, successCount) : page === 'changelog' ? `
           <div class="page-heading"><div><p class="eyebrow">CHANGE HISTORY</p><h1>Change log</h1><p class="subheading">Lacak riwayat update berdasarkan hari, tanggal, dan permintaan.</p></div><div class="connection"><span class="pulse"></span><span>${changeLogEntries.length} updates · ${backendOnline ? 'PostgreSQL' : 'local fallback'}</span></div></div>
           ${renderChangeLogUpdates()}` : page === 'activity' ? `
           ${renderActivityTrail(currentUser)}` : page === 'doing' ? `
           ${renderDoingPage(route)}` : page === 'learning' ? `
-          ${renderLearningPage()}` : isLifestylePage(page) ? `
+          ${learningHome.render()}` : isLifestylePage(page) ? `
           ${renderLifestylePage(page)}` : page === 'profile' ? `
           ${renderProfilePage(currentUser, profileBusy, profileMessage, profileError, fontProfileOptions())}` : `
           <div class="page-heading"><div><p class="eyebrow">WORKSPACE CONFIGURATION</p><h1>Settings</h1><p class="subheading">Kelola preferensi yang tersimpan di backend PostgreSQL.</p></div><div class="connection"><span class="status-dot"></span><span>${backendOnline ? 'Backend connected' : 'Backend unavailable'}</span></div></div>
@@ -1053,6 +1083,7 @@ function render() {
   restoreLearningListScroll();
   if (isLearningRoute(route)) bindLearningMaterialsEvents({ onNavigate: navigateTo, rerender: render });
   if (manualRoute) bindLearningManualEvents(manualRoute, navigateTo, render);
+  if (route.kind === 'page' && route.page === 'learning') learningHome.bind(app, navigateTo);
   if (isWorkoutMaterialsRoute(route)) bindWorkoutMaterialEvents({
     onNavigate: navigateTo,
     rerender: render,
@@ -1072,10 +1103,6 @@ function render() {
     rerender: render,
     onStatus: (online, error) => { backendOnline = online; backendError = error; },
   });
-  document.querySelector<HTMLButtonElement>('[data-learning-materials]')?.addEventListener('click', () => navigateTo('/learning/materials'));
-  document.querySelector<HTMLButtonElement>('[data-learning-modules]')?.addEventListener('click', () => navigateTo('/learning/modules'));
-  document.querySelector<HTMLButtonElement>('[data-learning-module-new]')?.addEventListener('click', () => navigateTo('/learning/modules/new'));
-  document.querySelector<HTMLButtonElement>('[data-learning-session-new]')?.addEventListener('click', () => navigateTo('/learning/sessions/new'));
   document.querySelector<HTMLButtonElement>('[data-workout-materials]')?.addEventListener('click', () => navigateTo(`/workout/materials?date=${encodeURIComponent(currentWorkoutDate())}`));
   document.querySelector<HTMLButtonElement>('[data-global-search]')?.addEventListener('click', () => {
     if (window.location.pathname !== pagePaths.overview) {
@@ -1119,18 +1146,7 @@ function render() {
   }));
   document.querySelectorAll<HTMLButtonElement>('[data-change-period]').forEach((button) => button.addEventListener('click', () => { changeLogPeriod = button.dataset.changePeriod as ChangeLogPeriod; render(); }));
   document.querySelector<HTMLSelectElement>('#change-log-sort')?.addEventListener('change', (event) => { changeLogSort = (event.target as HTMLSelectElement).value as ChangeLogSort; render(); });
-  document.querySelector<HTMLButtonElement>('[data-calendar-prev]')?.addEventListener('click', () => { learningMonth = new Date(learningMonth.getFullYear(), learningMonth.getMonth() - 1, 1); render(); });
-  document.querySelector<HTMLButtonElement>('[data-calendar-next]')?.addEventListener('click', () => { learningMonth = new Date(learningMonth.getFullYear(), learningMonth.getMonth() + 1, 1); render(); });
-  document.querySelector<HTMLButtonElement>('[data-today]')?.addEventListener('click', () => { learningMonth = new Date(today.getFullYear(), today.getMonth(), 1); selectedLearningDate = todayKey; render(); });
-  document.querySelectorAll<HTMLButtonElement>('[data-day]').forEach((button) => button.addEventListener('click', () => { selectedLearningDate = button.dataset.day!; learningListScrollTop = 0; editingLearningId = null; render(); }));
-  document.querySelectorAll<HTMLButtonElement>('[data-learning-edit]').forEach((button) => button.addEventListener('click', () => { editingLearningId = button.dataset.learningEdit!; render(); }));
-  document.querySelectorAll<HTMLButtonElement>('[data-learning-cancel]').forEach((button) => button.addEventListener('click', () => { editingLearningId = null; render(); }));
-  document.querySelectorAll<HTMLButtonElement>('[data-learning-toggle]').forEach((button) => button.addEventListener('click', () => { const list = button.closest<HTMLElement>('.learning-list'); if (list) learningListScrollTop = list.scrollTop; button.blur(); const entry = (learningEntries[selectedLearningDate] ?? []).find((item) => item.id === button.dataset.learningToggle); if (entry) void persistLearningEntry({ ...entry, completed: !entry.completed }); }));
-  document.querySelectorAll<HTMLButtonElement>('[data-learning-delete]').forEach((button) => button.addEventListener('click', () => { const list = button.closest<HTMLElement>('.learning-list'); if (list) learningListScrollTop = list.scrollTop; const rect = button.getBoundingClientRect(); pendingDeleteLearningId = button.dataset.learningDelete!; deletePopoverPosition = { top: rect.top - 8, left: rect.right }; button.blur(); render(); }));
-  document.querySelectorAll<HTMLButtonElement>('[data-learning-delete-cancel]').forEach((button) => button.addEventListener('click', () => { pendingDeleteLearningId = null; render(); }));
-  document.querySelector<HTMLButtonElement>('[data-learning-delete-confirm]')?.addEventListener('click', () => { const entry = (learningEntries[selectedLearningDate] ?? []).find((item) => item.id === pendingDeleteLearningId); if (entry) void removeLearningEntry(entry); });
-  document.querySelectorAll<HTMLFormElement>('[data-learning-edit-form]').forEach((formElement) => formElement.addEventListener('submit', (event) => { event.preventDefault(); const current = (learningEntries[selectedLearningDate] ?? []).find((item) => item.id === formElement.dataset.learningEditForm); if (!current) return; const form = new FormData(formElement); const title = String(form.get('title') ?? '').trim(); if (!title) return; void persistLearningEntry({ ...current, title, note: String(form.get('note') ?? '').trim() || 'Catatan pembelajaran ditambahkan.', category: String(form.get('category') ?? 'General') }); }));
-  document.querySelector<HTMLFormElement>('#learning-form')?.addEventListener('submit', async (event) => { event.preventDefault(); const form = new FormData(event.currentTarget as HTMLFormElement); const title = String(form.get('title') ?? '').trim(); if (!title) return; const payload = { date: selectedLearningDate, title, note: String(form.get('note') ?? '').trim() || 'Catatan pembelajaran ditambahkan.', category: String(form.get('category') ?? 'General') }; try { const created = await api.createLearning(payload); const entry: LearningEntry = { id: created.id, title: created.title, note: created.note, category: created.category, completed: created.completed }; learningEntries[selectedLearningDate] = [...(learningEntries[selectedLearningDate] ?? []), entry]; localStorage.setItem(learningStorageKey, JSON.stringify(learningEntries)); backendOnline = true; backendError = ''; } catch (error) { backendOnline = false; backendError = error instanceof Error ? error.message : 'Backend tidak tersedia'; } render(); });
+  if (route.kind === 'learning-journal') bindLearningJournalEvents();
   document.querySelector<HTMLFormElement>('#settings-form')?.addEventListener('submit', async (event) => { event.preventDefault(); const form = new FormData(event.currentTarget as HTMLFormElement); const workspaceName = String(form.get('workspaceName') ?? '').trim(); if (!workspaceName) return; try { backendSettings = await api.updateSettings(workspaceName); backendOnline = true; backendError = ''; } catch (error) { backendOnline = false; backendError = error instanceof Error ? error.message : 'Backend tidak tersedia'; } render(); });
   document.querySelector<HTMLButtonElement>('#theme-toggle')?.addEventListener('click', () => { theme = theme === 'dark' ? 'light' : 'dark'; localStorage.setItem('hermes-monitor-theme', theme); applyTheme(); render(); });
   document.querySelectorAll<HTMLInputElement>('input[data-font-profile]').forEach((input) => input.addEventListener('change', () => {
@@ -1142,6 +1158,46 @@ function render() {
     requestAnimationFrame(() => [...document.querySelectorAll<HTMLInputElement>('input[data-font-profile]')].find((option) => option.value === fontProfile)?.focus());
   }));
 }
+function bindLearningJournalEvents() {
+  document.querySelector<HTMLButtonElement>('[data-learning-materials]')?.addEventListener('click', () => navigateTo('/learning/materials'));
+  document.querySelector<HTMLButtonElement>('[data-learning-modules]')?.addEventListener('click', () => navigateTo('/learning/modules'));
+  document.querySelector<HTMLButtonElement>('[data-learning-module-new]')?.addEventListener('click', () => navigateTo('/learning/modules/new'));
+  document.querySelector<HTMLButtonElement>('[data-learning-session-new]')?.addEventListener('click', () => navigateTo('/learning/sessions/new'));
+  document.querySelector<HTMLButtonElement>('[data-calendar-prev]')?.addEventListener('click', () => { learningMonth = new Date(learningMonth.getFullYear(), learningMonth.getMonth() - 1, 1); render(); });
+  document.querySelector<HTMLButtonElement>('[data-calendar-next]')?.addEventListener('click', () => { learningMonth = new Date(learningMonth.getFullYear(), learningMonth.getMonth() + 1, 1); render(); });
+  document.querySelector<HTMLButtonElement>('[data-today]')?.addEventListener('click', () => { learningMonth = new Date(today.getFullYear(), today.getMonth(), 1); selectedLearningDate = todayKey; render(); });
+  document.querySelectorAll<HTMLButtonElement>('[data-day]').forEach((button) => button.addEventListener('click', () => { selectedLearningDate = button.dataset.day!; learningListScrollTop = 0; editingLearningId = null; render(); }));
+  document.querySelectorAll<HTMLButtonElement>('[data-learning-edit]').forEach((button) => button.addEventListener('click', () => { editingLearningId = button.dataset.learningEdit!; render(); }));
+  document.querySelectorAll<HTMLButtonElement>('[data-learning-cancel]').forEach((button) => button.addEventListener('click', () => { editingLearningId = null; render(); }));
+  document.querySelectorAll<HTMLButtonElement>('[data-learning-toggle]').forEach((button) => button.addEventListener('click', () => { const list = button.closest<HTMLElement>('.learning-list'); if (list) learningListScrollTop = list.scrollTop; button.blur(); const entry = (learningEntries[selectedLearningDate] ?? []).find((item) => item.id === button.dataset.learningToggle); if (entry) void persistLearningEntry({ ...entry, completed: !entry.completed }); }));
+  document.querySelectorAll<HTMLButtonElement>('[data-learning-delete]').forEach((button) => button.addEventListener('click', () => { const list = button.closest<HTMLElement>('.learning-list'); if (list) learningListScrollTop = list.scrollTop; const rect = button.getBoundingClientRect(); pendingDeleteLearningId = button.dataset.learningDelete!; deletePopoverPosition = { top: rect.top - 8, left: rect.right }; button.blur(); render(); }));
+  document.querySelectorAll<HTMLButtonElement>('[data-learning-delete-cancel]').forEach((button) => button.addEventListener('click', () => { pendingDeleteLearningId = null; render(); }));
+  document.querySelector<HTMLButtonElement>('[data-learning-delete-confirm]')?.addEventListener('click', () => { const entry = (learningEntries[selectedLearningDate] ?? []).find((item) => item.id === pendingDeleteLearningId); if (entry) void removeLearningEntry(entry); });
+  document.querySelectorAll<HTMLFormElement>('[data-learning-edit-form]').forEach((formElement) => formElement.addEventListener('submit', (event) => { event.preventDefault(); const current = (learningEntries[selectedLearningDate] ?? []).find((item) => item.id === formElement.dataset.learningEditForm); if (!current) return; const form = new FormData(formElement); const title = String(form.get('title') ?? '').trim(); if (!title) return; void persistLearningEntry({ ...current, title, note: String(form.get('note') ?? '').trim() || 'Catatan pembelajaran ditambahkan.', category: String(form.get('category') ?? 'General') }); }));
+  document.querySelector<HTMLFormElement>('#learning-form')?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const ownerId = currentUser?.id;
+    if (!ownerId) return;
+    const epoch = learningAuthEpoch;
+    const form = new FormData(event.currentTarget as HTMLFormElement);
+    const title = String(form.get('title') ?? '').trim();
+    if (!title) return;
+    const payload = { date: selectedLearningDate, title, note: String(form.get('note') ?? '').trim() || 'Catatan pembelajaran ditambahkan.', category: String(form.get('category') ?? 'General') };
+    try {
+      const created = await api.createLearning(payload);
+      if (!isCurrentLearningOwner(ownerId, epoch)) return;
+      const entry: LearningEntry = { id: created.id, title: created.title, note: created.note, category: created.category, completed: created.completed };
+      learningEntries[payload.date] = [...(learningEntries[payload.date] ?? []), entry];
+      backendOnline = true; backendError = '';
+    } catch (error) {
+      if (!isCurrentLearningOwner(ownerId, epoch)) return;
+      backendOnline = false;
+      backendError = error instanceof Error ? error.message : 'Backend tidak tersedia';
+    }
+    render();
+  });
+}
+
 window.addEventListener('popstate', () => {
   if (!currentUser) {
     if (isPublicLandingPath(window.location.pathname)) {
@@ -1179,6 +1235,7 @@ window.addEventListener('popstate', () => {
 window.addEventListener('zeno:unauthorized', () => {
   if (!currentUser) return;
   currentUser = null;
+  setLearningOwner(null);
   authChecked = true;
   dashboardEntryPending = true;
   authView = 'login';

@@ -65,7 +65,7 @@ export function ensureLearningManualData(route: ManualRoute, rerender: () => voi
 }
 
 function navigation() {
-  return `<nav class="lm-nav" aria-label="Ruang belajar"><a href="/learning" data-lm-route>Jurnal</a><a href="/learning/modules" data-lm-route>Modul</a><a href="/learning/sessions/new" data-lm-route>Sesi baru</a><a href="/learning/materials" data-lm-route>Katalog</a></nav>`;
+  return `<nav class="lm-nav" aria-label="Ruang belajar"><a href="/learning/journal" data-lm-route>Jurnal</a><a href="/learning/modules" data-lm-route>Modul</a><a href="/learning/sessions/new" data-lm-route>Sesi baru</a><a href="/learning/materials" data-lm-route>Katalog</a></nav>`;
 }
 function heading(title: string, subtitle: string) { return `<header class="lm-heading"><p class="lm-kicker">ZENO / LEARNING</p><h1>${title}</h1><p>${subtitle}</p></header>`; }
 function materialSummary(material: ManualMaterial, moduleId: string) {
