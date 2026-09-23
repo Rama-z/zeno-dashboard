@@ -57,6 +57,13 @@ export type LearningEntryResponse = {
   createdAt: string;
 };
 
+export type ManualMaterial = { id: string; type: 'text' | 'pdf' | 'video' | 'youtube' | 'link'; title: string; body: string; url: string; fileName: string; mimeType: string; byteSize: number; sortOrder: number };
+export type ManualModule = { id: string; title: string; category: string; level: string; objective: string; note: string; materials: ManualMaterial[]; createdAt: string };
+export type ManualModuleInput = Omit<ManualModule, 'id' | 'createdAt' | 'materials'> & { materials: Array<Pick<ManualMaterial, 'type' | 'title' | 'body' | 'url' | 'sortOrder'> & { id?: string }> };
+export type ManualPortion = { materialId: string; startPage?: number; endPage?: number; startSecond?: number; endSecond?: number };
+export type ManualSession = { id: string; moduleId: string; date: string; title: string; targetMinutes: number; method: string; objective: string; practicePlan: string; status: 'planned' | 'in_progress' | 'completed'; plannedItems: ManualPortion[]; actualItems: ManualPortion[]; actualMinutes: number; reflection: string; confusion: string; nextStep: string; reviewDate: string; createdAt: string };
+export type ManualSessionInput = Omit<ManualSession, 'id' | 'createdAt'>;
+
 export type LessonItemType = 'multiple_choice' | 'fill_blank' | 'rewrite';
 export type LearningMaterialLessonItem = {
   id: string;
@@ -366,6 +373,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     if (response.status === 401) window.dispatchEvent(new CustomEvent('zeno:unauthorized'));
     throw new ApiError(body.error ?? `API request failed (${response.status})`, response.status);
   }
+  if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
 }
 
@@ -392,6 +400,31 @@ export const api = {
     method: 'PUT', body: JSON.stringify({ workspaceName }),
   }),
   learning: (date = '') => request<{ date: string | null; entries: LearningEntryResponse[] }>(`/api/learning${date ? `?date=${encodeURIComponent(date)}` : ''}`),
+  learningModules: () => request<{ modules: ManualModule[] }>('/api/learning-modules'),
+  learningModule: (id: string) => request<ManualModule>(`/api/learning-modules/${encodeURIComponent(id)}`),
+  createLearningModule: (input: ManualModuleInput) => request<ManualModule>('/api/learning-modules', { method: 'POST', body: JSON.stringify(input) }),
+  updateLearningModule: (id: string, input: ManualModuleInput) => request<ManualModule>(`/api/learning-modules/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(input) }),
+  createLearningModuleMaterial: (moduleId: string, input: Pick<ManualMaterial, 'type' | 'title' | 'body' | 'url' | 'sortOrder'>) => request<ManualMaterial>(`/api/learning-modules/${encodeURIComponent(moduleId)}/materials`, { method: 'POST', body: JSON.stringify(input) }),
+  updateLearningModuleMaterial: (moduleId: string, materialId: string, input: Pick<ManualMaterial, 'type' | 'title' | 'body' | 'url' | 'sortOrder'>) => request<ManualMaterial>(`/api/learning-modules/${encodeURIComponent(moduleId)}/materials/${encodeURIComponent(materialId)}`, { method: 'PUT', body: JSON.stringify(input) }),
+  deleteLearningModuleMaterial: (moduleId: string, materialId: string) => request<void>(`/api/learning-modules/${encodeURIComponent(moduleId)}/materials/${encodeURIComponent(materialId)}`, { method: 'DELETE' }),
+  learningSessions: () => request<{ sessions: ManualSession[] }>('/api/learning-sessions'),
+  learningSession: (id: string) => request<ManualSession>(`/api/learning-sessions/${encodeURIComponent(id)}`),
+  createLearningSession: (input: ManualSessionInput) => request<ManualSession>('/api/learning-sessions', { method: 'POST', body: JSON.stringify(input) }),
+  updateLearningSession: (id: string, input: ManualSessionInput) => request<ManualSession>(`/api/learning-sessions/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(input) }),
+  uploadLearningModuleFile: async (moduleId: string, materialId: string, file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    const csrfToken = document.cookie.split('; ').find((value) => value.startsWith('zeno_csrf='))?.split('=').slice(1).join('=') ?? '';
+    const response = await fetch(`/api/learning-modules/${encodeURIComponent(moduleId)}/materials/${encodeURIComponent(materialId)}/file`, {
+      method: 'POST', credentials: 'same-origin', headers: csrfToken ? { 'X-CSRF-Token': decodeURIComponent(csrfToken) } : {}, body: form,
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({})) as { error?: string };
+      if (response.status === 401) window.dispatchEvent(new CustomEvent('zeno:unauthorized'));
+      throw new ApiError(body.error ?? `Upload failed (${response.status})`, response.status);
+    }
+    return response.json() as Promise<ManualMaterial>;
+  },
   createLearning: (entry: { date: string; title: string; note: string; category: string; completed?: boolean }) => request<LearningEntryResponse>('/api/learning', {
     method: 'POST', body: JSON.stringify(entry),
   }),

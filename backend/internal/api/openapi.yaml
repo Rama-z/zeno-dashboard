@@ -2,10 +2,175 @@ openapi: 3.0.3
 info:
   title: Zeno API
   version: 1.5.0
-  description: API runtime untuk dashboard dan personal workspace Zeno.
+  description: >-
+    API runtime untuk dashboard dan personal workspace Zeno. Manual Learning:
+    regular users access only their own records (foreign IDs return 404); admins
+    can list and manage records of every owner, including files and materials.
+    New modules belong to their creator; sessions inherit their module owner.
+    Editing never transfers ownership or reparents a session across owners.
 servers:
   - url: http://localhost:3000
 paths:
+  /api/learning-modules:
+    get:
+      tags: [Manual Learning]
+      summary: Owner-scoped modules including materials; admin sees all owners
+      responses:
+        '200': {description: '{modules: LearningModule[]}'}
+        '401': {description: Login required}
+    post:
+      tags: [Manual Learning]
+      summary: Create a manual module; send X-CSRF-Token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ManualLearningModuleInput'}
+      responses:
+        '201': {description: LearningModule directly}
+        '400': {description: Invalid module}
+  /api/learning-modules/{id}:
+    parameters:
+      - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      tags: [Manual Learning]
+      summary: Read accessible module and its ordered materials (admin sees all)
+      responses:
+        '200': {description: LearningModule directly}
+        '404': {description: Not found or not owned}
+    put:
+      tags: [Manual Learning]
+      summary: Replace module metadata (does not change materials)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ManualLearningModuleInput'}
+      responses:
+        '200': {description: LearningModule directly}
+        '404': {description: Not found or not owned}
+    delete:
+      tags: [Manual Learning]
+      summary: Delete module and sessions/materials/files by cascade
+      responses:
+        '204': {description: Deleted}
+        '404': {description: Not found or not owned}
+  /api/learning-modules/{id}/materials:
+    parameters:
+      - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+    post:
+      tags: [Manual Learning]
+      summary: Create text/link/youtube metadata via JSON; or upload PDF/video and metadata atomically via multipart
+      description: 'For multipart send file (required), title (required), sortOrder (optional). PDF <=20 MiB; MP4/WebM <=100 MiB. JSON pdf/video metadata may be created first and populated through the separate /file POST.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ManualMaterialInput'}
+          multipart/form-data:
+            schema:
+              type: object
+              required: [title, file]
+              properties:
+                title: {type: string}
+                sortOrder: {type: integer}
+                file: {type: string, format: binary}
+      responses:
+        '201': {description: Material directly}
+        '400': {description: Invalid material or file}
+        '404': {description: Module not owned}
+  /api/learning-modules/{id}/materials/{materialId}:
+    parameters:
+      - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      - {name: materialId, in: path, required: true, schema: {type: string, format: uuid}}
+    put:
+      tags: [Manual Learning]
+      summary: Replace owned material metadata and order without changing type or file
+      description: 'Full metadata replacement: send type (must match existing), title, body, url, sortOrder. File fields are ignored; pdf/video file changes use POST /file. sortOrder can tie (ordered by material ID). Auth cookie and X-CSRF-Token required.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ManualMaterialInput'}
+      responses:
+        '200': {description: Updated material including preserved file metadata}
+        '400': {description: Invalid input or attempted type change}
+        '401': {description: Login required}
+        '404': {description: Missing or foreign module/material}
+    delete:
+      tags: [Manual Learning]
+      summary: Delete unreferenced owned material and its file
+      description: 'A material referenced by any session plannedItems or actualItems cannot be deleted.'
+      responses:
+        '204': {description: Deleted}
+        '401': {description: Login required}
+        '404': {description: Missing or foreign module/material}
+        '409': {description: Referenced by a session}
+  /api/learning-modules/{id}/materials/{materialId}/file:
+    parameters:
+      - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      - {name: materialId, in: path, required: true, schema: {type: string, format: uuid}}
+    post:
+      tags: [Manual Learning]
+      summary: Upload/replace file on owned PDF/video material
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: {type: string, format: binary}
+      responses:
+        '200': {description: Updated material}
+        '400': {description: Invalid file}
+        '404': {description: Not found or not owned}
+    get:
+      tags: [Manual Learning]
+      summary: Authenticated download; attachment, nosniff
+      responses:
+        '200': {description: Raw PDF/video file}
+        '404': {description: Not found or not owned}
+  /api/learning-sessions:
+    get:
+      tags: [Manual Learning]
+      summary: Owner-scoped sessions; admin sees all owners
+      responses:
+        '200': {description: '{sessions: LearningSession[]}'}
+    post:
+      tags: [Manual Learning]
+      summary: Create session owned by its module owner; admin may use any module
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ManualLearningSessionInput'}
+      responses:
+        '201': {description: LearningSession directly}
+        '400': {description: Invalid input or missing reflection on completed session}
+        '404': {description: Module/material not owned}
+  /api/learning-sessions/{id}:
+    parameters:
+      - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      tags: [Manual Learning]
+      summary: Get owned session
+      responses:
+        '200': {description: LearningSession directly}
+        '404': {description: Not found or not owned}
+    put:
+      tags: [Manual Learning]
+      summary: Replace session; completed always requires nonblank reflection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ManualLearningSessionInput'}
+      responses:
+        '200': {description: LearningSession directly}
+        '400': {description: Invalid session or reflection missing}
+        '404': {description: Not found or not owned}
   /api/health:
     get:
       tags: [System]
@@ -654,6 +819,52 @@ components:
       in: header
       name: X-CSRF-Token
   schemas:
+    ManualLearningModuleInput:
+      type: object
+      required: [title]
+      properties:
+        title: {type: string, maxLength: 160}
+        category: {type: string, maxLength: 80}
+        level: {type: string, maxLength: 40}
+        objective: {type: string}
+        note: {type: string}
+    ManualMaterialInput:
+      type: object
+      required: [type, title]
+      properties:
+        type: {type: string, enum: [text, pdf, video, youtube, link]}
+        title: {type: string, minLength: 1, maxLength: 160}
+        body: {type: string, maxLength: 100000}
+        url: {type: string, format: uri, maxLength: 2048}
+        sortOrder: {type: integer, minimum: 0, maximum: 100000}
+    ManualLearningPortion:
+      type: object
+      required: [materialId]
+      properties:
+        materialId: {type: string, format: uuid}
+        startPage: {type: integer, minimum: 0}
+        endPage: {type: integer, minimum: 0}
+        startSecond: {type: integer, minimum: 0}
+        endSecond: {type: integer, minimum: 0}
+    ManualLearningSessionInput:
+      type: object
+      required: [moduleId, date, title, status]
+      properties:
+        moduleId: {type: string, format: uuid}
+        date: {type: string, format: date}
+        title: {type: string, maxLength: 160}
+        targetMinutes: {type: integer, minimum: 0, maximum: 1440}
+        method: {type: string}
+        objective: {type: string}
+        practicePlan: {type: string}
+        status: {type: string, enum: [planned, in_progress, completed]}
+        plannedItems: {type: array, items: {$ref: '#/components/schemas/ManualLearningPortion'}}
+        actualItems: {type: array, items: {$ref: '#/components/schemas/ManualLearningPortion'}}
+        actualMinutes: {type: integer, minimum: 0, maximum: 1440}
+        reflection: {type: string, description: Required nonblank when completed}
+        confusion: {type: string}
+        nextStep: {type: string}
+        reviewDate: {type: string, format: date}
     RegisterInput:
       type: object
       required: [email, password, displayName]

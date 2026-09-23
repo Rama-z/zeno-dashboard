@@ -15,6 +15,11 @@ export const pagePaths: Record<Page, string> = {
 
 export type AppRoute =
   | { kind: 'page'; page: Page }
+  | { kind: 'learning-modules' }
+  | { kind: 'learning-module-editor' }
+  | { kind: 'learning-module-detail'; id: string }
+  | { kind: 'learning-session-editor' }
+  | { kind: 'learning-session-detail'; id: string }
   | { kind: 'learning-subjects' }
   | { kind: 'learning-categories'; subjectId: string }
   | { kind: 'grammar-topics'; subjectId: string; categoryId: string }
@@ -58,6 +63,17 @@ export function resolveAppRoute(pathname: string): AppRoute {
     if (segments.length === 4) return { kind: 'workout-material-detail', categoryId: segments[2], movementId: segments[3] };
     return notFound(path);
   }
+  if (segments[0] === 'learning' && segments[1] === 'modules') {
+    if (segments.length === 2) return { kind: 'learning-modules' };
+    if (segments.length === 3 && segments[2] === 'new') return { kind: 'learning-module-editor' };
+    if (segments.length === 3) return { kind: 'learning-module-detail', id: decodeURIComponent(segments[2]) };
+    return notFound(path);
+  }
+  if (segments[0] === 'learning' && segments[1] === 'sessions') {
+    if (segments.length === 3 && segments[2] === 'new') return { kind: 'learning-session-editor' };
+    if (segments.length === 3) return { kind: 'learning-session-detail', id: decodeURIComponent(segments[2]) };
+    return notFound(path);
+  }
   if (segments[0] !== 'learning' || segments[1] !== 'materials') return notFound(path);
   if (segments.length === 2) return { kind: 'learning-subjects' };
   if (segments.length === 3) return { kind: 'learning-categories', subjectId: segments[2] };
@@ -75,7 +91,7 @@ export function pageForRoute(route: AppRoute): Page {
 }
 
 export function isLearningRoute(route: AppRoute): route is LearningMaterialRoute {
-  return pageForRoute(route) === 'learning';
+  return isLearningMaterialRoute(route);
 }
 
 export function isLearningMaterialRoute(route: AppRoute): route is LearningMaterialRoute {
@@ -88,6 +104,11 @@ export function isWorkoutMaterialsRoute(route: AppRoute): route is WorkoutMateri
 
 export function appRoutePath(route: Exclude<AppRoute, { kind: 'not-found' }>) {
   if (route.kind === 'page') return pagePaths[route.page];
+  if (route.kind === 'learning-modules') return '/learning/modules';
+  if (route.kind === 'learning-module-editor') return '/learning/modules/new';
+  if (route.kind === 'learning-module-detail') return `/learning/modules/${encodeURIComponent(route.id)}`;
+  if (route.kind === 'learning-session-editor') return '/learning/sessions/new';
+  if (route.kind === 'learning-session-detail') return `/learning/sessions/${encodeURIComponent(route.id)}`;
   if (route.kind === 'doing-detail') return `/doing/${encodeURIComponent(route.taskId)}`;
   if (route.kind === 'doing-editor') return route.taskId ? `/doing/${encodeURIComponent(route.taskId)}/edit` : '/doing/new';
   if (route.kind === 'learning-subjects') return '/learning/materials';

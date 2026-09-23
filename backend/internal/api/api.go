@@ -196,6 +196,20 @@ func New(store Store, source Source, version string, options ...Option) http.Han
 	mux.HandleFunc("POST /api/learning", h.createLearning)
 	mux.HandleFunc("PUT /api/learning/{id}", h.updateLearning)
 	mux.HandleFunc("DELETE /api/learning/{id}", h.deleteLearning)
+	mux.HandleFunc("GET /api/learning-modules", h.listManualModules)
+	mux.HandleFunc("POST /api/learning-modules", h.createManualModule)
+	mux.HandleFunc("GET /api/learning-modules/{id}", h.getManualModule)
+	mux.HandleFunc("PUT /api/learning-modules/{id}", h.updateManualModule)
+	mux.HandleFunc("DELETE /api/learning-modules/{id}", h.deleteManualModule)
+	mux.HandleFunc("POST /api/learning-modules/{id}/materials", h.createManualMaterial)
+	mux.HandleFunc("PUT /api/learning-modules/{id}/materials/{materialId}", h.updateManualMaterial)
+	mux.HandleFunc("DELETE /api/learning-modules/{id}/materials/{materialId}", h.deleteManualMaterial)
+	mux.HandleFunc("POST /api/learning-modules/{id}/materials/{materialId}/file", h.uploadManualFile)
+	mux.HandleFunc("GET /api/learning-modules/{id}/materials/{materialId}/file", h.getManualFile)
+	mux.HandleFunc("GET /api/learning-sessions", h.listManualSessions)
+	mux.HandleFunc("POST /api/learning-sessions", h.createManualSession)
+	mux.HandleFunc("GET /api/learning-sessions/{id}", h.getManualSession)
+	mux.HandleFunc("PUT /api/learning-sessions/{id}", h.updateManualSession)
 	mux.HandleFunc("GET /api/learning-materials", h.listLearningMaterials)
 	mux.HandleFunc("GET /api/learning-materials/{id}", h.getLearningMaterial)
 	mux.HandleFunc("PUT /api/learning-materials/{id}/progress", h.upsertLearningMaterialProgress)
@@ -240,7 +254,7 @@ func (h *handler) authMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if h.auth.Enabled && r.Method != http.MethodGet && r.Method != http.MethodHead && r.Method != http.MethodOptions && r.ContentLength != 0 {
 			mediaType, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
-			if err != nil || mediaType != "application/json" {
+			if err != nil || (mediaType != "application/json" && !(mediaType == "multipart/form-data" && strings.HasPrefix(r.URL.Path, "/api/learning-modules/") && strings.Contains(r.URL.Path, "/materials"))) {
 				writeError(w, http.StatusUnsupportedMediaType, "Content-Type harus application/json")
 				return
 			}

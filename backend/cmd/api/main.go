@@ -105,6 +105,38 @@ func emailSender(cfg config) mailer.Sender {
 	}
 }
 
+func serverTimeouts(s *http.Server) *http.Server {
+	s.ReadHeaderTimeout = 5 * time.Second
+	s.IdleTimeout = 60 * time.Second
+	// Whole-request deadlines would truncate 100 MiB transfers; the handler
+	// instead assigns bounded per-route read and write deadlines.
+	s.ReadTimeout, s.WriteTimeout = 0, 0
+	return s
+}
+
+func requestDeadlines(r *http.Request) (time.Duration, time.Duration) {
+	path := r.URL.Path
+	material := strings.HasPrefix(path, "/api/learning-modules/") && strings.Contains(path, "/materials")
+	if material && r.Method == http.MethodPost && (strings.HasSuffix(path, "/materials") || strings.HasSuffix(path, "/file")) {
+		return 15 * time.Minute, 15 * time.Minute
+	}
+	if material && r.Method == http.MethodGet && strings.HasSuffix(path, "/file") {
+		return 2 * time.Minute, 15 * time.Minute
+	}
+	return 2 * time.Minute, 2 * time.Minute
+}
+
+func boundedRequests(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		read, write := requestDeadlines(r)
+		controller := http.NewResponseController(w)
+		now := time.Now()
+		_ = controller.SetReadDeadline(now.Add(read))
+		_ = controller.SetWriteDeadline(now.Add(write))
+		next.ServeHTTP(w, r)
+	})
+}
+
 func main() {
 	cfg, err := configFromEnv()
 	if err != nil {
@@ -120,15 +152,12 @@ func main() {
 
 	server := &http.Server{
 		Addr: cfg.Address,
-		Handler: api.New(database, source.New(cfg.SourceFile), version, api.WithAuth(api.AuthOptions{
+		Handler: boundedRequests(api.New(database, source.New(cfg.SourceFile), version, api.WithAuth(api.AuthOptions{
 			Enabled: cfg.AuthEnabled, AppBaseURL: cfg.AppBaseURL, AllowedOrigin: cfg.AllowedOrigin, CookieSecure: cfg.CookieSecure,
 			AdminEmails: cfg.AdminEmails, Mailer: emailSender(cfg),
-		})),
-		ReadHeaderTimeout: 5 * time.Second,
-		ReadTimeout:       15 * time.Second,
-		WriteTimeout:      30 * time.Second,
-		IdleTimeout:       60 * time.Second,
+		}))),
 	}
+	serverTimeouts(server)
 
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)

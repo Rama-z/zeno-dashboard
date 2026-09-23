@@ -11,6 +11,7 @@ import { bindDoingEvents, doingOverviewEntries, renderDoingPage, syncDoingData }
 import { authPath, authViewFromPath, bindAuthEvents, bindProfileEvents, renderAuthScreen, renderProfilePage, type AuthScreenState, type AuthView, type FontProfileOption } from './auth';
 import { bindLandingEvents, renderLandingPage } from './landing';
 import { bindLearningMaterialsEvents, ensureLearningMaterialData, renderLearningMaterials as learningMaterials } from './learning-materials';
+import { bindLearningManualEvents, ensureLearningManualData, renderLearningManual, resetLearningManualData, type ManualRoute } from './learning-manual';
 import { bindWorkoutMaterialEvents, renderWorkoutMaterials } from './workout-materials';
 import { isLearningMaterialRoute, isLearningRoute, isWorkoutMaterialsRoute, pageForRoute, pagePaths, resolveAppRoute, type AppRoute, type Page } from './app-route';
 import { activeOrbitLocation, chooseOrbitTriggerDock, clampOrbitTriggerPosition, orbitDialogSize, orbitSegmentGeometry, paginateOrbitItems, placeOrbitDialog, visibleOrbitNavigation, type OrbitDestination, type OrbitDialogPlacement, type OrbitNavigationItem, type OrbitPoint, type OrbitRole } from './orbit-navigation';
@@ -146,7 +147,7 @@ function renderLearningPage() {
   const monthName = learningMonth.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
   const selectedLabel = new Date(`${selectedLearningDate}T12:00:00`).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   return `
-          <div class="page-heading"><div><p class="eyebrow">LEARNING JOURNAL</p><h1>What I learned</h1><p class="subheading">Catat dan pantau pembelajaran harian dalam kalender lintas tahun.</p></div><div class="learning-heading-actions"><button type="button" class="feature-button primary" data-learning-materials>Learning Material List</button><div class="connection"><span class="pulse"></span><span>${Object.values(learningEntries).reduce((total, entries) => total + entries.length, 0)} lessons logged</span></div></div></div>
+          <div class="page-heading"><div><p class="eyebrow">LEARNING JOURNAL</p><h1>What I learned</h1><p class="subheading">Catat dan pantau pembelajaran harian dalam kalender lintas tahun.</p></div><div class="learning-heading-actions"><button type="button" class="feature-button primary" data-learning-modules>My modules & sessions</button><button type="button" class="feature-button" data-learning-module-new>Create module</button><button type="button" class="feature-button" data-learning-session-new>Plan session</button><button type="button" class="feature-button" data-learning-materials>Learning Material List</button><div class="connection"><span class="pulse"></span><span>${Object.values(learningEntries).reduce((total, entries) => total + entries.length, 0)} lessons logged</span></div></div></div>
           <div class="learning-layout"><section class="calendar-panel"><div class="calendar-header"><button class="calendar-nav" data-calendar-prev aria-label="Previous month">‹</button><div><p class="eyebrow">LEARNING CALENDAR</p><h2>${monthName}</h2></div><button class="calendar-nav" data-calendar-next aria-label="Next month">›</button></div><div class="calendar-weekdays"><span>Min</span><span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span></div><div class="calendar-grid">${learningCalendar().map((day) => { if (!day) return '<span class="calendar-day empty-day"></span>'; const key = dateKey(new Date(learningMonth.getFullYear(), learningMonth.getMonth(), day)); const entries = learningEntries[key] ?? []; const count = entries.length; const unfinishedCount = entries.filter((entry) => !entry.completed).length; const allCompleted = count > 0 && unfinishedCount === 0; const isToday = key === todayKey; return `<button class="calendar-day ${key === selectedLearningDate ? 'selected' : ''} ${isToday ? 'today' : ''} ${count ? 'has-lessons' : ''} ${allCompleted ? 'all-completed' : ''}" data-day="${key}" title="${allCompleted ? 'All lessons completed' : count ? `${unfinishedCount} unfinished lessons` : 'No lessons'}"><span>${day}</span>${count ? `<i aria-label="${allCompleted ? 'All completed' : `${unfinishedCount} unfinished lessons`}">${allCompleted ? icon('check') : unfinishedCount}</i>` : ''}</button>`; }).join('')}</div><div class="calendar-legend"><span><i class="legend-progress">3</i> In progress</span><span><i class="legend-complete">${icon('check')}</i> All completed</span></div><button class="today-button" data-today>Jump to today</button></section><section class="learning-detail"><div class="detail-heading"><div><p class="eyebrow">SELECTED DAY</p><h2>${selectedLabel}</h2></div><span class="date-badge">${selectedEntries.length} ${selectedEntries.length === 1 ? 'lesson' : 'lessons'}</span></div><div class="learning-list">${selectedEntries.length ? selectedEntries.map(renderLearningEntry).join('') : '<div class="learning-empty">Belum ada catatan untuk tanggal ini.<br><span>Tambahkan materi pertama di form di bawah.</span></div>'}</div><form class="learning-form" id="learning-form"><input name="title" placeholder="Apa yang dipelajari?" aria-label="What was learned" required /><input name="note" placeholder="Catatan singkat (opsional)" aria-label="Learning note" /><select name="category" aria-label="Learning category"><option>General</option><option>Hermes</option><option>Frontend</option><option>DevOps</option><option>Research</option></select><button type="submit">Add lesson <span>↗</span></button></form></section></div>`;
 }
 
@@ -982,6 +983,7 @@ window.addEventListener('resize', scheduleOrbitTriggerDock);
 
 function render() {
   disposeLanding?.();
+  resetLearningManualData(currentUser?.id ?? null);
   disposeLanding = undefined;
   disposeOverviewMotion?.();
   if (!authChecked) {
@@ -1009,7 +1011,9 @@ function render() {
   const pendingDeleteEntry = (learningEntries[selectedLearningDate] ?? []).find((entry) => entry.id === pendingDeleteLearningId);
   document.title = `${pageLabel} · Zeno`;
   if (isLearningMaterialRoute(route)) ensureLearningMaterialData(route, render);
-  const pageContent = route.kind === 'doing-detail' || route.kind === 'doing-editor' ? renderDoingPage(route) : route.kind !== 'page' ? (isLearningRoute(route) ? learningMaterials(route) : isWorkoutMaterialsRoute(route) ? renderWorkoutMaterials(route) : renderRouteNotFound(window.location.pathname)) : page === 'overview' ? renderOverviewPage(currentUser, visible, successCount) : page === 'changelog' ? `
+  const manualRoute = ['learning-modules', 'learning-module-editor', 'learning-module-detail', 'learning-session-editor', 'learning-session-detail'].includes(route.kind) ? route as ManualRoute : null;
+  if (manualRoute) ensureLearningManualData(manualRoute, render);
+  const pageContent = manualRoute ? renderLearningManual(manualRoute) : route.kind === 'doing-detail' || route.kind === 'doing-editor' ? renderDoingPage(route) : route.kind !== 'page' ? (isLearningMaterialRoute(route) ? learningMaterials(route) : isWorkoutMaterialsRoute(route) ? renderWorkoutMaterials(route) : renderRouteNotFound(window.location.pathname)) : page === 'overview' ? renderOverviewPage(currentUser, visible, successCount) : page === 'changelog' ? `
           <div class="page-heading"><div><p class="eyebrow">CHANGE HISTORY</p><h1>Change log</h1><p class="subheading">Lacak riwayat update berdasarkan hari, tanggal, dan permintaan.</p></div><div class="connection"><span class="pulse"></span><span>${changeLogEntries.length} updates · ${backendOnline ? 'PostgreSQL' : 'local fallback'}</span></div></div>
           ${renderChangeLogUpdates()}` : page === 'activity' ? `
           ${renderActivityTrail(currentUser)}` : page === 'doing' ? `
@@ -1048,6 +1052,7 @@ function render() {
   scheduleOrbitTriggerDock();
   restoreLearningListScroll();
   if (isLearningRoute(route)) bindLearningMaterialsEvents({ onNavigate: navigateTo, rerender: render });
+  if (manualRoute) bindLearningManualEvents(manualRoute, navigateTo, render);
   if (isWorkoutMaterialsRoute(route)) bindWorkoutMaterialEvents({
     onNavigate: navigateTo,
     rerender: render,
@@ -1068,6 +1073,9 @@ function render() {
     onStatus: (online, error) => { backendOnline = online; backendError = error; },
   });
   document.querySelector<HTMLButtonElement>('[data-learning-materials]')?.addEventListener('click', () => navigateTo('/learning/materials'));
+  document.querySelector<HTMLButtonElement>('[data-learning-modules]')?.addEventListener('click', () => navigateTo('/learning/modules'));
+  document.querySelector<HTMLButtonElement>('[data-learning-module-new]')?.addEventListener('click', () => navigateTo('/learning/modules/new'));
+  document.querySelector<HTMLButtonElement>('[data-learning-session-new]')?.addEventListener('click', () => navigateTo('/learning/sessions/new'));
   document.querySelector<HTMLButtonElement>('[data-workout-materials]')?.addEventListener('click', () => navigateTo(`/workout/materials?date=${encodeURIComponent(currentWorkoutDate())}`));
   document.querySelector<HTMLButtonElement>('[data-global-search]')?.addEventListener('click', () => {
     if (window.location.pathname !== pagePaths.overview) {

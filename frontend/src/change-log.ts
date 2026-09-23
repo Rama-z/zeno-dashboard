@@ -10,6 +10,13 @@ export type ChangeLogUpdate = {
 // Gunakan timestamp ISO dengan zona waktu agar sorting dan filter tanggal tetap akurat.
 export const changeLogUpdates: ChangeLogUpdate[] = [
   {
+    id: '2026-09-23-learning-manual-modules-sessions',
+    occurredAt: '2026-09-23T18:32:44+07:00',
+    title: 'Modul dan sesi belajar manual dengan refleksi wajib',
+    description: 'Menambahkan modul Learning berisi materi teks, tautan, PDF, dan video; perencanaan sesi per bagian materi; serta Notes refleksi yang wajib sebelum sesi selesai. Modul, materi, file, dan sesi tersimpan melalui API Go dan PostgreSQL dengan validasi, hak akses pengguna/admin, dan pembacaan ulang. Verifikasi: 114 test frontend, build produksi, test Go dengan PostgreSQL terisolasi, serta 28 pemeriksaan browser terisolasi termasuk reload dan mobile.',
+    category: 'General',
+  },
+  {
     id: '2026-09-23-doing-complete-workspace',
     occurredAt: '2026-09-23T11:43:48+07:00',
     title: 'Doing Complete Workspace terhubung ke PostgreSQL',

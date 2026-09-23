@@ -3,6 +3,7 @@ import './styles.css';
 import './overview.css';
 import './lifestyle.css';
 import './learning-materials.css';
+import './learning-manual.css';
 import './workout-materials.css';
 import './workout-trail.css';
 import './auth.css';

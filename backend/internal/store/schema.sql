@@ -557,3 +557,38 @@ ON CONFLICT (version) DO NOTHING;
 
 INSERT INTO schema_migrations (version) VALUES (17)
 ON CONFLICT (version) DO NOTHING;
+
+-- Owner-scoped manual learning (separate from legacy journal and seeded catalogue).
+CREATE TABLE IF NOT EXISTS manual_learning_modules (
+ id UUID PRIMARY KEY, owner_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+ title VARCHAR(160) NOT NULL, category VARCHAR(80) NOT NULL DEFAULT '', level VARCHAR(40) NOT NULL DEFAULT '',
+ objective TEXT NOT NULL DEFAULT '', note TEXT NOT NULL DEFAULT '', created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+ UNIQUE (id,owner_user_id)
+);
+CREATE INDEX IF NOT EXISTS manual_learning_modules_owner_idx ON manual_learning_modules(owner_user_id,created_at DESC);
+CREATE TABLE IF NOT EXISTS manual_learning_materials (
+ id UUID PRIMARY KEY, module_id UUID NOT NULL REFERENCES manual_learning_modules(id) ON DELETE CASCADE,
+ kind VARCHAR(12) NOT NULL CHECK (kind IN ('text','pdf','video','youtube','link')),
+ title VARCHAR(160) NOT NULL, body TEXT NOT NULL DEFAULT '', url TEXT NOT NULL DEFAULT '',
+ file_name TEXT NOT NULL DEFAULT '', mime_type VARCHAR(100) NOT NULL DEFAULT '', byte_size BIGINT NOT NULL DEFAULT 0,
+ sort_order INTEGER NOT NULL DEFAULT 0,
+ UNIQUE(id,module_id)
+);
+CREATE INDEX IF NOT EXISTS manual_learning_materials_module_idx ON manual_learning_materials(module_id,sort_order,id);
+CREATE TABLE IF NOT EXISTS manual_learning_files (
+ material_id UUID PRIMARY KEY REFERENCES manual_learning_materials(id) ON DELETE CASCADE,
+ data BYTEA NOT NULL
+);
+CREATE TABLE IF NOT EXISTS manual_learning_sessions (
+ id UUID PRIMARY KEY, owner_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+ module_id UUID NOT NULL, session_date DATE NOT NULL, title VARCHAR(160) NOT NULL,
+ target_minutes INTEGER NOT NULL DEFAULT 0, method TEXT NOT NULL DEFAULT '', objective TEXT NOT NULL DEFAULT '',
+ practice_plan TEXT NOT NULL DEFAULT '', status VARCHAR(16) NOT NULL CHECK(status IN ('planned','in_progress','completed')),
+ planned_items JSONB NOT NULL DEFAULT '[]', actual_items JSONB NOT NULL DEFAULT '[]', actual_minutes INTEGER NOT NULL DEFAULT 0,
+ reflection TEXT NOT NULL DEFAULT '', confusion TEXT NOT NULL DEFAULT '', next_step TEXT NOT NULL DEFAULT '',
+ review_date DATE, created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+ CONSTRAINT manual_session_reflection_required CHECK(status <> 'completed' OR length(btrim(reflection)) > 0),
+ FOREIGN KEY(module_id,owner_user_id) REFERENCES manual_learning_modules(id,owner_user_id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS manual_learning_sessions_owner_date_idx ON manual_learning_sessions(owner_user_id,session_date DESC);
+INSERT INTO schema_migrations (version) VALUES (19) ON CONFLICT DO NOTHING;
