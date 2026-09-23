@@ -117,12 +117,13 @@ func TestDoingWorkspaceMigrationAndRoundTrip(t *testing.T) {
 	legacy := legacyRows[0]
 	legacy.Title = "Edited from Overview"
 	legacy.Note = "Legacy note"
+	legacy.EstimatedMinutes = 90
 	_, ok, err = db.UpdateDoing(ctx, legacy, owner, false)
 	if err != nil || !ok {
 		t.Fatalf("legacy update %v %v", ok, err)
 	}
 	rows, err = db.ListDoingTasks(ctx, owner, false)
-	if err != nil || len(rows) != 1 || rows[0].Title != "Edited from Overview" || rows[0].Notes != "Legacy note" {
+	if err != nil || len(rows) != 1 || rows[0].Title != "Edited from Overview" || rows[0].Notes != "Legacy note" || rows[0].Duration.MinMinutes != 90 || rows[0].Duration.MaxMinutes != 90 || rows[0].Duration.Label != "90–90 minutes" {
 		t.Fatalf("workspace stale after Overview edit %+v %v", rows, err)
 	}
 	if _, ok, err = db.UpdateDoingTask(ctx, task, "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee", false); err != nil || ok {

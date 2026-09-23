@@ -670,6 +670,10 @@ func (p *Postgres) updateDoing(ctx context.Context, entry model.DoingEntry, owne
 				'title',$3::varchar(160),'status',CASE $4::varchar(16) WHEN 'doing' THEN 'In progress' WHEN 'blocked' THEN 'Blocked' WHEN 'done' THEN 'Done' ELSE 'Ready' END,
 				'priority',CASE $5::varchar(16) WHEN 'high' THEN 'P1' WHEN 'low' THEN 'P3' ELSE 'P2' END,
 				'area',$10::varchar(60),'project',$11::varchar(160),'focus',CASE $14::varchar(16) WHEN 'deep' THEN 'Deep' WHEN 'light' THEN 'Light' ELSE 'Moderate' END,
+				'duration',jsonb_build_object(
+					'minMinutes',CASE WHEN $8::integer > 0 THEN LEAST($8::integer,240) ELSE 15 END,
+					'maxMinutes',CASE WHEN $8::integer > 0 THEN LEAST($8::integer,240) ELSE 30 END,
+					'label',CASE WHEN $8::integer > 0 THEN LEAST($8::integer,240)::text || '–' || LEAST($8::integer,240)::text || ' minutes' ELSE '15–30 minutes' END),
 				'notes',$17::text)
 		WHERE id = $1::uuid AND doing_date = $2::date`+ownerPredicate+`
 		RETURNING `+doingColumns,
