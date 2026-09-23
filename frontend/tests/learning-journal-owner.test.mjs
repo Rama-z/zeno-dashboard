@@ -13,6 +13,8 @@ function journalHarness({ cache = {}, users = {}, remote = {} } = {}) {
   const data = new Map(Object.entries(cache));
   const localStorage = { getItem: key => data.get(key) ?? null, setItem: (key, value) => data.set(key, value), removeItem: key => data.delete(key) };
   const created = [];
+  const dom = new JSDOM('<main id="app"></main>');
+  let paint = () => {};
   let submitCreate;
   const learningForm = { addEventListener: (_, handler) => { submitCreate = handler; } };
   let learningRequest = async () => ({ entries: remote[currentUser?.id] ?? [] });
@@ -40,12 +42,15 @@ function journalHarness({ cache = {}, users = {}, remote = {} } = {}) {
     dashboardEntryPending: false, authView: '', overviewDataState: '', overviewFailedSources: new Set(),
     backendOnline: false, backendError: '', logs: [], activityEvents: [], changeLogEntries: [],
     syncLifestyleData: async () => ({}), syncDoingData: async () => ({}), errorMessage: error => String(error),
-    render: () => { renders++; }, history: { replaceState() {} }, pagePaths: { overview: '/overview' },
-    window: { setTimeout() {} }, document: { querySelector: selector => selector === '#learning-form' ? learningForm : null, querySelectorAll: () => [] },
+    render: () => { renders++; paint(); }, history: { replaceState() {} }, pagePaths: { overview: '/overview' },
+    window: { setTimeout() {} }, document: { querySelector: selector => selector === '#learning-form' ? learningForm : dom.window.document.querySelector(selector), querySelectorAll: selector => dom.window.document.querySelectorAll(selector) },
     FormData: class { constructor(form) { this.form = form; } get(key) { return this.form.fields[key]; } },
     requestAnimationFrame() {}, icon: () => '', Date,
   };
   const runtime = Function(...Object.keys(context), js)(...Object.values(context));
+  runtime.paint = () => { dom.window.document.querySelector('#app').innerHTML = runtime.renderLearningPage(); runtime.bindLearningJournalEvents(); };
+  paint = runtime.paint;
+  runtime.dom = dom.window.document;
   runtime.data = data;
   runtime.created = created;
   Object.defineProperty(runtime, 'renders', { get: () => renders });
@@ -118,9 +123,14 @@ test('B has no A rows even while B backend response is pending', async () => {
   const loginB = app.loginAccount('b', '');
   await tick();
   assert.deepEqual(app.entries, {});
+  assert.equal(app.dom.querySelector('[data-learning-load-state]').dataset.learningLoadState, 'loading');
+  assert.doesNotMatch(app.dom.querySelector('#app').textContent, /A private journal|0 lessons logged|Belum ada catatan/);
   resolveB({ entries: [] });
   await loginB;
   assert.deepEqual(app.entries, {});
+  assert.equal(app.dom.querySelector('[data-learning-load-state]').dataset.learningLoadState, 'ready');
+  assert.match(app.dom.querySelector('#app').textContent, /0 lessons logged|Belum ada catatan/);
+  assert.ok(!app.dom.querySelector('[data-learning-retry]'), 'genuinely empty success is not an error');
 });
 
 test('late journal update from A cannot mutate B journal or status', async () => {
@@ -151,4 +161,101 @@ test('late journal create from A cannot append to B journal', async () => {
   await create;
   assert.deepEqual(app.entries['2026-09-23'].map(item => item.title), ['B lesson']);
   assert.deepEqual(app.created.map(item => item.owner), ['a']);
+});
+
+test('pending and failed journal read never claims empty, and retry loads the authenticated journal', async () => {
+  const app = journalHarness({ users: { a: { id: 'a' } } });
+  let rejectRead;
+  app.setLearningRequest(() => new Promise((_, reject) => { rejectRead = reject; }));
+  const login = app.loginAccount('a', '');
+  await tick();
+  let html = app.dom.querySelector('#app').textContent;
+  assert.match(html, /Memuat catatan/);
+  assert.doesNotMatch(html, /0 lessons logged|Belum ada catatan/);
+  assert.ok(app.dom.querySelector('#learning-form'), 'journal controls remain available');
+  rejectRead(new Error('journal unavailable'));
+  await login;
+  html = app.dom.querySelector('#app').textContent;
+  assert.match(html, /Gagal memuat catatan/);
+  assert.doesNotMatch(html, /0 lessons logged|Belum ada catatan/);
+  assert.ok(app.dom.querySelector('[data-learning-retry]'));
+  app.setLearningRequest(async () => ({ entries: [entry('a1', 'Recovered lesson')] }));
+  app.dom.querySelector('[data-learning-retry]').click();
+  await tick();
+  assert.deepEqual(app.visibleTitles(), ['Recovered lesson']);
+  assert.match(app.dom.querySelector('#app').textContent, /1 lessons logged/);
+});
+
+test('create during held initial read keeps the created row and reconciles earlier rows', async () => {
+  const app = journalHarness({ users: { a: { id: 'a' } } });
+  let resolveInitial;
+  let reads = 0;
+  app.setLearningRequest(() => ++reads === 1
+    ? new Promise(resolve => { resolveInitial = resolve; })
+    : Promise.resolve({ entries: [entry('old', 'Existing lesson'), entry('created', 'New lesson')] }));
+  const login = app.loginAccount('a', '');
+  await tick();
+  await app.submitCreate({ title: 'New lesson', note: '', category: 'General' });
+  assert.ok(app.visibleTitles().includes('New lesson'));
+  resolveInitial({ entries: [entry('old', 'Existing lesson')] });
+  await login;
+  await tick();
+  assert.deepEqual(app.visibleTitles().sort(), ['Existing lesson', 'New lesson']);
+  assert.equal(app.dom.querySelector('[data-learning-load-state]').dataset.learningLoadState, 'ready');
+});
+
+for (const operation of ['update', 'delete']) {
+  test(`${operation} during held journal read is not rolled back by its stale response`, async () => {
+    const app = journalHarness({ users: { a: { id: 'a' } }, remote: { a: [entry('one', 'Original')] } });
+    await app.loginAccount('a', '');
+    let resolveOld;
+    app.setLearningRequest(() => new Promise(resolve => { resolveOld = resolve; }));
+    const sync = app.syncBackend();
+    await tick();
+    if (operation === 'update') await app.persistLearningEntry({ ...app.entries['2026-09-23'][0], title: 'Updated' });
+    else await app.removeLearningEntry(app.entries['2026-09-23'][0]);
+    resolveOld({ entries: [entry('one', 'Original')] });
+    await sync;
+    assert.deepEqual(app.visibleTitles(), operation === 'update' ? ['Updated'] : []);
+  });
+}
+
+test('a held manual retry cannot overwrite a newer create and reconciled existing rows', async () => {
+  const app = journalHarness({ users: { a: { id: 'a' } } });
+  app.setLearningRequest(async () => { throw new Error('offline'); });
+  await app.loginAccount('a', '');
+  let resolveRetry;
+  let reads = 0;
+  app.setLearningRequest(() => ++reads === 1
+    ? new Promise(resolve => { resolveRetry = resolve; })
+    : Promise.resolve({ entries: [entry('old', 'Existing lesson'), entry('created', 'New lesson')] }));
+  app.dom.querySelector('[data-learning-retry]').click();
+  assert.equal(app.dom.querySelector('[data-learning-load-state]').dataset.learningLoadState, 'loading');
+  await app.submitCreate({ title: 'New lesson', note: '', category: 'General' });
+  resolveRetry({ entries: [entry('old', 'Existing lesson')] });
+  await tick();
+  assert.deepEqual(app.visibleTitles().sort(), ['Existing lesson', 'New lesson']);
+  assert.equal(app.dom.querySelector('[data-learning-load-state]').dataset.learningLoadState, 'ready');
+});
+
+test('update during pending retry eventually reconciles instead of staying loading', async () => {
+  const app = journalHarness({ users: { a: { id: 'a' } }, remote: { a: [entry('one', 'Original')] } });
+  await app.loginAccount('a', '');
+  let resolveRetry;
+  let reads = 0;
+  app.setLearningRequest(() => ++reads === 1
+    ? new Promise(resolve => { resolveRetry = resolve; })
+    : Promise.resolve({ entries: [entry('one', 'Updated')] }));
+  // Retry is available after a failed read; keep the already displayed owner row.
+  app.setLearningRequest(async () => { throw new Error('offline'); });
+  await app.syncBackend();
+  app.setLearningRequest(() => ++reads === 1
+    ? new Promise(resolve => { resolveRetry = resolve; })
+    : Promise.resolve({ entries: [entry('one', 'Updated')] }));
+  app.dom.querySelector('[data-learning-retry]').click();
+  await app.persistLearningEntry({ ...app.entries['2026-09-23'][0], title: 'Updated' });
+  resolveRetry({ entries: [entry('one', 'Original')] });
+  await tick();
+  assert.deepEqual(app.visibleTitles(), ['Updated']);
+  assert.equal(app.dom.querySelector('[data-learning-load-state]').dataset.learningLoadState, 'ready');
 });

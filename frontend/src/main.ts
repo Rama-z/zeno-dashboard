@@ -120,18 +120,46 @@ function restoreLearningListScroll() {
 let learningEntries: Record<string, LearningEntry[]> = {};
 let learningOwnerId: string | null = null;
 let learningAuthEpoch = 0;
+let learningDataState: 'loading' | 'ready' | 'error' = 'loading';
+let learningRevision = 0;
 function setLearningOwner(user: AuthUser | null) {
   const ownerId = user?.id ?? null;
   if (ownerId === learningOwnerId) return;
   learningOwnerId = ownerId;
   learningAuthEpoch++;
+  learningRevision++;
   learningEntries = {};
+  learningDataState = 'loading';
   editingLearningId = null;
   pendingDeleteLearningId = null;
   learningListScrollTop = 0;
 }
 function isCurrentLearningOwner(ownerId: string, epoch: number) {
   return currentUser?.id === ownerId && learningOwnerId === ownerId && learningAuthEpoch === epoch;
+}
+function groupLearningEntries(entries: Awaited<ReturnType<typeof api.learning>>['entries']) {
+  return entries.reduce<Record<string, LearningEntry[]>>((grouped, entry) => {
+    (grouped[entry.date] ??= []).push({ id: entry.id, title: entry.title, note: entry.note, category: entry.category, completed: entry.completed });
+    return grouped;
+  }, {});
+}
+async function retryLearningEntries() {
+  const ownerId = currentUser?.id;
+  if (!ownerId) return;
+  const epoch = learningAuthEpoch;
+  const revision = ++learningRevision;
+  learningDataState = 'loading';
+  render();
+  try {
+    const result = await api.learning();
+    if (!isCurrentLearningOwner(ownerId, epoch) || revision !== learningRevision) return;
+    learningEntries = groupLearningEntries(result.entries);
+    learningDataState = 'ready';
+  } catch {
+    if (!isCurrentLearningOwner(ownerId, epoch) || revision !== learningRevision) return;
+    learningDataState = 'error';
+  }
+  render();
 }
 
 
@@ -161,11 +189,12 @@ function renderLearningEntry(entry: LearningEntry) {
 }
 function renderLearningPage() {
   const selectedEntries = learningEntries[selectedLearningDate] ?? [];
+  const journalPending = learningDataState !== 'ready';
   const monthName = learningMonth.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
   const selectedLabel = new Date(`${selectedLearningDate}T12:00:00`).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   return `
-          <div class="page-heading"><div><p class="eyebrow">LEARNING JOURNAL</p><h1>What I learned</h1><p class="subheading">Catat dan pantau pembelajaran harian dalam kalender lintas tahun.</p></div><div class="learning-heading-actions"><button type="button" class="feature-button primary" data-learning-modules>My modules & sessions</button><button type="button" class="feature-button" data-learning-module-new>Create module</button><button type="button" class="feature-button" data-learning-session-new>Plan session</button><button type="button" class="feature-button" data-learning-materials>Learning Material List</button><div class="connection"><span class="pulse"></span><span>${Object.values(learningEntries).reduce((total, entries) => total + entries.length, 0)} lessons logged</span></div></div></div>
-          <div class="learning-layout"><section class="calendar-panel"><div class="calendar-header"><button class="calendar-nav" data-calendar-prev aria-label="Previous month">‹</button><div><p class="eyebrow">LEARNING CALENDAR</p><h2>${monthName}</h2></div><button class="calendar-nav" data-calendar-next aria-label="Next month">›</button></div><div class="calendar-weekdays"><span>Min</span><span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span></div><div class="calendar-grid">${learningCalendar().map((day) => { if (!day) return '<span class="calendar-day empty-day"></span>'; const key = dateKey(new Date(learningMonth.getFullYear(), learningMonth.getMonth(), day)); const entries = learningEntries[key] ?? []; const count = entries.length; const unfinishedCount = entries.filter((entry) => !entry.completed).length; const allCompleted = count > 0 && unfinishedCount === 0; const isToday = key === todayKey; return `<button class="calendar-day ${key === selectedLearningDate ? 'selected' : ''} ${isToday ? 'today' : ''} ${count ? 'has-lessons' : ''} ${allCompleted ? 'all-completed' : ''}" data-day="${key}" title="${allCompleted ? 'All lessons completed' : count ? `${unfinishedCount} unfinished lessons` : 'No lessons'}"><span>${day}</span>${count ? `<i aria-label="${allCompleted ? 'All completed' : `${unfinishedCount} unfinished lessons`}">${allCompleted ? icon('check') : unfinishedCount}</i>` : ''}</button>`; }).join('')}</div><div class="calendar-legend"><span><i class="legend-progress">3</i> In progress</span><span><i class="legend-complete">${icon('check')}</i> All completed</span></div><button class="today-button" data-today>Jump to today</button></section><section class="learning-detail"><div class="detail-heading"><div><p class="eyebrow">SELECTED DAY</p><h2>${selectedLabel}</h2></div><span class="date-badge">${selectedEntries.length} ${selectedEntries.length === 1 ? 'lesson' : 'lessons'}</span></div><div class="learning-list">${selectedEntries.length ? selectedEntries.map(renderLearningEntry).join('') : '<div class="learning-empty">Belum ada catatan untuk tanggal ini.<br><span>Tambahkan materi pertama di form di bawah.</span></div>'}</div><form class="learning-form" id="learning-form"><input name="title" placeholder="Apa yang dipelajari?" aria-label="What was learned" required /><input name="note" placeholder="Catatan singkat (opsional)" aria-label="Learning note" /><select name="category" aria-label="Learning category"><option>General</option><option>Hermes</option><option>Frontend</option><option>DevOps</option><option>Research</option></select><button type="submit">Add lesson <span>↗</span></button></form></section></div>`;
+          <div class="page-heading"><div><p class="eyebrow">LEARNING JOURNAL</p><h1>What I learned</h1><p class="subheading">Catat dan pantau pembelajaran harian dalam kalender lintas tahun.</p></div><div class="learning-heading-actions"><button type="button" class="feature-button primary" data-learning-modules>My modules & sessions</button><button type="button" class="feature-button" data-learning-module-new>Create module</button><button type="button" class="feature-button" data-learning-session-new>Plan session</button><button type="button" class="feature-button" data-learning-materials>Learning Material List</button><div class="connection" role="status"><span class="pulse"></span><span>${journalPending ? learningDataState === 'loading' ? 'Memuat catatan…' : 'Gagal memuat catatan' : `${Object.values(learningEntries).reduce((total, entries) => total + entries.length, 0)} lessons logged`}</span>${learningDataState === 'error' ? '<button type="button" class="feature-button" data-learning-retry>Coba lagi</button>' : ''}</div></div></div>
+          <div class="learning-layout"><section class="calendar-panel"><div class="calendar-header"><button class="calendar-nav" data-calendar-prev aria-label="Previous month">‹</button><div><p class="eyebrow">LEARNING CALENDAR</p><h2>${monthName}</h2></div><button class="calendar-nav" data-calendar-next aria-label="Next month">›</button></div><div class="calendar-weekdays"><span>Min</span><span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span></div><div class="calendar-grid">${learningCalendar().map((day) => { if (!day) return '<span class="calendar-day empty-day"></span>'; const key = dateKey(new Date(learningMonth.getFullYear(), learningMonth.getMonth(), day)); const entries = learningEntries[key] ?? []; const count = entries.length; const unfinishedCount = entries.filter((entry) => !entry.completed).length; const allCompleted = count > 0 && unfinishedCount === 0; const isToday = key === todayKey; return `<button class="calendar-day ${key === selectedLearningDate ? 'selected' : ''} ${isToday ? 'today' : ''} ${count ? 'has-lessons' : ''} ${allCompleted ? 'all-completed' : ''}" data-day="${key}" title="${allCompleted ? 'All lessons completed' : count ? `${unfinishedCount} unfinished lessons` : journalPending ? 'Catatan belum tersedia' : 'No lessons'}"><span>${day}</span>${count ? `<i aria-label="${allCompleted ? 'All completed' : `${unfinishedCount} unfinished lessons`}">${allCompleted ? icon('check') : unfinishedCount}</i>` : ''}</button>`; }).join('')}</div><div class="calendar-legend"><span><i class="legend-progress">3</i> In progress</span><span><i class="legend-complete">${icon('check')}</i> All completed</span></div><button class="today-button" data-today>Jump to today</button></section><section class="learning-detail"><div class="detail-heading"><div><p class="eyebrow">SELECTED DAY</p><h2>${selectedLabel}</h2></div><span class="date-badge">${journalPending ? '— lessons' : `${selectedEntries.length} ${selectedEntries.length === 1 ? 'lesson' : 'lessons'}`}</span></div><div class="learning-list" data-learning-load-state="${learningDataState}">${selectedEntries.length ? selectedEntries.map(renderLearningEntry).join('') : journalPending ? `<div class="learning-empty" role="status">${learningDataState === 'loading' ? 'Memuat catatan…' : 'Gagal memuat catatan.'}</div>` : '<div class="learning-empty">Belum ada catatan untuk tanggal ini.<br><span>Tambahkan materi pertama di form di bawah.</span></div>'}</div><form class="learning-form" id="learning-form"><input name="title" placeholder="Apa yang dipelajari?" aria-label="What was learned" required /><input name="note" placeholder="Catatan singkat (opsional)" aria-label="Learning note" /><select name="category" aria-label="Learning category"><option>General</option><option>Hermes</option><option>Frontend</option><option>DevOps</option><option>Research</option></select><button type="submit">Add lesson <span>↗</span></button></form></section></div>`;
 }
 
 function escapeHtml(value: string) {
@@ -548,6 +577,7 @@ async function syncBackend() {
   const ownerId = currentUser?.id;
   if (!ownerId) return;
   const epoch = learningAuthEpoch;
+  const learningReadRevision = learningRevision;
   overviewDataState = 'loading';
   overviewFailedSources.clear();
   const errors: string[] = [];
@@ -577,16 +607,20 @@ async function syncBackend() {
   if (lifestyleResult.status === 'rejected') fail('lifestyle', lifestyleResult.reason);
   if (doingResult.status === 'rejected') fail('doing', doingResult.reason);
 
-  if (learningResult.status === 'fulfilled') {
+  if (learningReadRevision !== learningRevision) {
+    // A newer journal mutation or retry owns the visible snapshot.
+  } else if (learningResult.status === 'fulfilled') {
     try {
-      learningEntries = learningResult.value.entries.reduce<Record<string, LearningEntry[]>>((grouped, entry) => {
-        (grouped[entry.date] ??= []).push({ id: entry.id, title: entry.title, note: entry.note, category: entry.category, completed: entry.completed });
-        return grouped;
-      }, {});
+      learningEntries = groupLearningEntries(learningResult.value.entries);
+      learningDataState = 'ready';
     } catch (error) {
+      learningDataState = 'error';
       fail('learning', error);
     }
-  } else fail('learning', learningResult.reason);
+  } else {
+    learningDataState = 'error';
+    fail('learning', learningResult.reason);
+  }
 
   const personalSources: OverviewSource[] = ['doing', 'learning', 'lifestyle', 'activity'];
   const allPersonalFailed = personalSources.every((source) => overviewFailedSources.has(source));
@@ -603,6 +637,8 @@ async function persistLearningEntry(entry: LearningEntry) {
     const updated = await api.updateLearning(entry.id, { date, title: entry.title, note: entry.note, category: entry.category, completed: entry.completed });
     if (!isCurrentLearningOwner(ownerId, epoch)) return;
     learningEntries[date] = (learningEntries[date] ?? []).map((item) => item.id === entry.id ? { id: updated.id, title: updated.title, note: updated.note, category: updated.category, completed: updated.completed } : item);
+    learningRevision++;
+    if (learningDataState !== 'ready') void retryLearningEntries();
     backendOnline = true;
     backendError = '';
     editingLearningId = null;
@@ -622,6 +658,8 @@ async function removeLearningEntry(entry: LearningEntry) {
     await api.deleteLearning(entry.id, date);
     if (!isCurrentLearningOwner(ownerId, epoch)) return;
     learningEntries[date] = (learningEntries[date] ?? []).filter((item) => item.id !== entry.id);
+    learningRevision++;
+    if (learningDataState !== 'ready') void retryLearningEntries();
     pendingDeleteLearningId = null;
     backendOnline = true;
     backendError = '';
@@ -1159,6 +1197,7 @@ function render() {
   }));
 }
 function bindLearningJournalEvents() {
+  document.querySelector<HTMLButtonElement>('[data-learning-retry]')?.addEventListener('click', () => { void retryLearningEntries(); });
   document.querySelector<HTMLButtonElement>('[data-learning-materials]')?.addEventListener('click', () => navigateTo('/learning/materials'));
   document.querySelector<HTMLButtonElement>('[data-learning-modules]')?.addEventListener('click', () => navigateTo('/learning/modules'));
   document.querySelector<HTMLButtonElement>('[data-learning-module-new]')?.addEventListener('click', () => navigateTo('/learning/modules/new'));
@@ -1188,6 +1227,8 @@ function bindLearningJournalEvents() {
       if (!isCurrentLearningOwner(ownerId, epoch)) return;
       const entry: LearningEntry = { id: created.id, title: created.title, note: created.note, category: created.category, completed: created.completed };
       learningEntries[payload.date] = [...(learningEntries[payload.date] ?? []), entry];
+      learningRevision++;
+      if (learningDataState !== 'ready') void retryLearningEntries();
       backendOnline = true; backendError = '';
     } catch (error) {
       if (!isCurrentLearningOwner(ownerId, epoch)) return;
