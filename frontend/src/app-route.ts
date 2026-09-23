@@ -19,6 +19,8 @@ export type AppRoute =
   | { kind: 'learning-categories'; subjectId: string }
   | { kind: 'grammar-topics'; subjectId: string; categoryId: string }
   | { kind: 'grammar-lesson'; subjectId: string; categoryId: string; topicId: string }
+  | { kind: 'doing-detail'; taskId: string }
+  | { kind: 'doing-editor'; taskId: string | null }
   | { kind: 'workout-material-categories' }
   | { kind: 'workout-material-list'; categoryId: string }
   | { kind: 'workout-material-detail'; categoryId: string; movementId: string }
@@ -44,6 +46,12 @@ export function resolveAppRoute(pathname: string): AppRoute {
   if (page) return { kind: 'page', page };
 
   const segments = path.split('/').filter(Boolean);
+  if (segments[0] === 'doing') {
+    if (segments.length === 2 && segments[1] === 'new') return { kind: 'doing-editor', taskId: null };
+    if (segments.length === 2) return { kind: 'doing-detail', taskId: decodeURIComponent(segments[1]) };
+    if (segments.length === 3 && segments[2] === 'edit') return { kind: 'doing-editor', taskId: decodeURIComponent(segments[1]) };
+    return notFound(path);
+  }
   if (segments[0] === 'workout' && segments[1] === 'materials') {
     if (segments.length === 2) return { kind: 'workout-material-categories' };
     if (segments.length === 3) return { kind: 'workout-material-list', categoryId: segments[2] };
@@ -61,6 +69,7 @@ export function resolveAppRoute(pathname: string): AppRoute {
 export function pageForRoute(route: AppRoute): Page {
   if (route.kind === 'page') return route.page;
   if (route.kind === 'not-found') return route.parentPage;
+  if (route.kind === 'doing-detail' || route.kind === 'doing-editor') return 'doing';
   if (route.kind === 'workout-material-categories' || route.kind === 'workout-material-list' || route.kind === 'workout-material-detail') return 'workout';
   return 'learning';
 }
@@ -79,6 +88,8 @@ export function isWorkoutMaterialsRoute(route: AppRoute): route is WorkoutMateri
 
 export function appRoutePath(route: Exclude<AppRoute, { kind: 'not-found' }>) {
   if (route.kind === 'page') return pagePaths[route.page];
+  if (route.kind === 'doing-detail') return `/doing/${encodeURIComponent(route.taskId)}`;
+  if (route.kind === 'doing-editor') return route.taskId ? `/doing/${encodeURIComponent(route.taskId)}/edit` : '/doing/new';
   if (route.kind === 'learning-subjects') return '/learning/materials';
   if (route.kind === 'learning-categories') return `/learning/materials/${encodeURIComponent(route.subjectId)}`;
   if (route.kind === 'grammar-topics') return `/learning/materials/${encodeURIComponent(route.subjectId)}/${encodeURIComponent(route.categoryId)}`;

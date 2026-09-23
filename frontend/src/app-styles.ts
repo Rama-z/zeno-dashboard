@@ -7,4 +7,5 @@ import './workout-materials.css';
 import './workout-trail.css';
 import './auth.css';
 import './font-profiles.css';
+import './doing-complete.css';
 import './playground-dashboard.css';

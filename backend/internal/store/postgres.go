@@ -575,24 +575,28 @@ func scanDoingEntry(scan scanFunc) (model.DoingEntry, error) {
 	return entry, err
 }
 
-const doingColumns = `id::text, COALESCE(owner_user_id::text, ''), doing_date::text, title, status, priority,
+const doingColumns = `id::text, COALESCE(owner_user_id::text, ''), COALESCE(doing_date::text, ''), title, status, priority,
 	time_block_start, time_block_end, estimated_minutes, actual_minutes, category, project, goal_outcome,
 	progress, energy_focus, dependency, blocked_by, note, carry_over, completed, completed_at, created_at`
 
 func (p *Postgres) CreateDoing(ctx context.Context, entry model.DoingEntry) (model.DoingEntry, error) {
+	workspace, err := legacyDoingProjection(entry)
+	if err != nil {
+		return model.DoingEntry{}, err
+	}
 	return scanDoingEntry(p.pool.QueryRow(ctx, `
 		INSERT INTO doing_entries (
 			id, owner_user_id, doing_date, title, status, priority, time_block_start, time_block_end,
 			estimated_minutes, actual_minutes, category, project, goal_outcome, progress, energy_focus,
-			dependency, blocked_by, note, carry_over, completed, completed_at, created_at
+			dependency, blocked_by, note, carry_over, completed, completed_at, created_at, workspace_data
 		)
-		VALUES ($1::uuid, NULLIF($2, '')::uuid, $3::date, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
+		VALUES ($1::uuid, NULLIF($2, '')::uuid, $3::date, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23::jsonb)
 		RETURNING `+doingColumns,
 		entry.ID, entry.OwnerUserID, entry.Date, entry.Title, entry.Status, entry.Priority,
 		entry.TimeBlockStart, entry.TimeBlockEnd, entry.EstimatedMinutes, entry.ActualMinutes,
 		entry.Category, entry.Project, entry.GoalOutcome, entry.Progress, entry.EnergyFocus,
 		entry.Dependency, entry.BlockedBy, entry.Note, entry.CarryOver, entry.Completed,
-		entry.CompletedAt, entry.CreatedAt,
+		entry.CompletedAt, entry.CreatedAt, workspace,
 	).Scan)
 }
 
@@ -661,7 +665,12 @@ func (p *Postgres) updateDoing(ctx context.Context, entry model.DoingEntry, owne
 		SET title = $3, status = $4, priority = $5, time_block_start = $6, time_block_end = $7,
 			estimated_minutes = $8, actual_minutes = $9, category = $10, project = $11,
 			goal_outcome = $12, progress = $13, energy_focus = $14, dependency = $15,
-			blocked_by = $16, note = $17, carry_over = $18, completed = $19, completed_at = $20
+			blocked_by = $16, note = $17, carry_over = $18, completed = $19, completed_at = $20,
+			workspace_data = COALESCE(workspace_data,'{}'::jsonb) || jsonb_build_object(
+				'title',$3::varchar(160),'status',CASE $4::varchar(16) WHEN 'doing' THEN 'In progress' WHEN 'blocked' THEN 'Blocked' WHEN 'done' THEN 'Done' ELSE 'Ready' END,
+				'priority',CASE $5::varchar(16) WHEN 'high' THEN 'P1' WHEN 'low' THEN 'P3' ELSE 'P2' END,
+				'area',$10::varchar(60),'project',$11::varchar(160),'focus',CASE $14::varchar(16) WHEN 'deep' THEN 'Deep' WHEN 'light' THEN 'Light' ELSE 'Moderate' END,
+				'notes',$17::text)
 		WHERE id = $1::uuid AND doing_date = $2::date`+ownerPredicate+`
 		RETURNING `+doingColumns,
 		args...,

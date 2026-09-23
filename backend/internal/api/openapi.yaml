@@ -285,6 +285,93 @@ paths:
         '401': {description: Login diperlukan}
         '404': {description: Material tidak ditemukan atau belum published}
         '409': {description: Content version sudah berubah}
+  /api/doing/tasks:
+    get:
+      tags: [Doing]
+      summary: List Complete Workspace tasks (all planned dates, including unscheduled)
+      security: [{CookieAuth: []}]
+      responses:
+        '200':
+          description: Owned tasks, or all tasks for admin
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [entries]
+                properties:
+                  entries: {type: array, items: {$ref: '#/components/schemas/DoingTask'}}
+        '401': {description: Login required}
+    post:
+      tags: [Doing]
+      summary: Create Complete Workspace task; legacy Overview reads the same row
+      security: [{CookieAuth: [], CSRFToken: []}]
+      parameters:
+        - {in: header, name: X-CSRF-Token, required: true, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/DoingTaskInput'}
+      responses:
+        '201':
+          description: Created task
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DoingTask'}
+        '400': {description: Invalid or unknown/read-only fields}
+        '401': {description: Login required}
+        '403': {description: CSRF token or origin invalid}
+  /api/doing/tasks/{id}:
+    get:
+      tags: [Doing]
+      summary: Get a task scoped to owner (admin may read any)
+      security: [{CookieAuth: []}]
+      parameters:
+        - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: Task
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DoingTask'}
+        '400': {description: Invalid ID}
+        '401': {description: Login required}
+        '404': {description: Missing or foreign task}
+    put:
+      tags: [Doing]
+      summary: Replace all 23 fields and checklist (stable IDs)
+      security: [{CookieAuth: [], CSRFToken: []}]
+      parameters:
+        - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+        - {in: header, name: X-CSRF-Token, required: true, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/DoingTaskInput'}
+      responses:
+        '200':
+          description: Updated task
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DoingTask'}
+        '400': {description: Invalid fields or checklist IDs}
+        '401': {description: Login required}
+        '403': {description: CSRF token or origin invalid}
+        '404': {description: Missing or foreign task}
+    delete:
+      tags: [Doing]
+      summary: Delete owned task by ID without date
+      security: [{CookieAuth: [], CSRFToken: []}]
+      parameters:
+        - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+        - {in: header, name: X-CSRF-Token, required: true, schema: {type: string}}
+      responses:
+        '200': {description: Deleted ID}
+        '400': {description: Invalid ID}
+        '401': {description: Login required}
+        '403': {description: CSRF token or origin invalid}
+        '404': {description: Missing or foreign task}
   /api/doing:
     get:
       tags: [Doing]
@@ -699,6 +786,77 @@ components:
             materialId: {type: string}
             createdAt: {type: string, format: date-time}
             updatedAt: {type: string, format: date-time}
+    DoingTaskInput:
+      type: object
+      additionalProperties: false
+      required: [title, area, project, type, status, priority, urgency, impact, effort, energy, focus, duration, context, device, location, timePreference, difficulty, resistance, nextAction, definitionOfDone]
+      description: Due and plannedDate independently nullable; send null to clear. Existing legacy rows may have empty attributes and no criteria until explicitly completed in the editor.
+      properties: &doingTaskFields
+        title: {type: string, minLength: 1, maxLength: 160}
+        area: {type: string, enum: ['💻 Personal Project', Work, Personal]}
+        project: {type: string, minLength: 1, maxLength: 160}
+        type: {type: string, enum: [Deep Work, Admin, Creative, Communication]}
+        status: {type: string, enum: [Ready, In progress, Blocked, Done]}
+        priority: {type: string, enum: [P0, P1, P2, P3]}
+        urgency: {type: string, enum: [Low, Normal, High]}
+        impact: {type: string, enum: [Low, Medium, High]}
+        effort: {type: string, enum: [Low, Medium, High]}
+        energy: {type: string, enum: [Low, Medium, High]}
+        focus: {type: string, enum: [Light, Moderate, Deep]}
+        duration: {$ref: '#/components/schemas/DoingDurationInput'}
+        context: {type: string, enum: ['@computer', '@home', '@office', '@errands']}
+        device: {type: string, enum: [Laptop, Phone, Tablet, Any device]}
+        location: {type: string, enum: [Anywhere, Home, Office, Library]}
+        timePreference: {type: string, enum: [Morning, Afternoon, Evening, Anytime]}
+        difficulty: {type: string, enum: [Low, Medium, High]}
+        resistance: {type: string, enum: [Low, Medium, High]}
+        due: {type: string, format: date, nullable: true}
+        nextAction: {type: string, minLength: 1, maxLength: 500}
+        definitionOfDone: {type: array, minItems: 1, maxItems: 100, items: {$ref: '#/components/schemas/DoingCriterionInput'}}
+        plannedDate: {type: string, format: date, nullable: true}
+        notes: {type: string, maxLength: 20000, description: Multiline whitespace preserved}
+    DoingDurationInput:
+      type: object
+      additionalProperties: false
+      required: [minMinutes, maxMinutes]
+      description: 1 <= minMinutes <= maxMinutes <= 240. Response also includes a server-derived label.
+      properties:
+        minMinutes: {type: integer, minimum: 1, maximum: 240}
+        maxMinutes: {type: integer, minimum: 1, maximum: 240}
+    DoingDuration:
+      type: object
+      required: [minMinutes, maxMinutes, label]
+      properties:
+        minMinutes: {type: integer, minimum: 1, maximum: 240}
+        maxMinutes: {type: integer, minimum: 1, maximum: 240}
+        label: {type: string, readOnly: true, description: Server-derived duration range label}
+    DoingCriterionInput:
+      type: object
+      additionalProperties: false
+      required: [text, done]
+      properties:
+        id: {type: string, format: uuid, description: Omit for new item; on update must belong to this task. Order is array order.}
+        text: {type: string, minLength: 1, maxLength: 500}
+        done: {type: boolean}
+    DoingCriterion:
+      type: object
+      required: [id, text, done]
+      properties:
+        id: {type: string, format: uuid}
+        text: {type: string, maxLength: 500}
+        done: {type: boolean}
+    DoingTask:
+      type: object
+      description: Complete Workspace response; migrated legacy records can contain empty enums/criteria and expose legacyMetadata.
+      properties:
+        <<: *doingTaskFields
+        duration: {$ref: '#/components/schemas/DoingDuration'}
+        definitionOfDone: {type: array, items: {$ref: '#/components/schemas/DoingCriterion'}, description: Migrated legacy rows can have an empty checklist}
+        id: {type: string, format: uuid}
+        ownerUserId: {type: string, format: uuid}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+        legacyMetadata: {type: object, additionalProperties: true, description: Read-only preserved source attributes for migrated legacy rows}
     DoingInput:
       type: object
       required: [date, title]

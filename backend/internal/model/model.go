@@ -153,6 +153,50 @@ type LearningMaterial struct {
 	Review  json.RawMessage `json:"review"`
 }
 
+// DoingTask is the Complete Workspace DTO; DoingEntry remains the legacy Overview DTO.
+type DoingCriterion struct {
+	ID   string `json:"id"`
+	Text string `json:"text"`
+	Done bool   `json:"done"`
+}
+
+type DoingDuration struct {
+	MinMinutes int    `json:"minMinutes"`
+	MaxMinutes int    `json:"maxMinutes"`
+	Label      string `json:"label,omitempty"`
+}
+
+type DoingTask struct {
+	ID               string           `json:"id"`
+	OwnerUserID      string           `json:"ownerUserId,omitempty"`
+	Title            string           `json:"title"`
+	Area             string           `json:"area"`
+	Project          string           `json:"project"`
+	Type             string           `json:"type"`
+	Status           string           `json:"status"`
+	Priority         string           `json:"priority"`
+	Urgency          string           `json:"urgency"`
+	Impact           string           `json:"impact"`
+	Effort           string           `json:"effort"`
+	Energy           string           `json:"energy"`
+	Focus            string           `json:"focus"`
+	Duration         DoingDuration    `json:"duration"`
+	Context          string           `json:"context"`
+	Device           string           `json:"device"`
+	Location         string           `json:"location"`
+	TimePreference   string           `json:"timePreference"`
+	Difficulty       string           `json:"difficulty"`
+	Resistance       string           `json:"resistance"`
+	Due              *string          `json:"due"`
+	NextAction       string           `json:"nextAction"`
+	DefinitionOfDone []DoingCriterion `json:"definitionOfDone"`
+	PlannedDate      *string          `json:"plannedDate"`
+	Notes            string           `json:"notes"`
+	LegacyMetadata   map[string]any   `json:"legacyMetadata,omitempty"`
+	CreatedAt        time.Time        `json:"createdAt"`
+	UpdatedAt        time.Time        `json:"updatedAt"`
+}
+
 type DoingEntry struct {
 	ID               string     `json:"id"`
 	OwnerUserID      string     `json:"ownerUserId,omitempty"`

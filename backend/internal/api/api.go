@@ -199,6 +199,11 @@ func New(store Store, source Source, version string, options ...Option) http.Han
 	mux.HandleFunc("GET /api/learning-materials", h.listLearningMaterials)
 	mux.HandleFunc("GET /api/learning-materials/{id}", h.getLearningMaterial)
 	mux.HandleFunc("PUT /api/learning-materials/{id}/progress", h.upsertLearningMaterialProgress)
+	mux.HandleFunc("GET /api/doing/tasks/{id}", h.getDoingTask)
+	mux.HandleFunc("GET /api/doing/tasks", h.listDoingTasks)
+	mux.HandleFunc("POST /api/doing/tasks", h.createDoingTask)
+	mux.HandleFunc("PUT /api/doing/tasks/{id}", h.updateDoingTask)
+	mux.HandleFunc("DELETE /api/doing/tasks/{id}", h.deleteDoingTask)
 	mux.HandleFunc("POST /api/doing", h.createDoing)
 	mux.HandleFunc("GET /api/doing", h.listDoing)
 	mux.HandleFunc("PUT /api/doing/{id}", h.updateDoing)
@@ -1161,6 +1166,10 @@ func (h *handler) updateDoing(w http.ResponseWriter, r *http.Request) {
 	existing, allowed := findOwned(existingEntries, input.ID, actor, func(entry model.DoingEntry) string { return entry.ID }, func(entry model.DoingEntry) string { return entry.OwnerUserID })
 	if !allowed {
 		writeError(w, http.StatusNotFound, "doing entry tidak ditemukan")
+		return
+	}
+	if utf8.RuneCountInString(existing.Note) > 2000 {
+		writeError(w, http.StatusBadRequest, "Complete Workspace task memiliki Notes panjang; gunakan /api/doing/tasks/{id} agar tidak terpotong")
 		return
 	}
 	if err := normalizeDoingInput(&input, h.auth.Now(), existing.CompletedAt); err != nil {

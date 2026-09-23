@@ -160,6 +160,57 @@ BEGIN
 END $$;
 CREATE INDEX IF NOT EXISTS doing_entries_owner_date_idx ON doing_entries (owner_user_id, doing_date DESC);
 
+-- Additive Complete Workspace projection on the SAME row used by legacy Overview.
+-- Existing rows, IDs, owner, status, creation time and every old column remain intact.
+ALTER TABLE doing_entries ADD COLUMN IF NOT EXISTS workspace_data JSONB;
+ALTER TABLE doing_entries ADD COLUMN IF NOT EXISTS workspace_updated_at TIMESTAMPTZ;
+ALTER TABLE doing_entries ALTER COLUMN doing_date DROP NOT NULL;
+ALTER TABLE doing_entries ALTER COLUMN note TYPE TEXT;
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='doing_entries_note_length_check' AND conrelid='doing_entries'::regclass) THEN
+        ALTER TABLE doing_entries ADD CONSTRAINT doing_entries_note_length_check CHECK (char_length(note) <= 20000);
+    END IF;
+END $$;
+UPDATE doing_entries SET workspace_data = jsonb_build_object(
+    'title', title, 'area', category,
+    'project', project, 'type', '',
+    'status', CASE status WHEN 'doing' THEN 'In progress' WHEN 'blocked' THEN 'Blocked' WHEN 'done' THEN 'Done' ELSE 'Ready' END,
+    'priority', CASE priority WHEN 'high' THEN 'P1' WHEN 'low' THEN 'P3' ELSE 'P2' END,
+    'urgency', '', 'impact', '', 'effort', '',
+    'energy', '', 'focus', CASE energy_focus WHEN 'deep' THEN 'Deep' WHEN 'light' THEN 'Light' ELSE 'Moderate' END,
+    'duration', jsonb_build_object('minMinutes', CASE WHEN estimated_minutes > 0 THEN LEAST(estimated_minutes,240) ELSE 15 END,
+                                   'maxMinutes', CASE WHEN estimated_minutes > 0 THEN LEAST(estimated_minutes,240) ELSE 30 END,
+                                   'label', CASE WHEN estimated_minutes > 0 THEN LEAST(estimated_minutes,240)::text || '–' || LEAST(estimated_minutes,240)::text || ' minutes' ELSE '15–30 minutes' END),
+    'context', '', 'device', '', 'location', '', 'timePreference', '',
+    'difficulty', '', 'resistance', '', 'due', NULL,
+    'nextAction', '', 'definitionOfDone', '[]'::jsonb,
+    'plannedDate', doing_date::text, 'notes',note, 'legacy',true,
+    'legacyMetadata', jsonb_build_object('doingDate',doing_date::text,'category',category,'goalOutcome',goal_outcome,
+        'actualMinutes',actual_minutes,'timeBlockStart',time_block_start,'timeBlockEnd',time_block_end,
+        'dependency',dependency,'blockedBy',blocked_by,'carryOver',carry_over,'progress',progress,'completed',completed)
+) WHERE workspace_data IS NULL;
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='doing_entries_workspace_data_object_check' AND conrelid='doing_entries'::regclass) THEN
+        ALTER TABLE doing_entries ADD CONSTRAINT doing_entries_workspace_data_object_check CHECK (workspace_data IS NULL OR jsonb_typeof(workspace_data) = 'object');
+    END IF;
+END $$;
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='doing_entries_workspace_shape_check' AND conrelid='doing_entries'::regclass) THEN
+        ALTER TABLE doing_entries ADD CONSTRAINT doing_entries_workspace_shape_check CHECK (
+            workspace_data IS NULL OR (
+                COALESCE(jsonb_typeof(workspace_data->'duration')='object',false)
+                AND COALESCE(jsonb_typeof(workspace_data->'definitionOfDone')='array',false)
+                AND COALESCE(jsonb_typeof(workspace_data->'notes')='string',false)
+                AND COALESCE((workspace_data->'duration'->>'minMinutes') ~ '^[0-9]{1,3}$',false)
+                AND COALESCE((workspace_data->'duration'->>'maxMinutes') ~ '^[0-9]{1,3}$',false)
+                AND (workspace_data->'duration'->>'minMinutes')::integer BETWEEN 1 AND 240
+                AND (workspace_data->'duration'->>'maxMinutes')::integer BETWEEN (workspace_data->'duration'->>'minMinutes')::integer AND 240
+                AND COALESCE(jsonb_typeof(workspace_data->'due') IN ('null','string'),false)
+                AND COALESCE(jsonb_typeof(workspace_data->'plannedDate') IN ('null','string'),false)
+            ));
+    END IF;
+END $$;
+
 CREATE TABLE IF NOT EXISTS workout_entries (
     id UUID PRIMARY KEY,
     owner_user_id UUID REFERENCES users(id) ON DELETE SET NULL,

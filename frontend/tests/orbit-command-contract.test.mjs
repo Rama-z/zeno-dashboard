@@ -13,6 +13,14 @@ async function loadOrbitModule() {
   return import(`data:text/javascript;base64,${Buffer.from(output).toString('base64')}`);
 }
 
+test('Doing list and editor controls are considered when docking the Petal Cluster', async () => {
+  const main = await read('src/main.ts');
+  assert.match(main, /\[data-doing-open\]/, 'task rows are actionable across their entire width');
+  assert.match(main, /\[data-doing-cancel\]/, 'editor cancel is a critical action');
+  assert.match(main, /\[data-doing-edit\]/, 'detail edit is a critical action');
+  assert.match(main, /\[data-doing-delete\]/, 'detail delete is a critical action');
+});
+
 test('Orbit Command owns one permission-aware navigation configuration', async () => {
   const navigation = await read('src/orbit-navigation.ts');
 
@@ -176,7 +184,7 @@ test('dashboard continuously docks Orbit away from visible critical actions', as
   const [main, styles] = await Promise.all([read('src/main.ts'), read('src/styles.css')]);
 
   assert.match(main, /chooseOrbitTriggerDock/);
-  assert.match(main, /\.doing-editor :is\(button\[type="submit"\],\[data-doing-editor-cancel\]\)/);
+  assert.match(main, /\.doing-complete :is\(\[data-doing-open\]/);
   assert.match(main, /\.feature-empty \[data-journal-tab="write"\]/);
   assert.match(main, /trigger\.dataset\.orbitDock\s*=\s*chooseOrbitTriggerDock/);
   assert.match(main, /window\.addEventListener\('scroll', scheduleOrbitTriggerDock, true\)/);

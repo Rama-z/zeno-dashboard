@@ -7,7 +7,7 @@ import { sessionLog as initialLogs, sourceFile, generatedAt } from './generated-
 import { api, ApiError, type ActivityEvent, type ApiLog, type AuthUser, type SettingsResponse } from './api';
 import { changeLogUpdates, type ChangeLogUpdate } from './change-log';
 import { bindLifestyleEvents, currentWorkoutDate, isLifestylePage, lifestyleOverviewSnapshot, renderLifestylePage, scheduleWorkout, syncLifestyleData, syncLifestyleRoute } from './lifestyle';
-import { bindDoingEvents, doingOverviewEntries, renderDoingPage, syncDoingData } from './doing';
+import { bindDoingEvents, doingOverviewEntries, renderDoingPage, syncDoingData } from './doing-complete';
 import { authPath, authViewFromPath, bindAuthEvents, bindProfileEvents, renderAuthScreen, renderProfilePage, type AuthScreenState, type AuthView, type FontProfileOption } from './auth';
 import { bindLandingEvents, renderLandingPage } from './landing';
 import { bindLearningMaterialsEvents, ensureLearningMaterialData, renderLearningMaterials as learningMaterials } from './learning-materials';
@@ -960,7 +960,7 @@ function updateOrbitTriggerDock() {
     if (orbitOpen) positionOrbitDialogFromTrigger(trigger);
     return;
   }
-  const controls = [...document.querySelectorAll<HTMLElement>('.doing-editor :is(button[type="submit"],[data-doing-editor-cancel])')];
+  const controls = [...document.querySelectorAll<HTMLElement>('.doing-complete :is([data-doing-open],[data-doing-new],[data-doing-edit],[data-doing-delete],[data-doing-back],[data-doing-cancel],[data-doing-submit],[data-doing-delete-confirm],[data-doing-check])')];
   const workoutCriticalControls = [...document.querySelectorAll<HTMLElement>('[data-workout-save-set],[data-workout-retry],.rest-timer.visible,.end-actions button')];
   const journalCriticalControls = [...document.querySelectorAll<HTMLElement>('.feature-empty [data-journal-tab="write"]')];
   controls.push(...workoutCriticalControls, ...journalCriticalControls);
@@ -1009,11 +1009,11 @@ function render() {
   const pendingDeleteEntry = (learningEntries[selectedLearningDate] ?? []).find((entry) => entry.id === pendingDeleteLearningId);
   document.title = `${pageLabel} · Zeno`;
   if (isLearningMaterialRoute(route)) ensureLearningMaterialData(route, render);
-  const pageContent = route.kind !== 'page' ? (isLearningRoute(route) ? learningMaterials(route) : isWorkoutMaterialsRoute(route) ? renderWorkoutMaterials(route) : renderRouteNotFound(window.location.pathname)) : page === 'overview' ? renderOverviewPage(currentUser, visible, successCount) : page === 'changelog' ? `
+  const pageContent = route.kind === 'doing-detail' || route.kind === 'doing-editor' ? renderDoingPage(route) : route.kind !== 'page' ? (isLearningRoute(route) ? learningMaterials(route) : isWorkoutMaterialsRoute(route) ? renderWorkoutMaterials(route) : renderRouteNotFound(window.location.pathname)) : page === 'overview' ? renderOverviewPage(currentUser, visible, successCount) : page === 'changelog' ? `
           <div class="page-heading"><div><p class="eyebrow">CHANGE HISTORY</p><h1>Change log</h1><p class="subheading">Lacak riwayat update berdasarkan hari, tanggal, dan permintaan.</p></div><div class="connection"><span class="pulse"></span><span>${changeLogEntries.length} updates · ${backendOnline ? 'PostgreSQL' : 'local fallback'}</span></div></div>
           ${renderChangeLogUpdates()}` : page === 'activity' ? `
           ${renderActivityTrail(currentUser)}` : page === 'doing' ? `
-          ${renderDoingPage()}` : page === 'learning' ? `
+          ${renderDoingPage(route)}` : page === 'learning' ? `
           ${renderLearningPage()}` : isLifestylePage(page) ? `
           ${renderLifestylePage(page)}` : page === 'profile' ? `
           ${renderProfilePage(currentUser, profileBusy, profileMessage, profileError, fontProfileOptions())}` : `
@@ -1060,8 +1060,9 @@ function render() {
   });
   if (page === 'doing') bindDoingEvents({
     rerender: render,
+    navigate: navigateTo,
     onStatus: (online, error) => { backendOnline = online; backendError = error; },
-  });
+  }, route);
   if (isLifestylePage(page)) bindLifestyleEvents(page, {
     rerender: render,
     onStatus: (online, error) => { backendOnline = online; backendError = error; },

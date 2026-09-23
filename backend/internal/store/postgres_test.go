@@ -295,10 +295,27 @@ func TestPostgresDoingRoundTrip(t *testing.T) {
 	defer db.Close()
 
 	completedAt := time.Date(2099, 12, 30, 14, 27, 0, 0, time.UTC)
-	entry := model.DoingEntry{ID: "00000000-0000-4000-8000-000000000002", Date: "2099-12-30", Title: "Doing integration test", Note: "Need handle refresh token", Category: "Work", Status: "doing", Priority: "high", TimeBlockStart: "09:00", TimeBlockEnd: "11:00", EstimatedMinutes: 120, ActualMinutes: 90, Project: "Zeno Dashboard", GoalOutcome: "OAuth reaches dashboard", Progress: 60, EnergyFocus: "deep", Dependency: "Google OAuth credentials", CarryOver: true, CreatedAt: time.Now().UTC()}
+	entry := model.DoingEntry{ID: fmt.Sprintf("00000000-0000-4000-8000-%012x", time.Now().UnixNano()&0xffffffffffff), Date: "2099-12-30", Title: "Doing integration test", Note: "Need handle refresh token", Category: "Work", Status: "doing", Priority: "high", TimeBlockStart: "09:00", TimeBlockEnd: "11:00", EstimatedMinutes: 120, ActualMinutes: 90, Project: "Zeno Dashboard", GoalOutcome: "OAuth reaches dashboard", Progress: 60, EnergyFocus: "deep", Dependency: "Google OAuth credentials", CarryOver: true, CreatedAt: time.Now().UTC()}
 	created, err := db.CreateDoing(ctx, entry)
+	defer db.DeleteDoing(context.Background(), entry.ID, entry.Date, "", true)
 	if err != nil {
 		t.Fatal(err)
+	}
+	workspaceRows, err := db.ListDoingTasks(ctx, "", true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	foundWorkspace := false
+	for _, candidate := range workspaceRows {
+		if candidate.ID == created.ID {
+			foundWorkspace = true
+			if candidate.Title != entry.Title {
+				t.Fatalf("legacy create workspace mismatch: %+v", candidate)
+			}
+		}
+	}
+	if !foundWorkspace {
+		t.Fatal("legacy Doing create is missing from Complete Workspace")
 	}
 	created.Title = "Updated doing integration test"
 	created.Status = "done"
@@ -310,7 +327,13 @@ func TestPostgresDoingRoundTrip(t *testing.T) {
 		t.Fatalf("expected doing update success: %+v, %v, %v", updated, found, err)
 	}
 	entries, err := db.ListDoing(ctx, entry.Date, "", true)
-	if err != nil || len(entries) != 1 || entries[0].ID != entry.ID || entries[0].Priority != "high" || entries[0].EstimatedMinutes != 120 || entries[0].Project != "Zeno Dashboard" || !entries[0].CarryOver {
+	var stored model.DoingEntry
+	for _, candidate := range entries {
+		if candidate.ID == entry.ID {
+			stored = candidate
+		}
+	}
+	if err != nil || stored.ID != entry.ID || stored.Priority != "high" || stored.EstimatedMinutes != 120 || stored.Project != "Zeno Dashboard" || !stored.CarryOver {
 		t.Fatalf("expected stored doing entry: %+v, %v", entries, err)
 	}
 	deleted, err := db.DeleteDoing(ctx, created.ID, entry.Date, "", true)

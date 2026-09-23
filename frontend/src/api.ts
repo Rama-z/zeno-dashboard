@@ -166,6 +166,24 @@ export type DoingEntryResponse = DoingInput & {
   createdAt: string;
 };
 
+// Complete Workspace is independent of the legacy date-bucket Doing API.
+export type DoingCriterion = { id: string; text: string; done: boolean };
+export type DoingDurationInput = { minMinutes: number; maxMinutes: number };
+export type DoingDuration = DoingDurationInput & { label: string };
+export type DoingTaskInput = {
+  title: string; area: string; project: string; type: string;
+  status: string; priority: string; urgency: string; impact: string; effort: string;
+  energy: string; focus: string; duration: DoingDurationInput; context: string; device: string;
+  location: string; timePreference: string; difficulty: string; resistance: string;
+  due: string | null; nextAction: string; definitionOfDone: DoingCriterion[];
+  plannedDate: string | null; notes: string;
+};
+export type DoingTaskResponse = Omit<DoingTaskInput, 'duration'> & {
+  duration: DoingDuration;
+  id: string; ownerUserId?: string; createdAt: string; updatedAt: string;
+  legacyMetadata?: Record<string, unknown>;
+};
+
 export type WorkoutInput = {
   date: string;
   exercise: string;
@@ -394,6 +412,16 @@ export const api = {
   learningMaterial: (id: string) => request<LearningMaterialDetail>(`/api/learning-materials/${encodeURIComponent(id)}`),
   learningMaterialProgress: (id: string, input: LearningMaterialProgressInput) => request<LearningMaterialProgress>(`/api/learning-materials/${encodeURIComponent(id)}/progress`, {
     method: 'PUT', body: JSON.stringify(input),
+  }),
+  doingTasks: () => request<{ entries: DoingTaskResponse[] }>('/api/doing/tasks'),
+  createDoingTask: (entry: DoingTaskInput) => request<DoingTaskResponse>('/api/doing/tasks', {
+    method: 'POST', body: JSON.stringify(entry),
+  }),
+  updateDoingTask: (id: string, entry: DoingTaskInput) => request<DoingTaskResponse>(`/api/doing/tasks/${encodeURIComponent(id)}`, {
+    method: 'PUT', body: JSON.stringify(entry),
+  }),
+  deleteDoingTask: (id: string) => request<{ deleted: string }>(`/api/doing/tasks/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
   }),
   doing: (date = '') => request<{ date: string | null; entries: DoingEntryResponse[] }>(`/api/doing${date ? `?date=${encodeURIComponent(date)}` : ''}`),
   createDoing: (entry: DoingInput) => request<DoingEntryResponse>('/api/doing', {

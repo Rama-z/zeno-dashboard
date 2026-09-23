@@ -10,6 +10,13 @@ export type ChangeLogUpdate = {
 // Gunakan timestamp ISO dengan zona waktu agar sorting dan filter tanggal tetap akurat.
 export const changeLogUpdates: ChangeLogUpdate[] = [
   {
+    id: '2026-09-23-doing-complete-workspace',
+    occurredAt: '2026-09-23T11:43:48+07:00',
+    title: 'Doing Complete Workspace terhubung ke PostgreSQL',
+    description: 'Merombak halaman Doing menjadi workspace dengan daftar, kalender Planned Date, filter, detail dan editor 23 atribut, Notes multiline, serta checklist persisten. Menambah API Go dan migrasi additive yang mempertahankan 33 task lama beserta metadata historis. Verifikasi: 108 test frontend, test Go dan PostgreSQL terisolasi, authenticated API roundtrip/ownership/CSRF, build Docker serta browser served pada desktop dan mobile 320/390 px.',
+    category: 'General',
+  },
+  {
     id: '2026-09-15-personal-overview-motion',
     occurredAt: '2026-09-15T15:49:47+07:00',
     title: 'Overview personal interaktif tersedia',
