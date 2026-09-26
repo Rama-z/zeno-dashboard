@@ -69,16 +69,16 @@
 }
 body:has(> #app > .zeno-landing) { margin: 0; }
 .zeno-landing {
-  --landing-bg: #F5F4ED;
-  --landing-surface: #fffef8;
-  --landing-bg-soft: #eeeee3;
-  --landing-line: #d9ddce;
+  --landing-bg: #DADDD2;
+  --landing-surface: #E9EBE1;
+  --landing-bg-soft: #D3D7CB;
+  --landing-line: #B7C0AF;
   --landing-text: #202820;
   --landing-text-soft: #525e50;
   --landing-text-muted: #626e5f;
-  --landing-lime: #DAF978;
-  --landing-accent: #335EEA;
-  --landing-blue-soft: #e9edfc;
+  --landing-lime: #C3DD78;
+  --landing-accent: #3359C7;
+  --landing-blue-soft: #D9DFF1;
   --landing-shadow: rgb(54 66 39 / .09);
   min-height: 100dvh;
   overflow-x: clip;

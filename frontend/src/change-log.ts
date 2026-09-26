@@ -10,6 +10,13 @@ export type ChangeLogUpdate = {
 // Gunakan timestamp ISO dengan zona waktu agar sorting dan filter tanggal tetap akurat.
 export const changeLogUpdates: ChangeLogUpdate[] = [
   {
+    id: '2026-09-26-soft-light-mode',
+    occurredAt: '2026-09-26T12:37:03+07:00',
+    title: 'Light mode Zeno lebih redup dan nyaman di ruang gelap',
+    description: 'Meredupkan kanvas kosong, kartu, sidebar, form, halaman landing dan login dengan palet sage hangat; melembutkan aurora serta aksen light mode tanpa mengubah dark mode. Menyamakan permukaan khusus Doing, Learning, dan Workout serta mempertahankan kontras teks untuk keterbacaan.',
+    category: 'Frontend',
+  },
+  {
     id: '2026-09-23-learning-home-journey',
     occurredAt: '2026-09-23T23:08:47+07:00',
     title: 'Beranda Learning Jejak Belajar terhubung ke sesi',

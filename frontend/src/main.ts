@@ -166,7 +166,7 @@ async function retryLearningEntries() {
 function applyTheme() {
   document.documentElement.dataset.theme = theme;
   document.documentElement.dataset.fontProfile = fontProfile;
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'light' ? '#F5F4ED' : '#202820');
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'light' ? '#DADDD2' : '#202820');
 }
 
 const iconNames: Record<string, string> = {

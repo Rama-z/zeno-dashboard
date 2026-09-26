@@ -141,16 +141,16 @@
 
 /* Zeno Playground auth: warm editorial bridge from landing to workspace. */
 .auth-shell {
-  --auth-bg: #F5F4ED;
-  --auth-surface: #FFFEF8;
-  --auth-soft: #ECECE1;
-  --auth-line: #D4D9C9;
+  --auth-bg: #DADDD2;
+  --auth-surface: #E9EBE1;
+  --auth-soft: #D3D7CB;
+  --auth-line: #B7C0AF;
   --auth-text: #202820;
   --auth-text-soft: #536050;
   --auth-muted: #697464;
-  --auth-lime: #DAF978;
-  --auth-accent: #335EEA;
-  --auth-accent-soft: #E9EDFC;
+  --auth-lime: #C3DD78;
+  --auth-accent: #3359C7;
+  --auth-accent-soft: #D9DFF1;
   --auth-shadow: rgb(54 66 39 / .12);
   min-height: 100dvh;
   grid-template-columns: minmax(430px, .9fr) minmax(480px, 1.1fr);
@@ -187,6 +187,13 @@
   border-right: 1px solid #BBD75D;
   background: var(--auth-lime);
   color: #202820;
+}
+:root[data-theme='light'] .auth-shell .auth-brand-panel {
+  border-right-color: var(--auth-line);
+  background: #B8C7A0;
+}
+:root[data-theme='light'] .auth-shell .auth-brand-panel::before {
+  background: rgb(233 235 225 / .24);
 }
 .auth-shell .auth-brand-panel::before {
   content: '';

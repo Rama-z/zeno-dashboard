@@ -5,13 +5,13 @@
 
 :root[data-theme='light'] {
   --orbit-charcoal: #202820;
-  --orbit-navy: #FFFEF8;
-  --orbit-navy-raised: #EEEEE3;
-  --orbit-line: #D9DDCE;
+  --orbit-navy: #E9EBE1;
+  --orbit-navy-raised: #D6DACC;
+  --orbit-line: #B7C0AF;
   --orbit-text: #202820;
-  --orbit-muted: #626E5F;
-  --orbit-active: #DAF978;
-  --orbit-selected: #DAF978;
+  --orbit-muted: #53604F;
+  --orbit-active: #C3DD78;
+  --orbit-selected: #C3DD78;
 }
 :root[data-theme='dark'] {
   --orbit-charcoal: #202820;
@@ -26,12 +26,12 @@
 
 /* Aurora Ribbon artwork tokens stay separate from semantic status colors. */
 :root[data-theme='light'] {
-  --aurora-lime: #BFD878;
-  --aurora-blue: #9BAFEA;
-  --aurora-cyan: #A8D5C9;
-  --aurora-center: rgb(245 244 237 / .62);
-  --aurora-core-opacity: .42;
-  --aurora-cloud-opacity: .22;
+  --aurora-lime: #A9BF78;
+  --aurora-blue: #98A8D1;
+  --aurora-cyan: #9CBDB4;
+  --aurora-center: rgb(218 221 210 / .8);
+  --aurora-core-opacity: .24;
+  --aurora-cloud-opacity: .12;
   --aurora-core-blur: 34px;
   --aurora-cloud-blur: 76px;
   --aurora-core-width: 118;
@@ -735,6 +735,38 @@ body:has(.zeno-dashboard) {
   .zeno-dashboard .search { flex: 1; width: auto; min-width: 200px; }
   .zeno-dashboard .entry-detail { grid-template-columns: 1fr; gap: 14px; padding: 18px 42px 22px; }
 }
+/* Quiet light-mode feature canvases that previously carried near-white local paint. */
+:root[data-theme='light'] .zeno-dashboard .doing-complete {
+  --dc-bg: var(--background-secondary);
+  --dc-surface: var(--surface);
+  --dc-line: var(--border);
+  --dc-lime: var(--primary);
+}
+:root[data-theme='light'] .zeno-dashboard .learning-home {
+  --lh-bg: var(--background-secondary);
+  --lh-surface: var(--surface);
+  --lh-line: var(--border);
+  --lh-lime: var(--primary);
+}
+:root[data-theme='light'] .zeno-dashboard .learning-manual {
+  --lm-cream: var(--background-secondary);
+  --lm-line: var(--border);
+}
+:root[data-theme='light'] .zeno-dashboard :is(.workout-week,.workout-session-card,.workout-context-panel,.focus-exercise,.summary-movements article,.workout-day,.focus-mobile-set,.workout-month-popover,.workout-empty-state) {
+  background: var(--surface);
+}
+:root[data-theme='light'] .zeno-dashboard :is(select,option) {
+  color-scheme: light;
+  color: var(--text-primary);
+  background-color: var(--surface-secondary);
+}
+:root[data-theme='light'] .zeno-dashboard :is(.workout-context-panel input,.workout-context-panel select,.workout-context-panel textarea,.history-toolbar input,.summary-note textarea,.set-inline-inputs input,.mobile-set-inputs input) {
+  background: var(--surface-secondary);
+}
+:root[data-theme='light'] .zeno-dashboard :is(.learning-material-card,.learning-topic-card,.workout-material-category-card,.workout-material-card,.workout-material-hero) {
+  background: var(--surface);
+}
+
 @media (max-width: 640px) {
   .zeno-dashboard .aurora-ribbon {
     --aurora-core-opacity: .23;

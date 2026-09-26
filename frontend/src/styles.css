@@ -74,29 +74,30 @@
 }
 :root[data-theme='light']{
   color-scheme:light;
-  --background:#F5F4ED;--background-secondary:#EEEEE3;
-  --surface:#FFFEF8;--surface-secondary:#EEEEE3;--surface-hover:#E7E9DE;
-  --border:#D9DDCE;--border-subtle:#E4E7DA;
-  --text-primary:#202820;--text-secondary:#525E50;--text-muted:#626E5F;
-  --primary:#DAF978;--primary-hover:#CBEE66;--primary-active:#B4CF5D;
-  --accent:#335EEA;--accent-hover:#2549BF;--accent-secondary:#335EEA;
-  --brand-gradient:linear-gradient(135deg,#335EEA 0%,#2549BF 100%);
-  --success:#277A4A;--warning:#9A6E1D;--danger:#B34F54;--info:#335EEA;
-  --success-bg:color-mix(in srgb,#277A4A 10%,#FFFEF8);--warning-bg:color-mix(in srgb,#9A6E1D 11%,#FFFEF8);--danger-bg:color-mix(in srgb,#B34F54 10%,#FFFEF8);--info-bg:#E9EDFC;
+  /* Low-glare warm sage: the large empty canvas is dimmer than the cards. */
+  --background:#DADDD2;--background-secondary:#D3D7CB;
+  --surface:#E9EBE1;--surface-secondary:#D6DACC;--surface-hover:#C9D0C0;
+  --border:#B7C0AF;--border-subtle:#C8D0C2;
+  --text-primary:#202820;--text-secondary:#424E3F;--text-muted:#53604F;
+  --primary:#C3DD78;--primary-hover:#B7D269;--primary-active:#A6C056;
+  --accent:#3359C7;--accent-hover:#2549AD;--accent-secondary:#3359C7;
+  --brand-gradient:linear-gradient(135deg,#3359C7 0%,#2549AD 100%);
+  --success:#277A4A;--warning:#8B641D;--danger:#B34F54;--info:#3359C7;
+  --success-bg:color-mix(in srgb,#277A4A 10%,var(--surface));--warning-bg:color-mix(in srgb,#8B641D 11%,var(--surface));--danger-bg:color-mix(in srgb,#B34F54 10%,var(--surface));--info-bg:#D9DFF1;
   --ambient-primary:transparent;--ambient-secondary:transparent;--ambient-support:transparent;
-  --glass-surface-low:#EEEEE3;--glass-surface-medium:#FFFEF8;--glass-surface-high:#FFFEF8;--glass-surface-interactive:#E7E9DE;
-  --glass-border:var(--border);--glass-border-strong:#AAB6A2;--glass-highlight:transparent;
+  --glass-surface-low:var(--surface-secondary);--glass-surface-medium:var(--surface);--glass-surface-high:var(--surface);--glass-surface-interactive:var(--surface-hover);
+  --glass-border:var(--border);--glass-border-strong:#94A18E;--glass-highlight:transparent;
   --glass-blur-shell:0px;--glass-blur-overlay:0px;
   --radius-control:12px;--radius-card:22px;--radius-shell:24px;--radius-overlay:22px;
-  --shadow-card:0 10px 30px rgb(54 66 39 / .1);--shadow-raised:0 16px 42px rgb(54 66 39 / .13);--shadow-overlay:0 20px 56px rgb(54 66 39 / .18);--shadow-accent:0 10px 24px rgb(91 112 39 / .14);
+  --shadow-card:0 10px 30px rgb(54 66 39 / .07);--shadow-raised:0 16px 42px rgb(54 66 39 / .1);--shadow-overlay:0 20px 56px rgb(54 66 39 / .15);--shadow-accent:0 10px 24px rgb(91 112 39 / .1);
   --bg:var(--background);--panel:var(--surface);--surface-2:var(--surface-secondary);
   --text:var(--text-primary);--heading:var(--text-primary);--muted:var(--text-secondary);--dim:var(--text-muted);--green:var(--success);
-  --control-bg:var(--surface-secondary);--control-hover:var(--surface-hover);--shadow:rgb(54 66 39 / .1);
+  --control-bg:var(--surface-secondary);--control-hover:var(--surface-hover);--shadow:rgb(54 66 39 / .07);
 }
 html{color:var(--text-primary);background:var(--background)}body{color:var(--text-primary);background:var(--background)}
 .shell>.sidebar{border-color:var(--border);background:linear-gradient(180deg,color-mix(in srgb,var(--background-secondary) 96%,var(--primary) 4%),var(--background))}.sidebar::before{background:radial-gradient(circle,rgba(22,139,255,.2),transparent 68%)}
 .sidebar .nav-item.active{color:var(--text-primary);border-color:rgba(22,139,255,.24);background:linear-gradient(90deg,rgba(22,139,255,.2),rgba(22,217,245,.055));box-shadow:inset 2px 0 var(--primary),0 5px 14px var(--shadow)}.sidebar .nav-item.active .nav-icon{color:var(--accent);border-color:rgba(22,217,245,.28);background:rgba(22,139,255,.16)}.sidebar .nav-item:hover .nav-icon{color:var(--accent-hover);border-color:rgba(58,164,255,.28);background:rgba(22,139,255,.12)}
-:root[data-theme='light'] .shell>.sidebar{background:linear-gradient(180deg,#FFFFFF,var(--background-secondary))}:root[data-theme='light'] .sidebar::before{background:radial-gradient(circle,rgba(8,120,232,.12),transparent 68%)}:root[data-theme='light'] .sidebar .nav-item.active{color:var(--text-primary);border-color:rgba(8,120,232,.2);background:linear-gradient(90deg,rgba(8,120,232,.15),rgba(0,175,203,.04));box-shadow:inset 2px 0 var(--primary),0 5px 14px var(--shadow)}:root[data-theme='light'] .sidebar .nav-item.active .nav-icon{color:var(--primary);border-color:rgba(8,120,232,.24);background:rgba(8,120,232,.12)}
+:root[data-theme='light'] .shell>.sidebar{background:linear-gradient(180deg,var(--surface),var(--background-secondary))}:root[data-theme='light'] .sidebar::before{background:radial-gradient(circle,rgba(8,120,232,.12),transparent 68%)}:root[data-theme='light'] .sidebar .nav-item.active{color:var(--text-primary);border-color:rgba(8,120,232,.2);background:linear-gradient(90deg,rgba(8,120,232,.15),rgba(0,175,203,.04));box-shadow:inset 2px 0 var(--primary),0 5px 14px var(--shadow)}:root[data-theme='light'] .sidebar .nav-item.active .nav-icon{color:var(--primary);border-color:rgba(8,120,232,.24);background:rgba(8,120,232,.12)}
 .calendar-panel,.learning-detail,.activity-panel,.settings-card,.change-log-toolbar,.metric-card,.update-card{border-color:var(--border);background:linear-gradient(145deg,color-mix(in srgb,var(--surface) 96%,var(--primary) 4%),var(--surface))}.metric-card.accent{border-color:rgba(22,139,255,.38);background:linear-gradient(135deg,rgba(22,139,255,.16),rgba(22,217,245,.035))}
 .eyebrow{color:var(--primary)}.calendar-day.selected{color:#FFFFFF;border-color:var(--primary-hover);background:var(--primary);box-shadow:0 7px 18px rgba(22,139,255,.2)}.calendar-day.today:not(.selected){color:var(--accent);border-color:rgba(22,217,245,.42)}.calendar-day i,.legend-progress{color:var(--accent);background:var(--info-bg)}
 .learning-form button,.settings-save{color:#FFFFFF;border-color:var(--primary);background:var(--primary);box-shadow:0 8px 20px rgba(22,139,255,.16)}.learning-form button:hover,.settings-save:hover{color:#FFFFFF;border-color:var(--primary-hover);background:var(--primary-hover)}

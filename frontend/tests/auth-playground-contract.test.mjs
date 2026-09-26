@@ -8,7 +8,7 @@ test('auth page uses the scoped Zeno Playground visual language in both themes',
   const [styles, auth] = await Promise.all([read('src/auth.css'), read('src/auth.ts')]);
 
   assert.match(styles, /\/\* Zeno Playground auth/);
-  assert.match(styles, /\.auth-shell\s*\{[^}]*--auth-bg:\s*#F5F4ED[^}]*--auth-text:\s*#202820[^}]*--auth-lime:\s*#DAF978[^}]*--auth-accent:\s*#335EEA/s);
+  assert.match(styles, /\.auth-shell\s*\{[^}]*--auth-bg:\s*#DADDD2[^}]*--auth-text:\s*#202820[^}]*--auth-lime:\s*#C3DD78[^}]*--auth-accent:\s*#3359C7/s);
   assert.match(styles, /:root\[data-theme=['"]dark['"]\]\s+\.auth-shell/);
   assert.match(styles, /\.auth-shell\s+\.auth-card\s*\{[^}]*border-radius:\s*24px[^}]*background:\s*var\(--auth-surface\)/s);
   assert.match(styles, /\.auth-shell\s+\.auth-submit\s*\{[^}]*border-radius:\s*999px[^}]*background:\s*var\(--auth-lime\)[^}]*color:\s*#202820/s);

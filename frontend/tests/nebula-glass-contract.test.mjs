@@ -34,10 +34,10 @@ test('Playground semantic tokens exist for both dashboard themes', () => {
   assert.match(styles, /--text-primary:#F5F4ED/);
   assert.match(styles, /--primary:#DAF978/);
   assert.match(styles, /--accent:#93ACFF/);
-  assert.match(styles, /--background:#F5F4ED/);
-  assert.match(styles, /--surface:#FFFEF8/);
+  assert.match(styles, /--background:#DADDD2/);
+  assert.match(styles, /--surface:#E9EBE1/);
   assert.match(styles, /--text-primary:#202820/);
-  assert.match(styles, /--accent:#335EEA/);
+  assert.match(styles, /--accent:#3359C7/);
   for (const token of requiredTokens) assert.match(styles, new RegExp(`${token.replaceAll('-', '\\-')}\\s*:`), `${token} missing`);
 });
 
@@ -97,5 +97,5 @@ test('Playground preserves focus, reduced motion, and one-time dashboard entry m
 
 test('Playground aligns browser chrome with the dashboard canvas', () => {
   assert.match(index, /<meta name="theme-color" content="#202820"/i);
-  assert.match(main, /theme-color[^\n]*theme === 'light' \? '#F5F4ED' : '#202820'/);
+  assert.match(main, /theme-color[^\n]*theme === 'light' \? '#DADDD2' : '#202820'/);
 });
