@@ -100,6 +100,7 @@ body:has(> #app > .zeno-landing) { margin: 0; }
   --landing-text: #F5F4ED;
   --landing-text-soft: #c3cbbd;
   --landing-text-muted: #aab6a2;
+  --landing-lime: #DAF978;
   --landing-accent: #93acff;
   --landing-blue-soft: #303e56;
   --landing-shadow: rgb(12 19 11 / .24);

@@ -40,5 +40,9 @@ test('public light surfaces and dashboard atmosphere share the softened palette'
   assert.ok(luminance(color(authPalette, '--auth-surface')) < .85);
   const brandPanel = palette(read('auth.css'), ":root[data-theme='light'] .auth-shell .auth-brand-panel {", '/* Zeno Playground auth:');
   assert.ok(luminance(color(brandPanel, 'background')) < .6, 'large login brand panel is too vivid');
+  const darkLanding = palette(read('landing.css'), ":root[data-theme='dark'] .zeno-landing {", '.zeno-landing {\n  --landing-bg:');
+  const darkAuth = palette(read('auth.css'), ":root[data-theme='dark'] .auth-shell {", '/* Zeno Playground auth:');
+  assert.equal(color(darkLanding, '--landing-lime').toUpperCase(), '#DAF978');
+  assert.equal(color(darkAuth, '--auth-lime').toUpperCase(), '#DAF978');
   assert.match(read('playground-dashboard.css'), /--aurora-core-opacity:\s*\.2[0-9]/);
 });
