@@ -1,8 +1,10 @@
 import '@fontsource-variable/outfit/wght.css';
 import '@fontsource/dm-mono/latin-400.css';
 import '@fontsource/dm-mono/latin-500.css';
+import '@fontsource-variable/inter/wght.css';
 import '@phosphor-icons/web/regular';
 import './landing.css';
+import './paper-landing.css';
 import { sessionLog as initialLogs, sourceFile, generatedAt } from './generated-log';
 import { api, ApiError, type ActivityEvent, type ApiLog, type AuthUser, type SettingsResponse } from './api';
 import { changeLogUpdates, type ChangeLogUpdate } from './change-log';

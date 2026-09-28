@@ -10,6 +10,13 @@ export type ChangeLogUpdate = {
 // Gunakan timestamp ISO dengan zona waktu agar sorting dan filter tanggal tetap akurat.
 export const changeLogUpdates: ChangeLogUpdate[] = [
   {
+    id: '2026-09-28-zeno-paper-desk-design',
+    occurredAt: '2026-09-28T10:28:56+07:00',
+    title: 'Zeno Paper Desk: struktur Notion dengan palet Zeno',
+    description: 'Menyusun DESIGN.md dengan token warna Zeno yang tetap, lalu menerapkan tipografi Inter, hierarki heading, ritme ruang, kartu hairline, bayangan lembut, radius komponen, hero terbalik, serta reflow mobile pada landing, autentikasi, dan dashboard. Mode gelap/terang, tiga profil tipografi, rute, fungsi data, serta geometri Petal Cluster tetap dipertahankan.',
+    category: 'Frontend',
+  },
+  {
     id: '2026-09-26-soft-light-mode',
     occurredAt: '2026-09-26T12:37:03+07:00',
     title: 'Light mode Zeno lebih redup dan nyaman di ruang gelap',

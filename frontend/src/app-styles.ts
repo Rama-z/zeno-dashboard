@@ -11,3 +11,4 @@ import './auth.css';
 import './font-profiles.css';
 import './doing-complete.css';
 import './playground-dashboard.css';
+import './paper-app.css';

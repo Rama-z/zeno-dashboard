@@ -1,0 +1,75 @@
+/* DESIGN.md — document-first landing. Colors intentionally remain Zeno tokens. */
+.zeno-landing,
+:root[data-font-profile='compact'] .zeno-landing {
+  font-family: 'Inter Variable', Inter, system-ui, sans-serif;
+  --paper-hairline: var(--landing-line);
+  --paper-shadow: 0 .175px 1.041px rgb(0 0 0 / .01),
+    0 .8px 2.925px rgb(0 0 0 / .02),
+    0 2.025px 7.847px rgb(0 0 0 / .027),
+    0 4px 18px var(--landing-shadow);
+  --zeno-type-display-size: clamp(3rem, 5vw, 4rem);
+  --zeno-type-display-line-height: 1;
+  --zeno-type-display-tracking: -.0332em;
+  --zeno-type-page-title-size: clamp(2.35rem, 4.2vw, 3.375rem);
+  --zeno-type-page-title-line-height: 1.04;
+  --zeno-type-page-title-tracking: -.035em;
+  --zeno-type-section-title-size: clamp(1.625rem, 2.7vw, 2.5rem);
+  --zeno-type-section-title-line-height: 1.1;
+  --zeno-type-section-title-tracking: -.025em;
+  --zeno-type-body-line-height: 1.5;
+}
+:root[data-font-profile='standard'] .zeno-landing { --zeno-type-display-size: clamp(3.15rem, 5.2vw, 4.2rem); --zeno-type-page-title-size: clamp(2.45rem, 4.35vw, 3.5rem); --zeno-type-section-title-size: clamp(1.75rem, 2.8vw, 2.625rem); --zeno-type-body-line-height: 1.55; }
+:root[data-font-profile='expanded'] .zeno-landing { --zeno-type-display-size: clamp(3.3rem, 5.4vw, 4.4rem); --zeno-type-page-title-size: clamp(2.55rem, 4.5vw, 3.625rem); --zeno-type-section-title-size: clamp(1.875rem, 2.9vw, 2.75rem); --zeno-type-body-line-height: 1.6; }
+.zeno-landing :is(button, input, textarea, a, h1, h2, h3, h4, h5, p, span, strong, small, label):not(.ph) {
+  font-family: 'Inter Variable', Inter, system-ui, sans-serif;
+}
+.zeno-landing .landing-container { width: min(1200px, calc(100% - 64px)); }
+.zeno-landing .landing-nav-shell { min-height: 68px; }
+.zeno-landing .landing-hero {
+  margin-top: 24px; padding: clamp(32px, 5vw, 68px); gap: clamp(20px, 3vw, 44px);
+  border-radius: 16px; background: #202820; color: #F5F4ED;
+}
+.zeno-landing .landing-hero h1,
+.zeno-landing .landing-hero-copy > p:not(.landing-eyebrow) { color: #F5F4ED; }
+.zeno-landing .landing-hero .landing-eyebrow { color: #C3CBBD; }
+.zeno-landing .landing-hero h1,
+.zeno-landing h2,
+.zeno-landing :is(.landing-workspace-copy,.landing-info-panel) h3,
+.zeno-landing .landing-demo-heading h4 { font-weight: 700; }
+.zeno-landing .landing-hero-copy > p:not(.landing-eyebrow) { max-width: 48ch; }
+.zeno-landing .landing-hero-art { min-height: 380px; }
+.zeno-landing .landing-float-card { color: var(--landing-text); }
+.zeno-landing .landing-float-card :is(span,p,small,strong) { color: inherit; }
+.zeno-landing .landing-float-card > span .ph,
+.zeno-landing .landing-workout-card strong { color: var(--landing-accent); }
+.zeno-landing .landing-handnote { color: #C3CBBD; }
+.zeno-landing .landing-hero .landing-motion-controls button { color: #F5F4ED; }
+.zeno-landing .landing-hero .landing-motion-controls > span { color: #C3CBBD; }
+.zeno-landing .landing-hero .landing-secondary-button { color: #202820; background: #E9EBE1; }
+.zeno-landing .landing-hero .landing-secondary-button:hover { background: #D3D7CB; }
+.zeno-landing .landing-section { padding-block: clamp(64px, 7vw, 100px); }
+.zeno-landing :is(.landing-workspace-panel,.landing-story-card,.landing-access-card,.landing-cta) { border-radius: 16px; }
+.zeno-landing :is(.landing-demo,.landing-float-card,.landing-info-panel) { border-radius: 12px; }
+.zeno-landing :is(.landing-demo,.landing-float-card,.landing-access-card) { box-shadow: var(--paper-shadow); }
+.zeno-landing .landing-workspace-panel { background: var(--landing-bg-soft); }
+.zeno-landing .landing-demo-bar { border-color: var(--paper-hairline); }
+.zeno-landing .landing-marquee { background: var(--landing-bg-soft); color: var(--landing-text); transform: none; }
+.zeno-landing :is(.landing-theme-button,.landing-menu-button,.landing-login,.landing-motion-controls button,.landing-choice) { border-radius: 8px; }
+.zeno-landing :is(textarea,input:not([type='checkbox'])) { border-radius: 4px; }
+.zeno-landing .landing-primary-button:active { scale: .9; }
+.zeno-landing .landing-cta { background: var(--landing-bg-soft); color: var(--landing-text); border: 1px solid var(--landing-line); }
+.zeno-landing .landing-cta .landing-primary-button { background: var(--landing-lime); color: #202820; border-color: var(--landing-lime); }
+.zeno-landing .landing-cta > p { color: var(--landing-text-soft); }
+@media (max-width: 767px) {
+  .zeno-landing .landing-container { width: calc(100% - 40px); }
+  .zeno-landing .landing-hero { padding: 32px 24px; margin-top: 12px; }
+  .zeno-landing .landing-hero-art { min-height: 350px; }
+  .zeno-landing .landing-hero h1 { font-size: clamp(2.65rem, 10vw, 4rem); }
+  .zeno-landing .landing-nav-links { border-radius: 12px; }
+}
+@media (max-width: 380px) {
+  .zeno-landing .landing-container { width: calc(100% - 24px); }
+  .zeno-landing .landing-hero { padding: 28px 16px; }
+  .zeno-landing .landing-hero-art { min-height: 315px; }
+}
+@media (prefers-reduced-motion: reduce) { .zeno-landing .landing-primary-button:active { scale: 1; } }

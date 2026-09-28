@@ -1,0 +1,101 @@
+/* DESIGN.md — Zeno colors unchanged; only non-color tokens are adapted. */
+:root, :root[data-theme='dark'], :root[data-theme='light'] {
+  --radius-control: 8px;
+  --radius-card: 12px;
+  --radius-shell: 16px;
+  --radius-overlay: 12px;
+  --shadow-card: 0 .175px 1.041px rgb(0 0 0 / .01), 0 .8px 2.925px rgb(0 0 0 / .02), 0 2.025px 7.847px rgb(0 0 0 / .027), 0 4px 18px var(--shadow);
+  --shadow-raised: 0 .8px 2.925px rgb(0 0 0 / .02), 0 4px 18px var(--shadow), 0 23px 52px rgb(0 0 0 / .05);
+  --shadow-overlay: 0 4px 18px var(--shadow), 0 23px 52px rgb(0 0 0 / .09);
+}
+.zeno-dashboard, .auth-shell, .delete-popover, .orbit-overlay {
+  font-family: 'Inter Variable', Inter, system-ui, sans-serif;
+  font-feature-settings: 'lnum' 1, 'locl' 1;
+}
+/* Prose, controls and labels use one family. Keep icon glyphs and code/data mono. */
+.zeno-dashboard :is(h1,h2,h3,h4,h5,p,span,strong,small,button,a,input,textarea,select,label,legend):not(.ph):not(code),
+.auth-shell :is(h1,h2,h3,h4,h5,p,span,strong,small,button,a,input,textarea,select,label):not(.ph):not(code),
+.delete-popover :is(strong,span,button),
+.orbit-overlay :is(button,span,strong):not(.ph) {
+  font-family: 'Inter Variable', Inter, system-ui, sans-serif;
+}
+.zeno-dashboard {
+  --dashboard-content-width: 1200px;
+  --dashboard-gap: 16px;
+  --zeno-type-page-title-size: clamp(2.25rem, 3.2vw, 2.5rem);
+  --zeno-type-page-title-line-height: 1.1;
+  --zeno-type-page-title-tracking: -.025em;
+  --zeno-type-section-title-size: 26px;
+  --zeno-type-section-title-line-height: 1.23;
+  --zeno-type-section-title-tracking: -.024em;
+  --zeno-type-card-title-size: 22px;
+  --zeno-type-card-title-line-height: 1.27;
+  --zeno-type-card-title-tracking: -.011em;
+  --zeno-type-body-size: 16px;
+  --zeno-type-body-line-height: 1.5;
+  --zeno-type-body-small-size: 15px;
+  --zeno-type-body-small-line-height: 1.4;
+  --zeno-type-control-size: 15px;
+  --zeno-type-meta-size: 12px;
+}
+:root[data-font-profile='standard'] .zeno-dashboard { --zeno-type-body-size: 17px; --zeno-type-body-small-size: 16px; --zeno-type-control-size: 16px; --zeno-type-page-title-size: clamp(2.35rem, 3.3vw, 2.65rem); --zeno-type-card-title-size: 23px; }
+:root[data-font-profile='expanded'] .zeno-dashboard { --zeno-type-body-size: 18px; --zeno-type-body-small-size: 17px; --zeno-type-control-size: 17px; --zeno-type-page-title-size: clamp(2.5rem, 3.5vw, 2.8rem); --zeno-type-card-title-size: 24px; }
+.zeno-dashboard .content { width: min(var(--dashboard-content-width), 100%); margin-inline: auto; padding: 48px clamp(12px, 2.5vw, 32px) 132px; }
+.zeno-dashboard .page-heading { margin-bottom: 36px; }
+.zeno-dashboard .page-heading h1,
+.zeno-dashboard .content :is(.section-toolbar h2,.panel-heading h2,.settings-card-heading h2,.calendar-header h2,.detail-heading h2,.spending-anchor h2,.session-card h2),
+.zeno-dashboard .content :is(.entry-title,.update-card h3,.learning-entry h3,.workout-copy h3,.journal-card-head h3,.journal-revision-head h3,.spending-copy h3,.learning-material-card h2,.learning-topic-card h2,.doing-board-heading h2,.doing-editor-heading h3) {
+  font-weight: 700;
+}
+.zeno-dashboard .content :is(.subheading,.question p,.answer-body p,.markdown-body,.journal-live-preview,.writer-surface textarea) { line-height: 1.5; font-weight: 400; }
+.zeno-dashboard .topbar { width: min(var(--dashboard-content-width), 100%); min-height: 60px; border-radius: 12px; box-shadow: var(--shadow-card); }
+.zeno-dashboard .metric-card,
+.zeno-dashboard .log-list,
+.zeno-dashboard :is(.calendar-panel,.learning-detail,.lifestyle-panel,.activity-panel,.settings-card,.change-log-toolbar,.update-card,.journal-writing,.workout-detail,.lifestyle-calendar,.learning-material-card,.learning-topic-card,.lesson-hero,.lesson-section,.concept-card,.lesson-example,.review-card,.mastery-panel,.workout-material-category-card,.workout-material-card,.workout-material-hero,.workout-material-section,.workout-material-action-card,.workout-material-summary-item,.workout-session-card,.workout-week,.workout-context-panel,.workout-summary,.workout-history,.workout-focus-shell,.activity-group-card) {
+  border-radius: 12px; box-shadow: var(--shadow-card);
+}
+.zeno-dashboard .metric-card { padding: 24px; }
+.zeno-dashboard .log-list { overflow: hidden; }
+.zeno-dashboard .entry-detail { padding: 24px 40px; }
+.zeno-dashboard :is(.doing-summary,.doing-board,.doing-planner-rail,.doing-editor,.activity-event-list) { border-radius: 12px; box-shadow: var(--shadow-card); }
+.zeno-dashboard :is(.search,.filters,.icon-button,.theme-toggle,.calendar-nav,.today-button,.feature-icon-button,.doing-secondary-button,.doing-icon-button,.settings-save,.markdown-toolbar button,.journal-history-controls button) { border-radius: 8px; }
+.zeno-dashboard :is(.filter,.period-filter,.font-profile-option) { border-radius: 8px; }
+.zeno-dashboard :is(.search,.filters) { min-height: 44px; }
+.zeno-dashboard :is(input:not([type='checkbox']):not([type='radio']),select,textarea) { border-radius: 4px; }
+.zeno-dashboard :is(.feature-button.primary,.doing-primary-button,.learning-form button,.settings-save,.workout-primary,.learning-item-submit,.topic-open):not(:disabled) { border-color: var(--primary); color: #202820; box-shadow: var(--shadow-card); border-radius: 9999px; }
+.zeno-dashboard :is(.feature-button.primary,.doing-primary-button,.learning-form button,.settings-save,.workout-primary,.learning-item-submit,.topic-open):not(:disabled):hover { border-color: var(--primary-hover); color: #202820; }
+.zeno-dashboard :is(.metric-card.accent,.metric-card.featured.accent,.filter.selected,.period-filter.selected,.font-profile-option:has(input:checked),.calendar-day.selected,.lifestyle-tabs > button.active,.spending-summary-card.active) { border-color: var(--primary-active); color: #202820; }
+.zeno-dashboard .metric-card.accent :is(span,strong,small) { color: #202820; }
+.zeno-dashboard .metric-card.accent em { color: #202820; opacity: .72; }
+.zeno-dashboard .sidebar .nav-item { border-radius: 8px; }
+.zeno-dashboard .sidebar .nav-item.active { box-shadow: inset 2px 0 var(--primary); }
+.zeno-dashboard .eyebrow { font-weight: 600; letter-spacing: .01em; }
+.zeno-dashboard .delete-popover, .delete-popover { border-radius: 12px; box-shadow: var(--shadow-overlay); }
+.delete-popover button { border-radius: 8px; }
+/* Preserve geometric Petal Cluster SVG and hit geometry. Only its surface depth changes. */
+.orbit-trigger, .orbit-center, .orbit-pagination button { box-shadow: var(--shadow-raised); }
+/* Auth: same paper-card geometry without replacing Zeno's existing colors. */
+.auth-shell .auth-card { width: min(460px, 100%); border-radius: 12px; padding: 24px; box-shadow: var(--shadow-raised); }
+.auth-shell .auth-card input { border-radius: 4px; background: var(--auth-surface); }
+.auth-shell .auth-brand-copy h2 { font-weight: 700; font-size: clamp(2.5rem, 4vw, 3.375rem); line-height: 1.04; letter-spacing: -.035em; }
+.auth-shell .auth-card-heading h1 { font-weight: 700; font-size: clamp(1.625rem, 2.4vw, 2.5rem); }
+.auth-shell .auth-submit { box-shadow: var(--shadow-card); }
+.auth-shell .auth-submit:active { transform: scale(.9); }
+.auth-shell .auth-submit.secondary { background: var(--auth-surface); color: var(--auth-text); box-shadow: var(--shadow-card); }
+.auth-shell :is(.profile-card,.session-card,.activity-audit-card) { border-radius: 12px; box-shadow: var(--shadow-card); }
+@media (max-width: 800px) {
+  .zeno-dashboard .content { padding: 32px 16px 128px; }
+  .zeno-dashboard .topbar { min-height: 58px; }
+}
+@media (max-width: 640px) {
+  .zeno-dashboard .content { padding: 24px 8px 116px; }
+  .zeno-dashboard .metric-card { padding: 18px; }
+  .zeno-dashboard .entry-detail { padding: 18px 30px; }
+  .zeno-dashboard .page-heading { margin-bottom: 24px; }
+  .zeno-dashboard .update-day { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .zeno-dashboard .update-date { position: static; padding: 0; }
+  .zeno-dashboard .update-day-list { padding-left: 16px; }
+  .zeno-dashboard .update-card { min-width: 0; }
+  .zeno-dashboard :is(.icon-button,.theme-toggle,.calendar-nav,.today-button,.feature-icon-button,.doing-secondary-button,.doing-icon-button) { min-width: 44px; min-height: 44px; }
+  .auth-shell .auth-card { padding: 24px 20px; }
+}
